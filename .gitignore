@@ -1,0 +1,41 @@
+# --- Python Specific ---
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+venv/
+.venv/
+env/
+ENV/
+bin/
+lib/
+lib64/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+*.egg
+
+# --- Windows Specific ---
+# Windows thumbnail cache files
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+
+# Folder config file
+[Dd]esktop.ini
+
+# Recycle Bin used on separate drives
+$RECYCLE.BIN/
+
+# --- Chronicle-MCP Specific ---
+# Temporary copies of the browser history database
+chronicle_temp_history.db
+chronicle_temp_history
+
+# Local environment secrets (if you add them later)
+.env
