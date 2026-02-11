@@ -24,4 +24,3 @@ repos:
         additional_dependencies: [types-requests]
         files: ^(chronicle_mcp|server\.py)$
         args: [--strict]
-
