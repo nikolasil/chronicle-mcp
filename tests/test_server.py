@@ -162,10 +162,11 @@ class TestGetRecentHistory:
 
     def test_get_recent_history_json_format(self, mock_chrome_path, sample_chrome_db):
         """Test JSON output format."""
-        import server
+        import datetime
         import json
         import sqlite3
-        import datetime
+
+        import server
 
         func = get_tool_func(server, "get_recent_history")
 
