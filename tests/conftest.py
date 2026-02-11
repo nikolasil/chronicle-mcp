@@ -111,44 +111,49 @@ def sample_firefox_db(temp_dir):
     return db_path
 
 
-@pytest.fixture
-def mock_chrome_path(monkeypatch, sample_chrome_db):
-    """Mocks get_browser_path to return our sample database."""
-    from chronicle_mcp import paths
-    import server
-
-    def mock_get_browser_path(browser):
-        if browser.lower() == "chrome":
-            return sample_chrome_db
-        return None
-
-    monkeypatch.setattr(paths, "get_browser_path", mock_get_browser_path)
-    monkeypatch.setattr(server, "get_browser_path", mock_get_browser_path)
-
-
-@pytest.fixture
-def mock_all_browsers(monkeypatch, sample_chrome_db, sample_firefox_db):
-    """Mocks multiple browser paths."""
-    from chronicle_mcp import paths
-    import server
+def _make_mock_get_browser_path(sample_chrome_db, sample_firefox_db=None):
+    """Factory for mock_get_browser_path functions."""
 
     def mock_get_browser_path(browser):
         browser_lower = browser.lower()
         if browser_lower == "chrome":
             return sample_chrome_db
-        elif browser_lower == "firefox":
+        elif browser_lower == "firefox" and sample_firefox_db:
             return sample_firefox_db
         elif browser_lower == "edge":
             return None
         return None
 
-    monkeypatch.setattr(paths, "get_browser_path", mock_get_browser_path)
-    monkeypatch.setattr(server, "get_browser_path", mock_get_browser_path)
+    return mock_get_browser_path
+
+
+@pytest.fixture
+def mock_chrome_path(monkeypatch, sample_chrome_db):
+    """Mocks get_browser_path to return our sample database."""
+    import server
+    from chronicle_mcp import paths
+
+    mock_fn = _make_mock_get_browser_path(sample_chrome_db)
+    monkeypatch.setattr(paths, "get_browser_path", mock_fn)
+    monkeypatch.setattr(server, "get_browser_path", mock_fn)
+
+
+@pytest.fixture
+def mock_all_browsers(monkeypatch, sample_chrome_db, sample_firefox_db):
+    """Mocks multiple browser paths."""
+    import server
+    from chronicle_mcp import paths
+
+    mock_fn = _make_mock_get_browser_path(sample_chrome_db, sample_firefox_db)
+    monkeypatch.setattr(paths, "get_browser_path", mock_fn)
+    monkeypatch.setattr(server, "get_browser_path", mock_fn)
 
 
 @pytest.fixture(autouse=True)
 def reload_server(monkeypatch, mock_chrome_path):
     """Reload server module to apply mocks."""
-    import server
     import importlib
+
+    import server
+
     importlib.reload(server)
