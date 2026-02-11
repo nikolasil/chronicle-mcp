@@ -1,41 +1,74 @@
-# --- Python Specific ---
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+.Python
 
-# Virtual Environment
+# Virtual environments
 venv/
 .venv/
 env/
 ENV/
-bin/
-lib/
-lib64/
+pyenv/
+.venv*
 
 # Distribution / packaging
 dist/
 build/
 *.egg-info/
 *.egg
+*.whl
+.pytest_cache/
+.coverage
+htmlcov/
+*.cover
+.mypy_cache/
+.ruff_cache/
+dmypy.json
+dmypy.sock
 
-# --- Windows Specific ---
-# Windows thumbnail cache files
+# OS files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
 Thumbs.db:encryptable
-ehthumbs.db
-ehthumbs_vista.db
-
-# Folder config file
-[Dd]esktop.ini
-
-# Recycle Bin used on separate drives
+desktop.ini
 $RECYCLE.BIN/
 
-# --- Chronicle-MCP Specific ---
-# Temporary copies of the browser history database
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# Environment files
+.env
+.env.local
+*.env
+.env.*
+
+# Chronicle-MCP specific
 chronicle_temp_history.db
 chronicle_temp_history
+*.db
 
-# Local environment secrets (if you add them later)
-.env
+# Log files
+*.log
+
+# OS-specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
