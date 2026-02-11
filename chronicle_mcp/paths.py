@@ -1,7 +1,6 @@
 import glob
 import os
 import platform
-from typing import Optional
 
 BROWSER_PATHS: dict[str, dict[str, str]] = {
     "chrome": {
@@ -32,13 +31,13 @@ def expand_path(path: str) -> str:
     return os.path.expandvars(os.path.expanduser(path))
 
 
-def find_glob_path(pattern: str) -> Optional[str]:
+def find_glob_path(pattern: str) -> str | None:
     """Finds a file matching the glob pattern, returns first match or None."""
     matches = glob.glob(expand_path(pattern))
     return matches[0] if matches else None
 
 
-def get_browser_path(browser: str) -> Optional[str]:
+def get_browser_path(browser: str) -> str | None:
     """
     Gets the history database path for the specified browser.
 
@@ -77,7 +76,7 @@ def get_available_browsers() -> list[str]:
     return available
 
 
-def get_all_browser_paths() -> dict[str, Optional[str]]:
+def get_all_browser_paths() -> dict[str, str | None]:
     """
     Returns a dictionary of all browser paths (found or not found).
     Useful for debugging.

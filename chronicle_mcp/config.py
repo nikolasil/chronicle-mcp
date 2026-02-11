@@ -1,7 +1,6 @@
 import logging
 import os
 from dataclasses import dataclass
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -15,7 +14,7 @@ class Config:
     log_level: str = "INFO"
 
 
-def load_config(config_path: Optional[str] = None) -> Config:
+def load_config(config_path: str | None = None) -> Config:
     """
     Load configuration from a TOML file.
 
@@ -75,7 +74,7 @@ def load_config(config_path: Optional[str] = None) -> Config:
     return config
 
 
-def setup_logging(level: Optional[str] = None) -> None:
+def setup_logging(level: str | None = None) -> None:
     """
     Set up logging for ChronicleMCP.
 
