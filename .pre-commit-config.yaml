@@ -23,4 +23,4 @@ repos:
       - id: mypy
         additional_dependencies: [types-requests]
         files: ^(chronicle_mcp|server\.py)$
-        args: [--strict]
+        args: [--ignore-missing-imports, --strict]
