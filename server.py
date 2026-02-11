@@ -72,7 +72,7 @@ def get_history_connection(browser: str = "chrome") -> Generator[sqlite3.Connect
         raise
 
 
-@mcp.tool()  # type: ignore[misc]
+@mcp.tool()  # type: ignore[untyped-decorator]
 def _list_available_browsers() -> str:
     """
     Returns a list of browsers with detected history databases on this system.
@@ -89,7 +89,7 @@ def _list_available_browsers() -> str:
 list_available_browsers = _list_available_browsers
 
 
-@mcp.tool()  # type: ignore[misc]
+@mcp.tool()  # type: ignore[untyped-decorator]
 def _search_history(
     query: str, limit: int = 5, browser: str = "chrome", format_type: str = "markdown"
 ) -> str:
@@ -143,7 +143,7 @@ def _search_history(
 search_history = _search_history
 
 
-@mcp.tool()  # type: ignore[misc]
+@mcp.tool()  # type: ignore[untyped-decorator]
 def _get_recent_history(
     hours: int = 24, limit: int = 20, browser: str = "chrome", format_type: str = "markdown"
 ) -> str:
@@ -187,7 +187,7 @@ def _get_recent_history(
 get_recent_history = _get_recent_history
 
 
-@mcp.tool()  # type: ignore[misc]
+@mcp.tool()  # type: ignore[untyped-decorator]
 def _count_visits(domain: str, browser: str = "chrome") -> str:
     """
     Counts total visits to a specific domain.
@@ -220,7 +220,7 @@ def _count_visits(domain: str, browser: str = "chrome") -> str:
 count_visits = _count_visits
 
 
-@mcp.tool()  # type: ignore[misc]
+@mcp.tool()  # type: ignore[untyped-decorator]
 def _list_top_domains(
     limit: int = 10, browser: str = "chrome", format_type: str = "markdown"
 ) -> str:
@@ -269,7 +269,7 @@ def _list_top_domains(
 list_top_domains = _list_top_domains
 
 
-@mcp.tool()  # type: ignore[misc]
+@mcp.tool()  # type: ignore[untyped-decorator]
 def _search_history_by_date(
     query: str,
     start_date: str,
