@@ -5,6 +5,7 @@ import sqlite3
 import tempfile
 import time
 from contextlib import contextmanager
+from typing import Generator
 
 from fastmcp import FastMCP
 
@@ -33,7 +34,7 @@ list_available_browsers = None
 
 
 @contextmanager
-def get_history_connection(browser: str = "chrome"):
+def get_history_connection(browser: str = "chrome") -> Generator[sqlite3.Connection, None, None]:
     """
     Creates a temporary copy of the history DB to avoid 'Database Locked' errors.
 
@@ -53,8 +54,7 @@ def get_history_connection(browser: str = "chrome"):
 
     temp_dir = tempfile.gettempdir()
     temp_path = os.path.join(
-        temp_dir,
-        f"chronicle_{browser}_temp_{os.getpid()}_{int(time.time() * 1000)}.db"
+        temp_dir, f"chronicle_{browser}_temp_{os.getpid()}_{int(time.time() * 1000)}.db"
     )
 
     try:
@@ -72,7 +72,7 @@ def get_history_connection(browser: str = "chrome"):
         raise
 
 
-@mcp.tool()
+@mcp.tool()  # type: ignore[misc]
 def _list_available_browsers() -> str:
     """
     Returns a list of browsers with detected history databases on this system.
@@ -89,12 +89,9 @@ def _list_available_browsers() -> str:
 list_available_browsers = _list_available_browsers
 
 
-@mcp.tool()
+@mcp.tool()  # type: ignore[misc]
 def _search_history(
-    query: str,
-    limit: int = 5,
-    browser: str = "chrome",
-    format_type: str = "markdown"
+    query: str, limit: int = 5, browser: str = "chrome", format_type: str = "markdown"
 ) -> str:
     """
     Searches browser history for keywords in titles or URLs.
@@ -146,12 +143,9 @@ def _search_history(
 search_history = _search_history
 
 
-@mcp.tool()
+@mcp.tool()  # type: ignore[misc]
 def _get_recent_history(
-    hours: int = 24,
-    limit: int = 20,
-    browser: str = "chrome",
-    format_type: str = "markdown"
+    hours: int = 24, limit: int = 20, browser: str = "chrome", format_type: str = "markdown"
 ) -> str:
     """
     Gets recent browsing history from the last N hours.
@@ -193,7 +187,7 @@ def _get_recent_history(
 get_recent_history = _get_recent_history
 
 
-@mcp.tool()
+@mcp.tool()  # type: ignore[misc]
 def _count_visits(domain: str, browser: str = "chrome") -> str:
     """
     Counts total visits to a specific domain.
@@ -226,11 +220,9 @@ def _count_visits(domain: str, browser: str = "chrome") -> str:
 count_visits = _count_visits
 
 
-@mcp.tool()
+@mcp.tool()  # type: ignore[misc]
 def _list_top_domains(
-    limit: int = 10,
-    browser: str = "chrome",
-    format_type: str = "markdown"
+    limit: int = 10, browser: str = "chrome", format_type: str = "markdown"
 ) -> str:
     """
     Gets the most visited domains from browser history.
@@ -261,6 +253,7 @@ def _list_top_domains(
 
             if format_type == "json":
                 import json
+
                 return json.dumps({"top_domains": [{"domain": d, "visits": v} for d, v in domains]})
 
             if not domains:
@@ -276,14 +269,14 @@ def _list_top_domains(
 list_top_domains = _list_top_domains
 
 
-@mcp.tool()
+@mcp.tool()  # type: ignore[misc]
 def _search_history_by_date(
     query: str,
     start_date: str,
     end_date: str,
     limit: int = 10,
     browser: str = "chrome",
-    format_type: str = "markdown"
+    format_type: str = "markdown",
 ) -> str:
     """
     Searches browser history within a date range.

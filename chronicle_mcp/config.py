@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Config:
     """Configuration settings for ChronicleMCP."""
+
     default_browser: str = "chrome"
     default_limit: int = 5
     default_format: str = "markdown"
@@ -89,8 +90,7 @@ def setup_logging(level: str | None = None) -> None:
     log_level = getattr(logging, level.upper(), logging.INFO)
 
     logging.basicConfig(
-        level=log_level,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        level=log_level, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
     )
 
     logger.debug("Logging initialized")

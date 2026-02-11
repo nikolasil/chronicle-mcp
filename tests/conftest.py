@@ -36,16 +36,40 @@ def sample_chrome_db(temp_dir):
     chrome_epoch_offset = 11644473600000000
 
     test_data = [
-        ("https://github.com/anthropics/claude", "Claude - Anthropic", 10, chrome_epoch_offset + 1000000000),
-        ("https://stackoverflow.com/questions/123", "Python SQLite Tutorial", 5, chrome_epoch_offset + 900000000),
-        ("https://docs.python.org/3/tutorial/", "Python Tutorial", 3, chrome_epoch_offset + 800000000),
-        ("https://github.com/microsoft/vscode", "VS Code - Microsoft", 8, chrome_epoch_offset + 700000000),
-        ("https://example.com/test?token=secret123", "Test Site with Token", 2, chrome_epoch_offset + 600000000),
+        (
+            "https://github.com/anthropics/claude",
+            "Claude - Anthropic",
+            10,
+            chrome_epoch_offset + 1000000000,
+        ),
+        (
+            "https://stackoverflow.com/questions/123",
+            "Python SQLite Tutorial",
+            5,
+            chrome_epoch_offset + 900000000,
+        ),
+        (
+            "https://docs.python.org/3/tutorial/",
+            "Python Tutorial",
+            3,
+            chrome_epoch_offset + 800000000,
+        ),
+        (
+            "https://github.com/microsoft/vscode",
+            "VS Code - Microsoft",
+            8,
+            chrome_epoch_offset + 700000000,
+        ),
+        (
+            "https://example.com/test?token=secret123",
+            "Test Site with Token",
+            2,
+            chrome_epoch_offset + 600000000,
+        ),
     ]
 
     cursor.executemany(
-        "INSERT INTO urls (url, title, visit_count, last_visit_time) VALUES (?, ?, ?, ?)",
-        test_data
+        "INSERT INTO urls (url, title, visit_count, last_visit_time) VALUES (?, ?, ?, ?)", test_data
     )
 
     conn.commit()
@@ -78,7 +102,7 @@ def sample_firefox_db(temp_dir):
 
     cursor.executemany(
         "INSERT INTO moz_places (url, title, visit_count, last_visit_date) VALUES (?, ?, ?, ?)",
-        firefox_data
+        firefox_data,
     )
 
     conn.commit()

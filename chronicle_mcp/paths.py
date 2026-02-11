@@ -6,18 +6,18 @@ BROWSER_PATHS: dict[str, dict[str, str]] = {
     "chrome": {
         "Windows": r"%LocalAppData%\Google\Chrome\User Data\Default\History",
         "Darwin": "~/Library/Application Support/Google/Chrome/Default/History",
-        "Linux": "~/.config/google-chrome/Default/History"
+        "Linux": "~/.config/google-chrome/Default/History",
     },
     "edge": {
         "Windows": r"%LocalAppData%\Microsoft\Edge\User Data\Default\History",
         "Darwin": "~/Library/Application Support/Microsoft Edge/Default/History",
-        "Linux": "~/.config/microsoft-edge/Default/History"
+        "Linux": "~/.config/microsoft-edge/Default/History",
     },
     "firefox": {
         "Windows": r"%AppData%\Mozilla\Firefox\Profiles\*.default\places.sqlite",
         "Darwin": "~/Library/Mozilla/Firefox/Profiles/*.default/places.sqlite",
-        "Linux": "~/.mozilla/firefox/*.default/places.sqlite"
-    }
+        "Linux": "~/.mozilla/firefox/*.default/places.sqlite",
+    },
 }
 
 

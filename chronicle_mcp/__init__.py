@@ -38,5 +38,5 @@ __all__ = [
     "Config",
     "load_config",
     "setup_logging",
-    "logger"
+    "logger",
 ]

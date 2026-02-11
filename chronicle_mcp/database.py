@@ -5,15 +5,15 @@ from urllib.parse import urlparse
 def sanitize_url(url: str) -> str:
     """Removes sensitive query parameters from URLs."""
     parsed = urlparse(url)
-    sensitive_params = {'token', 'session', 'key', 'password', 'auth', 'sid', 'access_token'}
+    sensitive_params = {"token", "session", "key", "password", "auth", "sid", "access_token"}
 
     query_parts = []
-    for part in parsed.query.split('&'):
-        param = part.split('=')[0] if '=' in part else part
+    for part in parsed.query.split("&"):
+        param = part.split("=")[0] if "=" in part else part
         if param.lower() not in sensitive_params:
             query_parts.append(part)
 
-    safe_query = '&'.join(query_parts)
+    safe_query = "&".join(query_parts)
     reconstructed = parsed._replace(query=safe_query)
     return reconstructed.geturl()
 
@@ -30,6 +30,7 @@ def format_chrome_timestamp(microseconds: int) -> str:
     """
     try:
         from datetime import datetime, timedelta, timezone
+
         epoch_delta = timedelta(microseconds=microseconds)
         chrome_epoch = datetime(1601, 1, 1, tzinfo=timezone.utc)
         dt = chrome_epoch + epoch_delta
@@ -39,9 +40,7 @@ def format_chrome_timestamp(microseconds: int) -> str:
 
 
 def query_history(
-    conn: sqlite3.Connection,
-    query: str,
-    limit: int = 10
+    conn: sqlite3.Connection, query: str, limit: int = 10
 ) -> list[tuple[str, str, str]]:
     """
     Searches history for matching titles or URLs.
@@ -58,15 +57,16 @@ def query_history(
     search_query = f"%{query}%"
     cursor.execute(
         "SELECT title, url, last_visit_time FROM urls WHERE title LIKE ? OR url LIKE ? ORDER BY last_visit_time DESC LIMIT ?",
-        (search_query, search_query, limit)
+        (search_query, search_query, limit),
     )
-    return [(title, sanitize_url(url), format_chrome_timestamp(ts)) for title, url, ts in cursor.fetchall()]
+    return [
+        (title, sanitize_url(url), format_chrome_timestamp(ts))
+        for title, url, ts in cursor.fetchall()
+    ]
 
 
 def query_recent_history(
-    conn: sqlite3.Connection,
-    hours: int = 24,
-    limit: int = 20
+    conn: sqlite3.Connection, hours: int = 24, limit: int = 20
 ) -> list[tuple[str, str, str]]:
     """
     Gets recent history entries from the last N hours.
@@ -88,9 +88,12 @@ def query_recent_history(
 
     cursor.execute(
         "SELECT title, url, last_visit_time FROM urls WHERE last_visit_time > ? ORDER BY last_visit_time DESC LIMIT ?",
-        (cutoff_microseconds, limit)
+        (cutoff_microseconds, limit),
     )
-    return [(title, sanitize_url(url), format_chrome_timestamp(ts)) for title, url, ts in cursor.fetchall()]
+    return [
+        (title, sanitize_url(url), format_chrome_timestamp(ts))
+        for title, url, ts in cursor.fetchall()
+    ]
 
 
 def count_domain_visits(conn: sqlite3.Connection, domain: str) -> int:
@@ -105,12 +108,9 @@ def count_domain_visits(conn: sqlite3.Connection, domain: str) -> int:
         Number of visits to the domain
     """
     cursor = conn.cursor()
-    cursor.execute(
-        "SELECT SUM(visit_count) FROM urls WHERE url LIKE ?",
-        (f"%{domain}%",)
-    )
+    cursor.execute("SELECT SUM(visit_count) FROM urls WHERE url LIKE ?", (f"%{domain}%",))
     result = cursor.fetchone()
-    return result[0] if result and result[0] else 0
+    return int(result[0]) if result and result[0] else 0
 
 
 def get_top_domains(conn: sqlite3.Connection, limit: int = 10) -> list[tuple[str, int]]:
@@ -125,7 +125,8 @@ def get_top_domains(conn: sqlite3.Connection, limit: int = 10) -> list[tuple[str
         List of (domain, visit_count) tuples
     """
     cursor = conn.cursor()
-    cursor.execute("""
+    cursor.execute(
+        """
         SELECT SUBSTR(
             SUBSTR(url, INSTR(url, '://') + 3),
             1,
@@ -140,16 +141,14 @@ def get_top_domains(conn: sqlite3.Connection, limit: int = 10) -> list[tuple[str
         GROUP BY domain
         ORDER BY total DESC
         LIMIT ?
-    """, (limit,))
+    """,
+        (limit,),
+    )
     return [(row[0], row[1]) for row in cursor.fetchall()]
 
 
 def search_by_date(
-    conn: sqlite3.Connection,
-    query: str,
-    start_date: str,
-    end_date: str,
-    limit: int = 10
+    conn: sqlite3.Connection, query: str, start_date: str, end_date: str, limit: int = 10
 ) -> list[tuple[str, str, str]]:
     """
     Searches history within a date range.
@@ -184,15 +183,16 @@ def search_by_date(
            WHERE (title LIKE ? OR url LIKE ?)
            AND last_visit_time >= ? AND last_visit_time <= ?
            ORDER BY last_visit_time DESC LIMIT ?""",
-        (search_query, search_query, start_microseconds, end_microseconds, limit)
+        (search_query, search_query, start_microseconds, end_microseconds, limit),
     )
-    return [(title, sanitize_url(url), format_chrome_timestamp(ts)) for title, url, ts in cursor.fetchall()]
+    return [
+        (title, sanitize_url(url), format_chrome_timestamp(ts))
+        for title, url, ts in cursor.fetchall()
+    ]
 
 
 def format_results(
-    rows: list[tuple[str, str, str]],
-    query: str,
-    format_type: str = "markdown"
+    rows: list[tuple[str, str, str]], query: str, format_type: str = "markdown"
 ) -> str:
     """
     Formats history results for output.
@@ -210,6 +210,7 @@ def format_results(
 
     if format_type == "json":
         import json
+
         items = [{"title": title, "url": url, "timestamp": ts} for title, url, ts in rows]
         return json.dumps({"results": items, "count": len(items)})
 
