@@ -115,6 +115,7 @@ def sample_firefox_db(temp_dir):
 def mock_chrome_path(monkeypatch, sample_chrome_db):
     """Mocks get_browser_path to return our sample database."""
     from chronicle_mcp import paths
+    import server
 
     def mock_get_browser_path(browser):
         if browser.lower() == "chrome":
@@ -122,12 +123,14 @@ def mock_chrome_path(monkeypatch, sample_chrome_db):
         return None
 
     monkeypatch.setattr(paths, "get_browser_path", mock_get_browser_path)
+    monkeypatch.setattr(server, "get_browser_path", mock_get_browser_path)
 
 
 @pytest.fixture
 def mock_all_browsers(monkeypatch, sample_chrome_db, sample_firefox_db):
     """Mocks multiple browser paths."""
     from chronicle_mcp import paths
+    import server
 
     def mock_get_browser_path(browser):
         browser_lower = browser.lower()
@@ -140,3 +143,12 @@ def mock_all_browsers(monkeypatch, sample_chrome_db, sample_firefox_db):
         return None
 
     monkeypatch.setattr(paths, "get_browser_path", mock_get_browser_path)
+    monkeypatch.setattr(server, "get_browser_path", mock_get_browser_path)
+
+
+@pytest.fixture(autouse=True)
+def reload_server(monkeypatch, mock_chrome_path):
+    """Reload server module to apply mocks."""
+    import server
+    import importlib
+    importlib.reload(server)
