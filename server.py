@@ -1,22 +1,35 @@
+import logging
 import os
-import sqlite3
 import shutil
+import sqlite3
 import tempfile
-import platform
 import time
 from contextlib import contextmanager
+
 from fastmcp import FastMCP
-from chronicle_mcp.paths import get_browser_path, get_available_browsers, get_all_browser_paths
+
+from chronicle_mcp.config import setup_logging
 from chronicle_mcp.database import (
+    count_domain_visits,
+    format_results,
     query_history,
     query_recent_history,
-    count_domain_visits,
-    get_top_domains as db_get_top_domains,
-    search_by_date as db_search_by_date,
-    format_results
 )
+from chronicle_mcp.database import get_top_domains as db_get_top_domains
+from chronicle_mcp.database import search_by_date as db_search_by_date
+from chronicle_mcp.paths import get_available_browsers, get_browser_path
+
+setup_logging()
+logger = logging.getLogger(__name__)
 
 mcp = FastMCP("Chronicle")
+
+search_history = None
+get_recent_history = None
+count_visits = None
+list_top_domains = None
+search_history_by_date = None
+list_available_browsers = None
 
 
 @contextmanager
@@ -60,7 +73,7 @@ def get_history_connection(browser: str = "chrome"):
 
 
 @mcp.tool()
-def list_available_browsers() -> str:
+def _list_available_browsers() -> str:
     """
     Returns a list of browsers with detected history databases on this system.
 
@@ -73,8 +86,11 @@ def list_available_browsers() -> str:
     return f"Available browsers: {', '.join(available)}"
 
 
+list_available_browsers = _list_available_browsers
+
+
 @mcp.tool()
-def search_history(
+def _search_history(
     query: str,
     limit: int = 5,
     browser: str = "chrome",
@@ -95,6 +111,7 @@ def search_history(
     browser = browser.lower()
 
     if not query or not query.strip():
+        logger.warning("Empty query received")
         return "Error: Query cannot be empty"
 
     if not isinstance(limit, int):
@@ -109,23 +126,28 @@ def search_history(
     if format_type not in ["markdown", "json"]:
         return "Error: format_type must be 'markdown' or 'json'"
 
+    logger.info(f"Searching history for '{query}' in {browser} (limit={limit})")
     try:
         with get_history_connection(browser) as conn:
             rows = query_history(conn, query, limit)
+            logger.debug(f"Found {len(rows)} results")
             return format_results(rows, query, format_type)
 
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         return f"Error: {browser} history not found. Please ensure {browser} is installed."
-    except PermissionError as e:
+    except PermissionError:
         return f"Error: Permission denied accessing {browser} history"
-    except sqlite3.OperationalError as e:
+    except sqlite3.OperationalError:
         return f"Error: Unable to access {browser} history database"
-    except Exception as e:
+    except Exception:
         return "Error: An unexpected error occurred"
 
 
+search_history = _search_history
+
+
 @mcp.tool()
-def get_recent_history(
+def _get_recent_history(
     hours: int = 24,
     limit: int = 20,
     browser: str = "chrome",
@@ -162,14 +184,17 @@ def get_recent_history(
             rows = query_recent_history(conn, hours, limit)
             return format_results(rows, f"last {hours} hours", format_type)
 
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         return f"Error: {browser} history not found"
-    except Exception as e:
+    except Exception:
         return "Error: An unexpected error occurred"
 
 
+get_recent_history = _get_recent_history
+
+
 @mcp.tool()
-def count_visits(domain: str, browser: str = "chrome") -> str:
+def _count_visits(domain: str, browser: str = "chrome") -> str:
     """
     Counts total visits to a specific domain.
 
@@ -194,12 +219,15 @@ def count_visits(domain: str, browser: str = "chrome") -> str:
             count = count_domain_visits(conn, domain)
             return f"Visits to '{domain}' in {browser}: {count}"
 
-    except Exception as e:
+    except Exception:
         return "Error: An unexpected error occurred"
 
 
+count_visits = _count_visits
+
+
 @mcp.tool()
-def list_top_domains(
+def _list_top_domains(
     limit: int = 10,
     browser: str = "chrome",
     format_type: str = "markdown"
@@ -241,12 +269,15 @@ def list_top_domains(
             results = [f"- **{domain}** ({visits} visits)" for domain, visits in domains]
             return "\n\n".join(results)
 
-    except Exception as e:
+    except Exception:
         return "Error: An unexpected error occurred"
 
 
+list_top_domains = _list_top_domains
+
+
 @mcp.tool()
-def search_history_by_date(
+def _search_history_by_date(
     query: str,
     start_date: str,
     end_date: str,
@@ -288,8 +319,11 @@ def search_history_by_date(
             rows = db_search_by_date(conn, query, start_date, end_date, limit)
             return format_results(rows, query, format_type)
 
-    except Exception as e:
+    except Exception:
         return "Error: An unexpected error occurred"
+
+
+search_history_by_date = _search_history_by_date
 
 
 if __name__ == "__main__":
