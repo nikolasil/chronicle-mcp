@@ -4,8 +4,8 @@ import shutil
 import sqlite3
 import tempfile
 import time
+from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Generator
 
 from fastmcp import FastMCP
 
