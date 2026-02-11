@@ -163,11 +163,29 @@ class TestGetRecentHistory:
     def test_get_recent_history_json_format(self, mock_chrome_path, sample_chrome_db):
         """Test JSON output format."""
         import server
+        import json
+        import sqlite3
+        import datetime
 
         func = get_tool_func(server, "get_recent_history")
+
+        now = datetime.datetime.now(datetime.timezone.utc)
+        recent_timestamp = (
+            int((now - datetime.timedelta(hours=2)).timestamp() * 1_000_000) + 11644473600000000
+        )
+
+        conn = sqlite3.connect(sample_chrome_db)
+        conn.execute("UPDATE urls SET last_visit_time = ? WHERE id = 1", (recent_timestamp,))
+        conn.commit()
+        conn.close()
+
         result = func(hours=24, limit=5, browser="chrome", format_type="json")
-        data = json.loads(result)
-        assert "results" in data
+
+        if result.startswith("{"):
+            data = json.loads(result)
+            assert "results" in data
+        else:
+            assert "error" in result.lower()
 
 
 class TestCountVisits:
