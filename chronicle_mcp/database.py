@@ -1,5 +1,4 @@
 import sqlite3
-from typing import List, Tuple, Optional
 from urllib.parse import urlparse
 
 
@@ -43,7 +42,7 @@ def query_history(
     conn: sqlite3.Connection,
     query: str,
     limit: int = 10
-) -> List[Tuple[str, str, str]]:
+) -> list[tuple[str, str, str]]:
     """
     Searches history for matching titles or URLs.
 
@@ -68,7 +67,7 @@ def query_recent_history(
     conn: sqlite3.Connection,
     hours: int = 24,
     limit: int = 20
-) -> List[Tuple[str, str, str]]:
+) -> list[tuple[str, str, str]]:
     """
     Gets recent history entries from the last N hours.
 
@@ -114,7 +113,7 @@ def count_domain_visits(conn: sqlite3.Connection, domain: str) -> int:
     return result[0] if result and result[0] else 0
 
 
-def get_top_domains(conn: sqlite3.Connection, limit: int = 10) -> List[Tuple[str, int]]:
+def get_top_domains(conn: sqlite3.Connection, limit: int = 10) -> list[tuple[str, int]]:
     """
     Gets most visited domains.
 
@@ -151,7 +150,7 @@ def search_by_date(
     start_date: str,
     end_date: str,
     limit: int = 10
-) -> List[Tuple[str, str, str]]:
+) -> list[tuple[str, str, str]]:
     """
     Searches history within a date range.
 
@@ -191,7 +190,7 @@ def search_by_date(
 
 
 def format_results(
-    rows: List[Tuple[str, str, str]],
+    rows: list[tuple[str, str, str]],
     query: str,
     format_type: str = "markdown"
 ) -> str:

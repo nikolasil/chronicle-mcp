@@ -1,6 +1,4 @@
-import pytest
 import os
-import tempfile
 from pathlib import Path
 
 
@@ -68,7 +66,7 @@ class TestPathDetection:
 
     def test_get_all_browser_paths_structure(self):
         """Test that get_all_browser_paths returns correct structure."""
-        from chronicle_mcp.paths import get_all_browser_paths, BROWSER_PATHS
+        from chronicle_mcp.paths import BROWSER_PATHS, get_all_browser_paths
 
         result = get_all_browser_paths()
 

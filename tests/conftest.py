@@ -1,8 +1,8 @@
-import pytest
-import sqlite3
 import os
+import sqlite3
 import tempfile
-from pathlib import Path
+
+import pytest
 
 
 @pytest.fixture

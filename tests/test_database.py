@@ -1,7 +1,5 @@
-import pytest
-import sqlite3
-import os
 import json
+import sqlite3
 
 
 class TestQueryHistory:
@@ -84,7 +82,7 @@ class TestFormatResults:
 
     def test_format_results_markdown(self, sample_chrome_db):
         """Test Markdown format output."""
-        from chronicle_mcp.database import query_history, format_results
+        from chronicle_mcp.database import format_results, query_history
 
         conn = sqlite3.connect(sample_chrome_db)
         try:
@@ -98,7 +96,7 @@ class TestFormatResults:
 
     def test_format_results_json(self, sample_chrome_db):
         """Test JSON format output."""
-        from chronicle_mcp.database import query_history, format_results
+        from chronicle_mcp.database import format_results, query_history
 
         conn = sqlite3.connect(sample_chrome_db)
         try:

@@ -1,10 +1,9 @@
-import os
 import glob
+import os
 import platform
-from typing import Optional, Dict, List
+from typing import Optional
 
-
-BROWSER_PATHS: Dict[str, Dict[str, str]] = {
+BROWSER_PATHS: dict[str, dict[str, str]] = {
     "chrome": {
         "Windows": r"%LocalAppData%\Google\Chrome\User Data\Default\History",
         "Darwin": "~/Library/Application Support/Google/Chrome/Default/History",
@@ -67,7 +66,7 @@ def get_browser_path(browser: str) -> Optional[str]:
         return expanded if os.path.exists(expanded) else None
 
 
-def get_available_browsers() -> List[str]:
+def get_available_browsers() -> list[str]:
     """
     Returns a list of browsers with detected history databases.
     """
@@ -78,7 +77,7 @@ def get_available_browsers() -> List[str]:
     return available
 
 
-def get_all_browser_paths() -> Dict[str, Optional[str]]:
+def get_all_browser_paths() -> dict[str, Optional[str]]:
     """
     Returns a dictionary of all browser paths (found or not found).
     Useful for debugging.
