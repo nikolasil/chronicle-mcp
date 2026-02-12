@@ -1,8 +1,24 @@
 import logging
 import os
 from dataclasses import dataclass
+from importlib.metadata import version as get_package_version
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+
+def get_version() -> str:
+    """Get the current version of ChronicleMCP."""
+    try:
+        return get_package_version("chronicle-mcp")
+    except Exception:
+        pyproject = Path(__file__).parent.parent.parent / "pyproject.toml"
+        if pyproject.exists():
+            content = pyproject.read_text()
+            for line in content.split("\n"):
+                if line.startswith("version"):
+                    return line.split("=")[1].strip().strip('"').strip("'")
+        return "1.0.0"
 
 
 @dataclass
