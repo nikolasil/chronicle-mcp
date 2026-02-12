@@ -29,7 +29,8 @@ jobs:
       - name: Update version in pyproject.toml
         run: |
           VERSION="${{ steps.get_version.outputs.VERSION }}"
-          sed -i "s/version = \"[^\"]*\"/version = \"$VERSION\"/" pyproject.toml
+          # Only update version in the [project] section (line 7 typically)
+          sed -i '0,/^\[project\]/{s/^version = "[^"]*"/version = "'$VERSION'"/}' pyproject.toml
           echo "Updated pyproject.toml to version $VERSION"
 
       - name: Commit version bump
