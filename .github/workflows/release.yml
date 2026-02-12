@@ -49,14 +49,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: 'pip'
+
+      - name: Update version in pyproject.toml
+        run: |
+          VERSION="${{ needs.bump-version.outputs.version }}"
+          sed -i '0,/^\[project\]/{s/^version = "[^"]*"/version = "'$VERSION'"/}' pyproject.toml
+          echo "Updated pyproject.toml to version $VERSION"
 
       - name: Install build
         run: pip install build
@@ -87,8 +91,12 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: main
+
+      - name: Update version in pyproject.toml
+        run: |
+          VERSION="${{ needs.bump-version.outputs.version }}"
+          sed -i '0,/^\[project\]/{s/^version = "[^"]*"/version = "'$VERSION'"/}' pyproject.toml
+          echo "Updated pyproject.toml to version $VERSION"
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -121,8 +129,6 @@ jobs:
       tarball_url: ${{ steps.create_release.outputs.tarball_url }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5

@@ -1,9 +1,9 @@
 name: Build Container
 
 on:
-  release:
-    types: [created]
   push:
+    tags:
+      - 'v*'
     branches: [main, master]
     paths:
       - 'Dockerfile'
