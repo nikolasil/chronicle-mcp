@@ -1,4 +1,5 @@
 """ChronicleMCP - Browser history access for AI agents."""
+
 __version__ = "1.1.0"
 
 from chronicle_mcp.config import Config, load_config, logger, setup_logging
