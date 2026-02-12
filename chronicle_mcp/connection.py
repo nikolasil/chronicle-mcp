@@ -10,9 +10,9 @@ import shutil
 import sqlite3
 import tempfile
 import time
-from collections.abc import Generator
+from collections.abc import Callable, Generator
 from contextlib import contextmanager
-from typing import Any, Callable
+from typing import Any
 
 from chronicle_mcp.paths import get_browser_path
 

@@ -1,5 +1,4 @@
 import sys
-from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
@@ -84,7 +83,9 @@ class TestCLI:
     def test_cli_run_sse_help(self):
         """Test that CLI run command with SSE transport help works."""
         with pytest.raises(SystemExit) as exc_info:
-            with patch.object(sys, "argv", ["chronicle-mcp", "run", "--transport", "sse", "--help"]):
+            with patch.object(
+                sys, "argv", ["chronicle-mcp", "run", "--transport", "sse", "--help"]
+            ):
                 cli.cli()
         assert exc_info.value.code == 0
 

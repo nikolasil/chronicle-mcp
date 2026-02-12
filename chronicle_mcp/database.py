@@ -6,9 +6,26 @@ def sanitize_url(url: str) -> str:
     """Removes sensitive query parameters from URLs."""
     parsed = urlparse(url)
     sensitive_params = {
-        "token", "session", "key", "password", "auth", "sid", "access_token",
-        "api_key", "apikey", "api-secret", "secret", "api_token", "apitoken",
-        "bearer", "jwt", "csrf", "xsrf", "nonce", "salt", "hash",
+        "token",
+        "session",
+        "key",
+        "password",
+        "auth",
+        "sid",
+        "access_token",
+        "api_key",
+        "apikey",
+        "api-secret",
+        "secret",
+        "api_token",
+        "apitoken",
+        "bearer",
+        "jwt",
+        "csrf",
+        "xsrf",
+        "nonce",
+        "salt",
+        "hash",
     }
 
     query_parts = []
@@ -221,8 +238,12 @@ def format_results(
     if format_type == "json":
         import json
 
-        items = [{"title": title, "url": sanitize_url(url), "timestamp": ts} for title, url, ts in rows]
+        items = [
+            {"title": title, "url": sanitize_url(url), "timestamp": ts} for title, url, ts in rows
+        ]
         return json.dumps({"results": items, "count": len(items)})
 
-    results = [f"- **{title}**\n  URL: {sanitize_url(url)}\n  Timestamp: {ts}" for title, url, ts in rows]
+    results = [
+        f"- **{title}**\n  URL: {sanitize_url(url)}\n  Timestamp: {ts}" for title, url, ts in rows
+    ]
     return "\n\n".join(results)

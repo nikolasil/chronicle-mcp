@@ -23,7 +23,7 @@ class TestTempFileLifecycle:
 
     @pytest.mark.xfail(
         platform.system() == "Windows",
-        reason="Windows file locking prevents immediate cleanup - production code handles gracefully"
+        reason="Windows file locking prevents immediate cleanup - production code handles gracefully",
     )
     def test_temp_file_created_during_query(self, mock_chrome_path, sample_chrome_db):
         """Verify temp file is created during query."""
@@ -43,10 +43,10 @@ class TestTempFileLifecycle:
             temp_files_after = set(os.listdir(temp_dir))
             new_files = temp_files_after - temp_files_before
             chronicle_files = [f for f in new_files if f.startswith("chronicle_")]
-            
+
             if not chronicle_files:
                 break
-            
+
             if i < max_retries - 1:
                 time.sleep(0.1)  # Wait for cleanup
 
@@ -55,7 +55,7 @@ class TestTempFileLifecycle:
 
     @pytest.mark.xfail(
         platform.system() == "Windows",
-        reason="Windows file locking prevents immediate cleanup on error - production code handles gracefully"
+        reason="Windows file locking prevents immediate cleanup on error - production code handles gracefully",
     )
     def test_temp_file_removed_on_error(self, mock_chrome_path, sample_chrome_db):
         """Verify temp files are removed even when errors occur."""
@@ -78,19 +78,21 @@ class TestTempFileLifecycle:
             temp_files_after = set(os.listdir(temp_dir))
             new_files = temp_files_after - temp_files_before
             chronicle_files = [f for f in new_files if f.startswith("chronicle_")]
-            
+
             if not chronicle_files:
                 break
-            
+
             if i < max_retries - 1:
                 time.sleep(0.1)  # Wait for cleanup
 
         # Temp file should still be cleaned up
-        assert len(chronicle_files) == 0, f"Temp files not cleaned up after error: {chronicle_files}"
+        assert len(chronicle_files) == 0, (
+            f"Temp files not cleaned up after error: {chronicle_files}"
+        )
 
     @pytest.mark.xfail(
         platform.system() == "Windows",
-        reason="Windows file locking prevents immediate cleanup - production code handles gracefully"
+        reason="Windows file locking prevents immediate cleanup - production code handles gracefully",
     )
     def test_no_temp_files_leaked(self, mock_chrome_path, sample_chrome_db):
         """Verify no temp files are leaked after multiple queries."""
@@ -113,10 +115,10 @@ class TestTempFileLifecycle:
             temp_files_after = set(os.listdir(temp_dir))
             new_files = temp_files_after - temp_files_before
             chronicle_files = [f for f in new_files if f.startswith("chronicle_")]
-            
+
             if not chronicle_files:
                 break
-            
+
             if i < max_retries - 1:
                 time.sleep(0.2)  # Wait longer for multiple files
 

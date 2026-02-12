@@ -15,12 +15,10 @@ import pytest
 from chronicle_mcp.connection import get_history_connection
 from chronicle_mcp.database import (
     count_domain_visits,
-    format_results,
     query_history,
     query_recent_history,
     search_by_date,
 )
-
 
 pytestmark = [pytest.mark.slow, pytest.mark.integration]
 
@@ -42,7 +40,7 @@ class TestCrossBrowserWorkflows:
         cursor = conn_firefox.cursor()
         cursor.execute(
             "SELECT title, url, last_visit_date FROM moz_places WHERE title LIKE ? OR url LIKE ? LIMIT ?",
-            ("%firefox%", "%firefox%", 10)
+            ("%firefox%", "%firefox%", 10),
         )
         firefox_results = cursor.fetchall()
         conn_firefox.close()
@@ -62,8 +60,7 @@ class TestCrossBrowserWorkflows:
         conn_firefox = sqlite3.connect(sample_firefox_db)
         cursor = conn_firefox.cursor()
         cursor.execute(
-            "SELECT SUM(visit_count) FROM moz_places WHERE url LIKE ?",
-            ("%firefox.com%",)
+            "SELECT SUM(visit_count) FROM moz_places WHERE url LIKE ?", ("%firefox.com%",)
         )
         result = cursor.fetchone()
         firefox_count = result[0] if result and result[0] else 0
@@ -203,7 +200,7 @@ class TestTempFileHandling:
 
     @pytest.mark.xfail(
         platform.system() == "Windows",
-        reason="Windows file locking prevents immediate cleanup - production code handles gracefully"
+        reason="Windows file locking prevents immediate cleanup - production code handles gracefully",
     )
     def test_temp_files_cleaned_up(self, mock_chrome_path, sample_chrome_db, tmp_path):
         """Test that temp files are cleaned up after queries."""
@@ -226,10 +223,10 @@ class TestTempFileHandling:
             temp_files_after = set(os.listdir(temp_dir))
             new_temp_files = temp_files_after - temp_files_before
             chronicle_temps = [f for f in new_temp_files if f.startswith("chronicle_")]
-            
+
             if not chronicle_temps:
                 break
-            
+
             if i < max_retries - 1:
                 time.sleep(0.2)  # Wait for cleanup
 

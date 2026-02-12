@@ -3,8 +3,6 @@
 import sqlite3
 import time
 
-import pytest
-
 from chronicle_mcp.database import format_results, query_history
 
 

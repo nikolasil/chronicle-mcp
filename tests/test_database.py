@@ -1,8 +1,6 @@
 import json
 import sqlite3
 
-import pytest
-
 from chronicle_mcp.database import (
     count_domain_visits,
     format_results,

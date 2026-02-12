@@ -1,8 +1,6 @@
 import os
 from pathlib import Path
 
-import pytest
-
 from chronicle_mcp.paths import (
     BROWSER_PATHS,
     expand_path,

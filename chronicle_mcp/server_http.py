@@ -9,7 +9,7 @@ import contextlib
 import logging
 import sqlite3
 from datetime import datetime, timezone
-from typing import Any, AsyncIterator
+from typing import Any
 
 from fastmcp import FastMCP
 from starlette.applications import Starlette

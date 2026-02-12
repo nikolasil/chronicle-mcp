@@ -14,7 +14,6 @@ from chronicle_mcp.database import (
     query_recent_history,
 )
 
-
 pytestmark = pytest.mark.slow
 
 
@@ -149,7 +148,9 @@ class TestConcurrency:
             finally:
                 conn.close()
 
-        threads = [threading.Thread(target=query_worker, args=(i,)) for i in range(3)]  # Reduced from 5
+        threads = [
+            threading.Thread(target=query_worker, args=(i,)) for i in range(3)
+        ]  # Reduced from 5
 
         for t in threads:
             t.start()
