@@ -693,20 +693,10 @@ def get_registered_tools() -> list[str]:
 if __name__ == "__main__":
     import sys
 
-    if len(sys.argv) > 1:
-        if sys.argv[1] == "--help":
-            print(__doc__)
-            print("\nRegistered MCP Tools:")
-            for tool_name in MCP_TOOLS:
-                print(f"  - {tool_name}")
-            print("\nOptions:")
-            print("  dev     Run with MCP Inspector for testing")
-            print("  --help  Show this help message")
-        elif sys.argv[1] == "dev":
-            print("Starting MCP Inspector...")
-            mcp.run()
-        else:
-            print(f"Unknown option: {sys.argv[1]}")
-            print("Use: python server.py [--help|dev]")
+    if len(sys.argv) > 1 and sys.argv[1] == "--help":
+        print(__doc__)
+        print("\nRegistered MCP Tools:")
+        for tool_name in MCP_TOOLS:
+            print(f"  - {tool_name}")
     else:
         mcp.run()

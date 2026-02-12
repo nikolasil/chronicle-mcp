@@ -104,6 +104,7 @@ jobs:
       - name: Build binary
         shell: bash
         run: |
+          pip install fastmcp rich
           pyinstaller --onefile --collect-all fastmcp --collect-all rich --name chronicle-mcp server.py
 
       - name: Upload binary
