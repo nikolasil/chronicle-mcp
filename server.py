@@ -26,6 +26,7 @@ from chronicle_mcp.database import (
     query_recent_history,
     search_by_date as db_search_by_date,
 )
+
 from chronicle_mcp.paths import get_available_browsers, get_browser_path
 
 setup_logging()
