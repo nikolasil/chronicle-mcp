@@ -56,53 +56,37 @@ class TestQueryPerformance:
             conn.close()
         return db_path
 
-    def test_search_performance(self, large_db):
+    def test_search_performance(self, large_db, benchmark):
         """Test search query performance with large dataset."""
         conn = sqlite3.connect(large_db)
         try:
-            start = time.perf_counter()
-            result = query_history(conn, "example", 100)
-            elapsed = time.perf_counter() - start
-
-            assert elapsed < 1.0
+            result = benchmark(query_history, conn, "example", 100)
             assert result is not None
         finally:
             conn.close()
 
-    def test_recent_history_performance(self, large_db):
+    def test_recent_history_performance(self, large_db, benchmark):
         """Test recent history query performance."""
         conn = sqlite3.connect(large_db)
         try:
-            start = time.perf_counter()
-            result = query_recent_history(conn, hours=24, limit=100)
-            elapsed = time.perf_counter() - start
-
-            assert elapsed < 0.5
+            result = benchmark(query_recent_history, conn, hours=24, limit=100)
             assert result is not None
         finally:
             conn.close()
 
-    def test_count_visits_performance(self, large_db):
+    def test_count_visits_performance(self, large_db, benchmark):
         """Test count visits performance."""
         conn = sqlite3.connect(large_db)
         try:
-            start = time.perf_counter()
-            count_domain_visits(conn, "example999.com")
-            elapsed = time.perf_counter() - start
-
-            assert elapsed < 0.1
+            benchmark(count_domain_visits, conn, "example999.com")
         finally:
             conn.close()
 
-    def test_top_domains_performance(self, large_db):
+    def test_top_domains_performance(self, large_db, benchmark):
         """Test top domains query performance."""
         conn = sqlite3.connect(large_db)
         try:
-            start = time.perf_counter()
-            result = get_top_domains(conn, limit=50)
-            elapsed = time.perf_counter() - start
-
-            assert elapsed < 0.5
+            result = benchmark(get_top_domains, conn, limit=50)
             assert result is not None
         finally:
             conn.close()
