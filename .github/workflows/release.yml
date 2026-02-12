@@ -28,7 +28,6 @@ jobs:
       - name: Update version in pyproject.toml
         run: |
           VERSION="${{ steps.get_version.outputs.VERSION }}"
-          # Only replaces version in the [project] section
           sed -i "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
 
       - name: Commit version bump
@@ -159,7 +158,6 @@ jobs:
         run: |
           VERSION=${{ needs.bump-version.outputs.version }}
           URL="https://github.com/${{ github.repository }}/archive/refs/tags/v${VERSION}.tar.gz"
-          # Source tarballs can take a moment to generate after tag push
           sleep 15
           SHA256=$(curl -sL "$URL" | sha256sum | cut -d' ' -f1)
           if [ -z "$SHA256" ] || [ ${#SHA256} -ne 64 ]; then echo "Failed to get SHA256"; exit 1; fi
@@ -171,8 +169,6 @@ jobs:
           VERSION="${{ needs.bump-version.outputs.version }}"
           SHA256="${{ steps.sha.outputs.sha256 }}"
           URL="${{ steps.sha.outputs.url }}"
-          
-          # Target only lines starting with '  url' or '  sha256' to avoid homepage/head
           sed -i "s|^  url \".*\"|  url \"$URL\"|" Formula/chronicle-mcp.rb
           sed -i "s|^  sha256 \".*\"|  sha256 \"$SHA256\"|" Formula/chronicle-mcp.rb
 
