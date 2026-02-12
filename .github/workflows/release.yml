@@ -100,14 +100,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyinstaller
           pip install --no-deps fastmcp
-          pip install anyio click starlette uvicorn httpx cachetools
-          pip install rich
+          pip install authlib cyclopts exceptiongroup httpx jsonref jsonschema-path mcp openapi-pydantic packaging platformdirs py-key-value-aio pydantic pydocket pyperclip python-dotenv rich uvicorn websockets
+          pip install cachetools
 
       - name: Build binary
         shell: bash
         run: |
           pip install --no-deps --no-build-isolation -e .
-          pyinstaller --onefile --collect-all fastmcp --collect-all rich --name chronicle-mcp server.py
+          pyinstaller --onefile --collect-all fastmcp --collect-all rich --exclude-module fakeredis --exclude-module lupa --exclude-module docket --name chronicle-mcp server.py
           # Rename the binary so they don't collide when downloaded together
           mv dist/chronicle-mcp* dist/${{ matrix.release_name }}
 
