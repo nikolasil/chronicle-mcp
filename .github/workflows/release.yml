@@ -1,17 +1,52 @@
 name: Release
 
 on:
-  release:
-    types: [created]
+  push:
+    tags:
+      - 'v*'
 
 permissions:
   contents: write
 
 jobs:
-  build:
+  bump-version:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version from tag
+        id: get_version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"
+
+      - name: Update version in pyproject.toml
+        run: |
+          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          sed -i "s/version = \"[^\"]*\"/version = \"$VERSION\"/" pyproject.toml
+          echo "Updated pyproject.toml to version $VERSION"
+
+      - name: Commit version bump
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add pyproject.toml
+          git diff --staged --quiet || git commit -m "chore: bump version to v${{ steps.get_version.outputs.VERSION }}"
+          git push
+
+      - name: Output version
+        run: echo "VERSION=${{ steps.get_version.outputs.VERSION }}" >> $GITHUB_ENV
+
+  build:
+    needs: bump-version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -23,7 +58,6 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          sed -i "s/version = \".*\"/version = \"$VERSION\"/" pyproject.toml
           echo "Extracted version: $VERSION"
 
       - name: Install build
@@ -39,6 +73,7 @@ jobs:
           path: dist/
 
   build-binaries:
+    needs: bump-version
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -54,6 +89,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -83,6 +120,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
