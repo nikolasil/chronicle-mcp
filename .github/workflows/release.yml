@@ -59,7 +59,7 @@ jobs:
       - name: Update version in pyproject.toml
         run: |
           VERSION="${{ needs.bump-version.outputs.version }}"
-          sed -i '0,/^\[project\]/{s/^version = "[^"]*"/version = "'$VERSION'"/}' pyproject.toml
+          python3 -c "import re; f=open('pyproject.toml','r'); c=f.read(); f.close(); c=re.sub(r'^(version = \")[^\"]*\"', r'\1${VERSION}\"', c, flags=re.MULTILINE); f=open('pyproject.toml','w'); f.write(c); f.close()"
           echo "Updated pyproject.toml to version $VERSION"
 
       - name: Install build
@@ -95,7 +95,7 @@ jobs:
       - name: Update version in pyproject.toml
         run: |
           VERSION="${{ needs.bump-version.outputs.version }}"
-          sed -i '0,/^\[project\]/{s/^version = "[^"]*"/version = "'$VERSION'"/}' pyproject.toml
+          python3 -c "import re; f=open('pyproject.toml','r'); c=f.read(); f.close(); c=re.sub(r'^(version = \")[^\"]*\"', r'\1${VERSION}\"', c, flags=re.MULTILINE); f=open('pyproject.toml','w'); f.write(c); f.close()"
           echo "Updated pyproject.toml to version $VERSION"
 
       - name: Set up Python
