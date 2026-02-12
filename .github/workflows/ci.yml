@@ -149,6 +149,7 @@ jobs:
         uses: benchmark-action/github-action-benchmark@v1
         with:
           name: Python Benchmark
+          tool: pytest
           output: benchmark.json
           fail-on-warning: false
           fail-on-error: false
