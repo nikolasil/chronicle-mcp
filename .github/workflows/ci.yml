@@ -93,7 +93,7 @@ jobs:
           deptry .
 
       - name: Check for known vulnerabilities
-        uses: pypa/pip-audit@latest
+        uses: pypa/pip-audit@v2
         with:
           policy: high
 
@@ -103,7 +103,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run codespell
-        uses: codespell-project/actions-codespell@latest
+        uses: codespell-project/actions-codespell@v2
         with:
           skip: ".git,*.svg,*.png,*.md"
           ignore_words_list: "crate,nd,parm,ro,te"
