@@ -93,9 +93,7 @@ jobs:
           deptry .
 
       - name: Check for known vulnerabilities
-        uses: pypa/pip-audit@v2
-        with:
-          policy: high
+        run: pip-audit --requirement <(pip freeze)
 
   codespell:
     runs-on: ubuntu-latest
