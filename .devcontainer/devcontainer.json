@@ -1,0 +1,40 @@
+{
+  "name": "ChronicleMCP Development",
+  "image": "mcr.microsoft.com/devcontainers/python:3.11",
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+        "njpwerner.autodocstring",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        "python.linting.enabled": true,
+        "python.linting.ruffEnabled": true,
+        "python.formatting.provider": "ruff",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.organizeImports.ruff": "explicit"
+        }
+      }
+    }
+  },
+  "postCreateCommand": "pip install -e \".[dev]\" && pre-commit install",
+  "remoteUser": "vscode",
+  "portsAttributes": {
+    "8080": {
+      "label": "ChronicleMCP HTTP Server",
+      "onAutoForward": "notify"
+    }
+  },
+  "containerEnv": {
+    "CHRONICLE_LOG_LEVEL": "DEBUG"
+  }
+}
