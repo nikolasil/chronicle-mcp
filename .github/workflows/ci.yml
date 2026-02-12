@@ -85,7 +85,7 @@ jobs:
       - name: Run safety check
         run: |
           pip install safety
-          safety check --requirements-file <(pip freeze)
+          safety scan
 
       - name: Run dependency check
         run: |
