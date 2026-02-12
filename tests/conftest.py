@@ -271,25 +271,27 @@ def _make_mock_get_browser_path(sample_chrome_db, sample_firefox_db=None):
 @pytest.fixture
 def mock_chrome_path(monkeypatch, sample_chrome_db):
     """Mocks get_browser_path to return our sample database."""
-    from chronicle_mcp import paths
+    from chronicle_mcp import paths, connection
 
     mock_fn = _make_mock_get_browser_path(sample_chrome_db)
     monkeypatch.setattr(paths, "get_browser_path", mock_fn)
+    monkeypatch.setattr(connection, "get_browser_path", mock_fn)
 
 
 @pytest.fixture
 def mock_all_browsers(monkeypatch, sample_chrome_db, sample_firefox_db):
     """Mocks multiple browser paths."""
-    from chronicle_mcp import paths
+    from chronicle_mcp import paths, connection
 
     mock_fn = _make_mock_get_browser_path(sample_chrome_db, sample_firefox_db)
     monkeypatch.setattr(paths, "get_browser_path", mock_fn)
+    monkeypatch.setattr(connection, "get_browser_path", mock_fn)
 
 
 @pytest.fixture
 def mock_realistic_chrome(monkeypatch, realistic_chrome_db):
     """Mocks get_browser_path with a realistic database."""
-    from chronicle_mcp import paths
+    from chronicle_mcp import paths, connection
 
     def mock_fn(browser):
         if browser.lower() == "chrome":
@@ -297,3 +299,4 @@ def mock_realistic_chrome(monkeypatch, realistic_chrome_db):
         return None
 
     monkeypatch.setattr(paths, "get_browser_path", mock_fn)
+    monkeypatch.setattr(connection, "get_browser_path", mock_fn)
