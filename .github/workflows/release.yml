@@ -104,7 +104,7 @@ jobs:
       - name: Build binary
         shell: bash
         run: |
-          pyinstaller --onefile --name chronicle-mcp server.py
+          pyinstaller --onefile --collect-all fastmcp --name chronicle-mcp server.py
 
       - name: Upload binary
         uses: actions/upload-artifact@v4
