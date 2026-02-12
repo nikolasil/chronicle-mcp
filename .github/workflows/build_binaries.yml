@@ -105,15 +105,8 @@ jobs:
         with:
           path: binaries/
 
-      - name: Delete existing release
+      - name: Upload assets to release
         run: |
-          gh release delete ${{ github.event.release.tag_name }} -y || true
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: binaries/**/*
-          draft: false
-          prerelease: false
+          gh release upload ${{ github.event.release.tag_name }} binaries/**/* --replace
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
