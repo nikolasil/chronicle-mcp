@@ -23,7 +23,13 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
 ]
-dependencies = ["fastmcp>=0.2.0"]
+dependencies = [
+    "fastmcp>=0.2.0",
+    "click>=8.0.0",
+    "httpx>=0.25.0",
+    "uvicorn>=0.25.0",
+    "starlette>=0.35.0",
+]
 
 [project.optional-dependencies]
 dev = [
@@ -51,6 +57,11 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_functions = ["test_*"]
 addopts = "-v --tb=short"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "performance: marks tests as performance tests",
+]
 
 [tool.pytest-cov]
 fail_under = 85
