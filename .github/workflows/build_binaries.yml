@@ -105,12 +105,17 @@ jobs:
         with:
           path: binaries/
 
+      - name: Delete existing release assets
+        run: |
+          for asset_id in $(gh release view ${{ github.event.release.tag_name }} --json assets --jq '.assets[].id'); do
+            gh api "releases/assets/$asset_id" -X DELETE
+          done
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
           files: binaries/**/*
           draft: false
           prerelease: false
-          overwrite_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
