@@ -24,3 +24,17 @@ repos:
         additional_dependencies: [types-requests]
         files: ^(chronicle_mcp|server\.py)$
         args: [--ignore-missing-imports, --strict]
+
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.3.0
+    hooks:
+      - id: codespell
+        args: ['--skip=*.svg,*.png,.git,*.md']
+        description: Check for typos
+
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+        files: \.(sh|bash)$
+        args: ['--severity=warning']

@@ -8,15 +8,15 @@ and uvicorn for the ASGI server.
 import contextlib
 import logging
 import sqlite3
+import time
 from datetime import datetime, timezone
-from typing import Any
 
 from fastmcp import FastMCP
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
-from starlette.responses import JSONResponse
+from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
 from chronicle_mcp.config import setup_logging
@@ -41,6 +41,10 @@ logger = logging.getLogger(__name__)
 mcp = FastMCP("Chronicle")
 
 default_browser: str = "chrome"
+
+REQUEST_COUNT = 0
+REQUEST_LATENCY_TOTAL = 0.0
+START_TIME = time.time()
 
 
 def error_response(message: str, status_code: int = 400) -> JSONResponse:
@@ -87,13 +91,55 @@ async def metrics_check(request: Request) -> JSONResponse:
     Returns:
         JSON response with basic metrics
     """
+    global REQUEST_COUNT, REQUEST_LATENCY_TOTAL, START_TIME
+
+    uptime = time.time() - START_TIME
+    avg_latency = REQUEST_LATENCY_TOTAL / REQUEST_COUNT if REQUEST_COUNT > 0 else 0
+
     return JSONResponse(
         {
-            "uptime_seconds": 0,
-            "requests_total": 0,
+            "uptime_seconds": uptime,
+            "requests_total": REQUEST_COUNT,
+            "requests_per_second": REQUEST_COUNT / uptime if uptime > 0 else 0,
+            "average_latency_seconds": avg_latency,
             "browsers_available": len(get_available_browsers()),
         }
     )
+
+
+async def prometheus_metrics(request: Request) -> Response:
+    """Prometheus metrics endpoint.
+
+    Returns:
+        Prometheus-formatted metrics
+    """
+    global REQUEST_COUNT, REQUEST_LATENCY_TOTAL, START_TIME
+
+    uptime = time.time() - START_TIME
+    avg_latency = REQUEST_LATENCY_TOTAL / REQUEST_COUNT if REQUEST_COUNT > 0 else 0
+
+    metrics = f"""# HELP chronicle_uptime_seconds Server uptime in seconds
+# TYPE chronicle_uptime_seconds gauge
+chronicle_uptime_seconds {uptime}
+
+# HELP chronicle_requests_total Total number of requests
+# TYPE chronicle_requests_total counter
+chronicle_requests_total {REQUEST_COUNT}
+
+# HELP chronicle_requests_per_second Requests per second
+# TYPE chronicle_requests_per_second gauge
+chronicle_requests_per_second {REQUEST_COUNT / uptime if uptime > 0 else 0}
+
+# HELP chronicle_average_latency_seconds Average request latency
+# TYPE chronicle_average_latency_seconds gauge
+chronicle_average_latency_seconds {avg_latency}
+
+# HELP chronicle_browsers_available Number of available browsers
+# TYPE chronicle_browsers_available gauge
+chronicle_browsers_available {len(get_available_browsers())}
+"""
+
+    return Response(content=metrics, media_type="text/plain")
 
 
 async def list_browsers_endpoint(request: Request) -> JSONResponse:
@@ -291,6 +337,7 @@ routes = [
     Route("/health", health_check),
     Route("/ready", ready_check),
     Route("/metrics", metrics_check),
+    Route("/metrics/prometheus", prometheus_metrics),
     Route("/api/browsers", list_browsers_endpoint),
     Route("/api/search", search_endpoint, methods=["POST"]),
     Route("/api/recent", recent_endpoint, methods=["POST"]),
@@ -310,8 +357,10 @@ middleware = [
 
 
 @contextlib.asynccontextmanager
-async def lifespan(app: Starlette) -> Any:
+async def lifespan(app: Starlette):
     """Lifespan context manager for startup and shutdown events."""
+    global START_TIME
+    START_TIME = time.time()
     logger.info("ChronicleMCP HTTP server starting...")
     yield
     logger.info("ChronicleMCP HTTP server shutting down...")

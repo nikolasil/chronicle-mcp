@@ -61,6 +61,9 @@ chronicle_temp_history.db
 chronicle_temp_history
 *.db
 
+# Hypothesis testing
+.hypothesis/
+
 # Log files
 *.log
 
