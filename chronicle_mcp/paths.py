@@ -18,7 +18,48 @@ BROWSER_PATHS: dict[str, dict[str, str]] = {
         "Darwin": "~/Library/Mozilla/Firefox/Profiles/*.default/places.sqlite",
         "Linux": "~/.mozilla/firefox/*.default/places.sqlite",
     },
+    "brave": {
+        "Windows": r"%LocalAppData%\BraveSoftware\Brave-Default\History",
+        "Darwin": "~/Library/Application Support/BraveSoftware/Brave-Default/History",
+        "Linux": "~/.config/BraveSoftware/Brave-Default/History",
+    },
+    "safari": {
+        "Darwin": "~/Library/Safari/History.db",
+    },
+    "vivaldi": {
+        "Windows": r"%LocalAppData%\Vivaldi\Default\History",
+        "Darwin": "~/Library/Application Support/Vivaldi/Default/History",
+        "Linux": "~/.config/vivaldi/Default/History",
+    },
+    "opera": {
+        "Windows": r"%AppData%\Opera Software\Opera Stable\History",
+        "Darwin": "~/Library/Application Support/com.operasoftware.Opera/History",
+        "Linux": "~/.config/opera/History",
+    },
 }
+
+BROWSER_SCHEMAS: dict[str, str] = {
+    "chrome": "chrome",
+    "edge": "chrome",
+    "brave": "chrome",
+    "vivaldi": "chrome",
+    "opera": "chrome",
+    "firefox": "firefox",
+    "safari": "safari",
+}
+
+
+def get_browser_schema(browser: str) -> str:
+    """
+    Returns the schema type for the specified browser.
+
+    Args:
+        browser: Browser name (case insensitive)
+
+    Returns:
+        Schema type: 'chrome', 'firefox', or 'safari'
+    """
+    return BROWSER_SCHEMAS.get(browser.lower(), "chrome")
 
 
 def get_os_name() -> str:
