@@ -5,24 +5,32 @@
 ChronicleMCP is a Python-based Model Context Protocol (MCP) server that provides AI agents secure access to local browser history. The project uses the FastMCP framework and SQLite for fast, privacy-first local data access.
 
 **Main Entry Point:** `server.py`
-**Dependencies:** `requirements.txt` (fastmcp only)
+**CLI Entry Point:** `chronicle_mcp/cli.py`
+**HTTP Server:** `chronicle_mcp/server_http.py`
+**Connection Management:** `chronicle_mcp/connection.py`
 
 ---
 
 ## Build, Lint, and Test Commands
 
 ### Installation
+
 ```bash
-pip install fastmcp
+pip install -e ".[dev]"
 ```
 
 ### Development Server
+
 ```bash
+# MCP Inspector for stdio mode
 python server.py dev
+
+# HTTP server for testing
+chronicle-mcp serve --port 8080
 ```
-Launches the MCP Inspector web interface for testing tools manually.
 
 ### Running Tests
+
 ```bash
 pytest                    # Run all tests
 pytest -v                 # Run with verbose output
@@ -30,22 +38,53 @@ pytest tests/            # Run specific test directory
 pytest tests/test_database.py  # Run specific test file
 pytest -k test_name      # Run single test by name
 pytest --co             # List all tests without running
+pytest --cov=chronicle_mcp  # With coverage
 ```
 
 ### Linting
+
 ```bash
-flake8 .                 # Basic linting
-flake8 --max-line-length=100 .  # Custom line length
+ruff check .                 # Check linting
+ruff check . --fix          # Auto-fix issues
+ruff format .               # Format code
+ruff format . --check      # Check formatting
 ```
 
 ### Type Checking
+
 ```bash
-mypy .                   # Type checking
+mypy chronicle_mcp/ server.py  # Type checking
 ```
 
-### Code Formatting
+---
+
+## CLI Commands
+
+### Available Commands
+
 ```bash
-black .                  # Format all Python files
+# Run MCP server
+chronicle-mcp run                          # stdio mode
+chronicle-mcp run --transport sse        # SSE mode
+
+# Start HTTP server
+chronicle-mcp serve --port 8080          # Foreground
+chronicle-mcp serve --port 8080 --daemon  # Background
+
+# Check status
+chronicle-mcp status --port 8080
+
+# View logs
+chronicle-mcp logs --port 8080 --lines 50
+
+# Check version
+chronicle-mcp version
+
+# List browsers
+chronicle-mcp list-browsers
+
+# Generate completions
+chronicle-mcp completion bash >> ~/.bashrc
 ```
 
 ---
@@ -53,32 +92,37 @@ black .                  # Format all Python files
 ## Code Style Guidelines
 
 ### Imports
-- Group imports: standard library → third-party → local application
-- Use absolute imports
-- Keep imports sorted alphabetically within groups
+
+Group imports: standard library → third-party → local application
+
 ```python
+import logging
 import os
-import sqlite3
 import shutil
+import sqlite3
 import tempfile
-import platform
 import time
+from collections.abc import Generator
 from contextlib import contextmanager
+
 from fastmcp import FastMCP
-from chronicle_mcp.paths import get_browser_path, get_available_browsers
+
+from chronicle_mcp.config import setup_logging
+from chronicle_mcp.connection import get_history_connection
 from chronicle_mcp.database import query_history, format_results
+from chronicle_mcp.paths import get_browser_path, get_available_browsers
 ```
 
 ### Formatting
+
 - 4 spaces for indentation (no tabs)
 - Maximum line length: 100 characters
-- Use blank lines to separate logical sections (2 blank lines between top-level definitions)
+- Use blank lines to separate logical sections
 - No trailing whitespace
 - Add final newline to files
 
 ### Type Hints
-- Use type hints for function parameters and return values
-- Include default values for optional parameters
+
 ```python
 def search_history(
     query: str,
@@ -89,18 +133,20 @@ def search_history(
 ```
 
 ### Naming Conventions
-- **Functions:** snake_case (e.g., `get_history_path`, `search_history`)
-- **Variables:** snake_case (e.g., `history_path`, `temp_path`)
-- **Constants:** UPPER_SNAKE_CASE (e.g., `TEMP_CACHE_DURATION`)
-- **Private functions:** prefix with underscore (e.g., `_internal_helper`)
-- **Tool functions:** Use descriptive names, avoid conflicts with imported functions
+
+| Type | Convention | Example |
+|------|------------|---------|
+| Functions | snake_case | `get_history_path` |
+| Variables | snake_case | `history_path` |
+| Constants | UPPER_SNAKE_CASE | `DEFAULT_LIMIT` |
+| Private functions | prefix with underscore | `_internal_helper` |
+| Classes | PascalCase | `ConnectionError` |
+| Exceptions | PascalCase | `BrowserNotFoundError` |
 
 ### Docstrings
-- Use triple double-quotes for all docstrings
-- Write clear, concise descriptions
-- Include Args and Returns sections for complex functions
+
 ```python
-def get_history_connection(browser: str = "chrome"):
+def get_history_connection(browser: str = "chrome") -> Generator[sqlite3.Connection, None, None]:
     """
     Creates a temporary copy of the history DB to avoid 'Database Locked' errors.
 
@@ -109,83 +155,235 @@ def get_history_connection(browser: str = "chrome"):
 
     Yields:
         SQLite connection to the history database
+
+    Raises:
+        BrowserNotFoundError: If browser is not recognized
+        BrowserPathNotFoundError: If history path doesn't exist
     """
 ```
 
 ### Error Handling
-- Use try/except blocks with specific exception types when possible
-- Return user-friendly error messages for tool functions
-- Avoid exposing file paths in error messages
+
 ```python
 try:
     with get_history_connection(browser) as conn:
         rows = query_history(conn, query, limit)
         return format_results(rows, query, format_type)
-except FileNotFoundError:
+except BrowserNotFoundError:
     return f"Error: {browser} history not found"
 except PermissionError:
     return f"Error: Permission denied accessing {browser} history"
 except sqlite3.OperationalError:
     return f"Error: Unable to access {browser} history database"
 except Exception:
+    logger.exception("Unexpected error")
     return "Error: An unexpected error occurred"
 ```
 
 ### MCP Tool Functions
-- Decorate with `@mcp.tool()`
-- Always return strings (not raw data) for AI consumption
-- Include docstrings describing parameters and return format
-- Handle empty results gracefully with informative messages
-- Validate all input parameters before processing
+
+```python
+@mcp.tool()
+def search_history(
+    query: str,
+    limit: int = 5,
+    browser: str = "chrome",
+    format_type: str = "markdown"
+) -> str:
+    """
+    Searches browser history for keywords in titles or URLs.
+
+    Args:
+        query: Search term to look for
+        limit: Maximum number of results (1-100)
+        browser: Browser to search
+        format_type: Output format (markdown or json)
+
+    Returns:
+        Formatted list of matching history entries
+    """
+```
 
 ### File Organization
+
 ```
 chronicle-mcp/
 ├── server.py              # MCP server and tool definitions
 ├── chronicle_mcp/
 │   ├── __init__.py       # Package exports
+│   ├── cli.py            # CLI commands
+│   ├── connection.py     # Database connection management
+│   ├── config.py         # Configuration loading
+│   ├── database.py        # Query functions and formatting
 │   ├── paths.py          # Browser path detection
-│   └── database.py       # Query functions and formatting
+│   └── server_http.py     # HTTP server
 └── tests/
     ├── conftest.py       # Pytest fixtures
-    ├── test_paths.py     # Path detection tests
-    └── test_database.py  # Database operation tests
+    ├── test_*.py         # All test files
 ```
-
-### Database Operations
-- Create temporary copies of database files to avoid locking issues
-- Always close connections after use (use context managers)
-- Clean up temp files after queries
-- Use parameterized queries to prevent SQL injection
-- Sanitize URLs to remove sensitive parameters
 
 ---
 
 ## Architecture Notes
 
-- **MCP Protocol:** All tools must be decorated with `@mcp.tool()`
-- **Cross-Platform:** Support Windows, macOS, and Linux via `platform.system()`
-- **Privacy-First:** No data leaves the local machine
-- **Performance:** Use SQLite for fast local queries
-- **Multi-Browser:** Chrome, Firefox, and Edge support
+### Component Responsibilities
+
+| Component | Responsibility |
+|-----------|-----------------|
+| `cli.py` | Command-line interface |
+| `server.py` | MCP protocol server with tools |
+| `server_http.py` | HTTP REST API server |
+| `connection.py` | Database connection management |
+| `database.py` | Query operations and formatting |
+| `paths.py` | Browser path detection |
+| `config.py` | Configuration loading |
+
+### Connection Flow
+
+```
+Query Request
+    ↓
+Validate parameters
+    ↓
+get_history_connection(browser)
+    ↓
+Copy DB to temp file
+    ↓
+Execute query
+    ↓
+Format results
+    ↓
+Cleanup temp file
+    ↓
+Return response
+```
+
+### Data Types
+
+```python
+# Connection exceptions
+ConnectionError
+├── BrowserNotFoundError
+├── BrowserPathNotFoundError
+├── PermissionError
+└── DatabaseLockedError
+```
 
 ---
 
 ## Testing Guidelines
 
-- Place tests in `tests/` directory
-- Name test files: `test_*.py`
-- Use pytest framework
-- Create synthetic database fixtures for testing
-- Mock browser paths for testing
-- Test all three OS paths if platform-specific code is modified
-- Test error handling for missing files, permission errors
-- Include URL sanitization tests
+### Test Fixtures
+
+```python
+@pytest.fixture
+def sample_chrome_db(temp_dir):
+    """Creates a synthetic Chrome history database."""
+    ...
+
+@pytest.fixture
+def realistic_chrome_db(temp_dir):
+    """Creates a realistic Chrome history database with 100+ entries."""
+    ...
+```
+
+### Mocking Browser Paths
+
+```python
+@pytest.fixture
+def mock_chrome_path(monkeypatch, sample_chrome_db):
+    """Mocks get_browser_path for testing."""
+    from chronicle_mcp import paths
+
+    def mock_fn(browser):
+        if browser.lower() == "chrome":
+            return sample_chrome_db
+        return None
+
+    monkeypatch.setattr(paths, "get_browser_path", mock_fn)
+```
+
+### HTTP Endpoint Testing
+
+```python
+from starlette.testclient import TestClient
+from chronicle_mcp.server_http import app
+
+@pytest.fixture
+def client():
+    return TestClient(app)
+
+def test_health_endpoint(client):
+    response = client.get("/health")
+    assert response.status_code == 200
+```
+
+### Test Coverage Requirements
+
+- Minimum 85% coverage
+- Test all MCP tools
+- Test error handling paths
+- Test HTTP endpoints
+- Test security features (URL sanitization)
+- Test performance with large datasets
 
 ---
 
 ## Tool Naming Conflicts
 
-When adding new tools, avoid naming conflicts with imported functions from `chronicle_mcp.database`:
-- Rename tool functions if they conflict (e.g., `get_top_domains` → `list_top_domains`)
-- Use aliases when importing: `from chronicle_mcp.database import get_top_domains as db_get_top_domains`
+When adding new tools, avoid naming conflicts:
+
+```python
+# Bad - conflicts with database.py
+from chronicle_mcp.database import get_top_domains
+def get_top_domains(...):  # Name conflict!
+
+# Good - use alias
+from chronicle_mcp.database import get_top_domains as db_get_top_domains
+def list_top_domains(...):  # Different name
+```
+
+---
+
+## Development Workflow
+
+### Quick Start
+
+```bash
+# 1. Clone and install
+git clone https://github.com/nikolasil/chronicle-mcp.git
+cd chronicle-mcp
+pip install -e ".[dev]"
+
+# 2. Run tests
+pytest -v
+
+# 3. Run linting
+ruff check . --fix
+ruff format .
+
+# 4. Start dev server
+python server.py dev
+
+# 5. Start HTTP server (separate terminal)
+chronicle-mcp serve --port 8080
+```
+
+### Making Changes
+
+1. Create feature branch: `git checkout -b feature/new-feature`
+2. Make changes following style guidelines
+3. Add tests for new functionality
+4. Run full test suite: `pytest -v`
+5. Run linting: `ruff check . --fix`
+6. Commit with conventional commits: `git commit -m "feat: add new tool"`
+7. Push and create PR
+
+---
+
+## See Also
+
+- [CLI Reference](CLI.md)
+- [API Documentation](API.md)
+- [Installation Guide](INSTALL.md)
+- [Architecture](ARCHITECTURE.md)
