@@ -131,7 +131,7 @@ def load_config(config_path: str | None = None) -> Config:
         import tomllib
     except ImportError:
         try:
-            import tomli as tomllib  # type: ignore[no-redef]
+            import tomli as tomllib
         except ImportError:
             logger.warning("tomli/tomllib not available, skipping config file")
             return config
