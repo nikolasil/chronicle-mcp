@@ -1,0 +1,95 @@
+name: Integration Tests
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  integration-tests:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        browser: [chrome, firefox, edge]
+        python-version: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Create synthetic browser history
+        run: |
+          python tests/scripts/create_synthetic_history.py --browser ${{ matrix.browser }} --limit 100
+
+      - name: Run integration tests
+        run: |
+          pytest tests/test_integration.py -v --browser ${{ matrix.browser }}
+
+  http-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e ".[dev]"
+          pip install httpx
+
+      - name: Start HTTP server
+        run: |
+          python -m chronicle_mcp serve --port 8765 &
+          sleep 5
+
+      - name: Run HTTP integration tests
+        run: |
+          pytest tests/test_server_http.py -v
+
+      - name: Stop server
+        run: |
+          pkill -f "chronicle_mcp serve"
+          pkill -f "uvicorn"
+
+  cross-platform-test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Run cross-platform tests
+        run: |
+          pytest tests/test_paths.py -v
+
+      - name: Run CLI tests
+        run: |
+          pytest tests/test_cli.py -v
