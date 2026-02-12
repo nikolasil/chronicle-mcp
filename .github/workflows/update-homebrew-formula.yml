@@ -47,4 +47,8 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add Formula/chronicle-mcp.rb
-          git diff --staged --quiet || (git commit -m "chore: update Homebrew formula to v${{ steps.release.outputs.version }}" && git push origin HEAD:main)
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: update Homebrew formula to v${{ steps.release.outputs.version }}"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
