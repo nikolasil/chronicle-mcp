@@ -57,19 +57,8 @@ jobs:
           cache: 'pip'
 
       - name: Update version in pyproject.toml
-        run: |
-          cat > /tmp/update_version.py << 'PYEOF'
-          import re
-          import sys
-          version = sys.argv[1]
-          with open('pyproject.toml','r') as f:
-              content = f.read()
-          content = re.sub(r'^(version = ")[^"]*"', r'\1' + version + '"', content, flags=re.MULTILINE)
-          with open('pyproject.toml','w') as f:
-              f.write(content)
-          PYEOF
-          python3 /tmp/update_version.py "${{ needs.bump-version.outputs.version }}"
-          echo "Updated pyproject.toml to version ${{ needs.bump-version.outputs.version }}"
+        run: python3 -c "import sys; v=sys.argv[1]; open('pyproject.toml','w').write(''.join(l if not l.startswith('version = ') else 'version = \"%s\"\n'%v for l in open('pyproject.toml')))" "${{ needs.bump-version.outputs.version }}"
+        shell: bash
 
       - name: Install build
         run: pip install build
@@ -102,19 +91,8 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Update version in pyproject.toml
-        run: |
-          cat > /tmp/update_version.py << 'PYEOF'
-          import re
-          import sys
-          version = sys.argv[1]
-          with open('pyproject.toml','r') as f:
-              content = f.read()
-          content = re.sub(r'^(version = ")[^"]*"', r'\1' + version + '"', content, flags=re.MULTILINE)
-          with open('pyproject.toml','w') as f:
-              f.write(content)
-          PYEOF
-          python3 /tmp/update_version.py "${{ needs.bump-version.outputs.version }}"
-          echo "Updated pyproject.toml to version ${{ needs.bump-version.outputs.version }}"
+        run: python3 -c "import sys; v=sys.argv[1]; open('pyproject.toml','w').write(''.join(l if not l.startswith('version = ') else 'version = \"%s\"\n'%v for l in open('pyproject.toml')))" "${{ needs.bump-version.outputs.version }}"
+        shell: bash
 
       - name: Set up Python
         uses: actions/setup-python@v5
