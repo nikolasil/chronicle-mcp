@@ -101,7 +101,8 @@ pip install -e .
 ### Homebrew (macOS)
 
 ```bash
-brew install nikolasil/chronicle-mcp/chronicle-mcp
+brew tap nikolasil/chronicle-mcp
+brew install chronicle-mcp
 ```
 
 ---
