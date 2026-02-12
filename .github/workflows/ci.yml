@@ -148,7 +148,7 @@ jobs:
         run: pytest tests/test_performance.py -v --benchmark-only
 
       - name: Upload benchmark results
-        uses: benchmark-action/github-action-benchmark@latest
+        uses: benchmark-action/github-action-benchmark@v1
         with:
           name: Python Benchmark
           output: benchmark.json
