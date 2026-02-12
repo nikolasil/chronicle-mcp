@@ -84,8 +84,8 @@ jobs:
 
       - name: Run safety check
         run: |
-          pip install safety
-          safety scan
+          pip install 'safety<3'
+          safety check
 
       - name: Run dependency check
         run: |
