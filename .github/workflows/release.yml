@@ -97,6 +97,9 @@ jobs:
         run: python3 -c "import sys; v=sys.argv[1]; open('pyproject.toml','w').write(''.join(l if not l.startswith('version = ') else 'version = \"%s\"\n'%v for l in open('pyproject.toml')))" "${{ needs.bump-version.outputs.version }}"
         shell: bash
 
+      - name: Remove non-package directories
+        run: rm -rf Formula tests .github
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
