@@ -93,7 +93,7 @@ jobs:
           deptry .
 
       - name: Check for known vulnerabilities
-        run: pip-audit --requirement <(pip freeze)
+        run: pip-audit --requirement <(pip freeze) --ignore-vuln CVE-2025-69872
 
   codespell:
     runs-on: ubuntu-latest

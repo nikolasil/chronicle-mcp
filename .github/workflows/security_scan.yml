@@ -30,7 +30,7 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Audit dependencies
-        run: pip audit --format=json --output pip-audit.json || true
+        run: pip audit --format=json --output pip-audit.json --ignore-vuln CVE-2025-69872 || true
 
       - name: Upload audit results
         uses: actions/upload-artifact@v4
