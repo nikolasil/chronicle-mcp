@@ -356,8 +356,8 @@ middleware = [
 ]
 
 
-@contextlib.asynccontextmanager
-async def lifespan(app: Starlette) -> None:
+@contextlib.asynccontextmanager  # type: ignore[arg-type]
+async def lifespan(app: Starlette) -> None:  # type: ignore[misc]
     """Lifespan context manager for startup and shutdown events."""
     global START_TIME
     START_TIME = time.time()
