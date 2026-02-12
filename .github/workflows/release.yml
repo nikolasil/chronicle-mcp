@@ -58,9 +58,18 @@ jobs:
 
       - name: Update version in pyproject.toml
         run: |
-          VERSION="${{ needs.bump-version.outputs.version }}"
-          python3 -c "import re; f=open('pyproject.toml','r'); c=f.read(); f.close(); c=re.sub(r'^(version = \")[^\"]*\"', r'\1${VERSION}\"', c, flags=re.MULTILINE); f=open('pyproject.toml','w'); f.write(c); f.close()"
-          echo "Updated pyproject.toml to version $VERSION"
+          cat > /tmp/update_version.py << 'PYEOF'
+          import re
+          import sys
+          version = sys.argv[1]
+          with open('pyproject.toml','r') as f:
+              content = f.read()
+          content = re.sub(r'^(version = ")[^"]*"', r'\1' + version + '"', content, flags=re.MULTILINE)
+          with open('pyproject.toml','w') as f:
+              f.write(content)
+          PYEOF
+          python3 /tmp/update_version.py "${{ needs.bump-version.outputs.version }}"
+          echo "Updated pyproject.toml to version ${{ needs.bump-version.outputs.version }}"
 
       - name: Install build
         run: pip install build
@@ -94,9 +103,18 @@ jobs:
 
       - name: Update version in pyproject.toml
         run: |
-          VERSION="${{ needs.bump-version.outputs.version }}"
-          python3 -c "import re; f=open('pyproject.toml','r'); c=f.read(); f.close(); c=re.sub(r'^(version = \")[^\"]*\"', r'\1${VERSION}\"', c, flags=re.MULTILINE); f=open('pyproject.toml','w'); f.write(c); f.close()"
-          echo "Updated pyproject.toml to version $VERSION"
+          cat > /tmp/update_version.py << 'PYEOF'
+          import re
+          import sys
+          version = sys.argv[1]
+          with open('pyproject.toml','r') as f:
+              content = f.read()
+          content = re.sub(r'^(version = ")[^"]*"', r'\1' + version + '"', content, flags=re.MULTILINE)
+          with open('pyproject.toml','w') as f:
+              f.write(content)
+          PYEOF
+          python3 /tmp/update_version.py "${{ needs.bump-version.outputs.version }}"
+          echo "Updated pyproject.toml to version ${{ needs.bump-version.outputs.version }}"
 
       - name: Set up Python
         uses: actions/setup-python@v5
