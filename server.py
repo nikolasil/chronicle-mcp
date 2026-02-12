@@ -516,8 +516,7 @@ def export_history(
 
     try:
         with get_history_connection(browser_lower) as conn:
-            result = export_history(conn, format_type, limit, query)
-            return result
+            return export_history(conn, format_type, limit, query)
 
     except ConnectionError as e:
         return f"Error: {e.message}"

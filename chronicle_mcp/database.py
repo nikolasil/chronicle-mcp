@@ -295,7 +295,7 @@ def search_by_domain(
         List of (title, url, timestamp) tuples
     """
     cursor = conn.cursor()
-    params = []
+    params: list[str | int] = []
     sql_conditions = ["url LIKE ?"]
     params.append(f"%{domain}%")
 
@@ -400,7 +400,7 @@ def export_history(
     from io import StringIO
 
     cursor = conn.cursor()
-    params = []
+    params: list[str | int] = []
     sql = "SELECT title, url, last_visit_time FROM urls"
 
     if query:
@@ -557,7 +557,7 @@ def search_history_advanced(
         return [(title, url, ts) for title, url, ts, _ in results]
 
     cursor = conn.cursor()
-    params = []
+    params: list[str | int] = []
     sql_conditions = ["(title LIKE ? OR url LIKE ?)"]
     params.append(f"%{query}%")
     params.append(f"%{query}%")

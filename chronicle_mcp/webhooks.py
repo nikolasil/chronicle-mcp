@@ -32,7 +32,7 @@ class WebhookEvent:
 
 
 class WebhookManager:
-    def __init__(self):
+    def __init__(self) -> None:
         self.webhooks: dict[str, Webhook] = {}
         self.event_queue: asyncio.Queue[WebhookEvent] = asyncio.Queue()
         self._running = False
@@ -145,7 +145,7 @@ class WebhookManager:
             self._worker_task = asyncio.create_task(self._worker())
             logger.info("Webhook manager started")
 
-    def stop(self) -> None:
+    async def stop(self) -> None:
         if self._running:
             self._running = False
             if self._worker_task:

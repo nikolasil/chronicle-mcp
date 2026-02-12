@@ -94,5 +94,5 @@ strict_optional = true
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = ["mcp.*"]
+module = ["mcp.*", "cachetools.*"]
 ignore_errors = true
