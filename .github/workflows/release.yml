@@ -20,7 +20,9 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "VERSION=$VERSION" >> $GITHUB_ENV
+          sed -i "s/version = \".*\"/version = \"$VERSION\"/" pyproject.toml
           echo "Extracted version: $VERSION"
+          cat pyproject.toml | grep version
 
       - name: Install build
         run: pip install build
