@@ -11,6 +11,8 @@ permissions:
 jobs:
   bump-version:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.VERSION }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -35,11 +37,11 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add pyproject.toml
-          git diff --staged --quiet || git commit -m "chore: bump version to v${{ steps.get_version.outputs.VERSION }}"
-          git push origin HEAD:main
-
-      - name: Output version
-        run: echo "VERSION=${{ steps.get_version.outputs.VERSION }}" >> $GITHUB_ENV
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: bump version to v${{ steps.get_version.outputs.VERSION }}"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
 
   build:
     needs: bump-version
@@ -54,12 +56,6 @@ jobs:
         with:
           python-version: "3.11"
           cache: 'pip'
-
-      - name: Extract version from tag
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "Extracted version: $VERSION"
 
       - name: Install build
         run: pip install build
@@ -119,6 +115,9 @@ jobs:
   publish:
     needs: [build, build-binaries]
     runs-on: ubuntu-latest
+    outputs:
+      release_url: ${{ steps.create_release.outputs.upload_url }}
+      tarball_url: ${{ steps.create_release.outputs.tarball_url }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -151,8 +150,54 @@ jobs:
           password: ${{ secrets.PYPI_API_TOKEN }}
 
       - name: Create Release
+        id: create_release
         uses: softprops/action-gh-release@v2
         with:
           files: binaries/**/*
           draft: false
           prerelease: false
+
+  update-homebrew-formula:
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get release info
+        id: release
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tarball_url=https://github.com/${{ github.repository }}/archive/refs/tags/v${VERSION}.tar.gz" >> $GITHUB_OUTPUT
+
+      - name: Calculate SHA256
+        id: sha
+        run: |
+          curl -sL "${{ steps.release.outputs.tarball_url }}" | sha256sum | cut -d' ' -f1 > sha256.txt
+          echo "sha256=$(cat sha256.txt)" >> $GITHUB_OUTPUT
+
+      - name: Update formula
+        run: |
+          VERSION="${{ steps.release.outputs.version }}"
+          SHA256="${{ steps.sha.outputs.sha256 }}"
+
+          # Update version and SHA256 in the formula
+          sed -i "s|url \"https://github.com/nikolasil/chronicle-mcp/archive/refs/tags/v.*.tar.gz\"|url \"https://github.com/nikolasil/chronicle-mcp/archive/refs/tags/v${VERSION}.tar.gz\"|" Formula/chronicle-mcp.rb
+          sed -i "s|sha256 \"TO_BE_UPDATED_WITH_ACTUAL_SHA256\"|sha256 \"${SHA256}\"|" Formula/chronicle-mcp.rb
+
+          echo "Updated formula to version $VERSION with SHA256 $SHA256"
+
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add Formula/chronicle-mcp.rb
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: update Homebrew formula to v${{ steps.release.outputs.version }}"
+            git pull --rebase origin main
+            git push origin HEAD:main
+          fi
