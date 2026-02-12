@@ -107,6 +107,6 @@ jobs:
 
       - name: Upload assets to release
         run: |
-          gh release upload ${{ github.event.release.tag_name }} binaries/**/* --replace
+          gh release upload ${{ github.event.release.tag_name }} binaries/**/* --clobber
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
