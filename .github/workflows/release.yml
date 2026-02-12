@@ -24,14 +24,11 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "Extracted version: $VERSION"
 
       - name: Update version in pyproject.toml
         run: |
           VERSION="${{ steps.get_version.outputs.VERSION }}"
-          # Only update version in the [project] section (line 7 typically)
-          sed -i '0,/^\[project\]/{s/^version = "[^"]*"/version = "'$VERSION'"/}' pyproject.toml
-          echo "Updated pyproject.toml to version $VERSION"
+          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
 
       - name: Commit version bump
         run: |
@@ -49,6 +46,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -56,23 +55,15 @@ jobs:
           python-version: "3.11"
           cache: 'pip'
 
-      - name: Update version in pyproject.toml
-        run: python3 -c "import sys; v=sys.argv[1]; open('pyproject.toml','w').write(''.join(l if not l.startswith('version = ') else 'version = \"%s\"\n'%v for l in open('pyproject.toml')))" "${{ needs.bump-version.outputs.version }}"
-        shell: bash
-
-      - name: Remove non-package directories
-        run: rm -rf Formula tests .github
-
-      - name: Install build
-        run: pip install build
-
       - name: Build package
-        run: python -m build
+        run: |
+          pip install build
+          python -m build
 
-      - name: Upload distribution artifacts
+      - name: Upload python-dist
         uses: actions/upload-artifact@v4
         with:
-          name: dist
+          name: python-dist
           path: dist/
 
   build-binaries:
@@ -84,22 +75,19 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         include:
           - os: ubuntu-latest
-            artifact_name: linux-binaries
+            artifact_name: linux-binary
+            binary_path: dist/chronicle-mcp
           - os: macos-latest
-            artifact_name: macos-binaries
+            artifact_name: macos-binary
+            binary_path: dist/chronicle-mcp
           - os: windows-latest
-            artifact_name: windows-binaries
+            artifact_name: windows-binary
+            binary_path: dist/chronicle-mcp.exe
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Update version in pyproject.toml
-        run: python3 -c "import sys; v=sys.argv[1]; open('pyproject.toml','w').write(''.join(l if not l.startswith('version = ') else 'version = \"%s\"\n'%v for l in open('pyproject.toml')))" "${{ needs.bump-version.outputs.version }}"
-        shell: bash
-
-      - name: Remove non-package directories
-        run: rm -rf Formula tests .github
-        shell: bash
+        with:
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -108,50 +96,39 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
+        shell: bash
         run: |
-          pip install --upgrade pip
-          pip install pyinstaller
+          python -m pip install --upgrade pip
+          pip install pyinstaller .
 
       - name: Build binary
-        run: |
-          pip install -e .
-          pyinstaller --onefile --name chronicle-mcp server.py
         shell: bash
+        run: |
+          pyinstaller --onefile --name chronicle-mcp server.py
 
-      - name: Upload artifacts
+      - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: dist/
+          path: ${{ matrix.binary_path }}
 
   publish:
-    needs: [build, build-binaries]
+    needs: [bump-version, build, build-binaries]
     runs-on: ubuntu-latest
-    outputs:
-      release_url: ${{ steps.create_release.outputs.upload_url }}
-      tarball_url: ${{ steps.create_release.outputs.tarball_url }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: pip install pip wheel setuptools
-
-      - name: Download distribution artifacts
+      - name: Download python-dist
         uses: actions/download-artifact@v4
         with:
-          name: dist
+          name: python-dist
           path: dist/
 
-      - name: Download binaries
+      - name: Download all binaries
         uses: actions/download-artifact@v4
         with:
-          path: binaries/
+          path: release-artifacts/
+          pattern: '*-binary'
           merge-multiple: true
 
       - name: Publish to PyPI
@@ -159,16 +136,15 @@ jobs:
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}
 
-      - name: Create Release
-        id: create_release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: binaries/**/*
+          files: release-artifacts/*
           draft: false
           prerelease: false
 
   update-homebrew-formula:
-    needs: publish
+    needs: [bump-version, publish]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -177,29 +153,23 @@ jobs:
           ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Get release info
-        id: release
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "tarball_url=https://github.com/${{ github.repository }}/archive/refs/tags/v${VERSION}.tar.gz" >> $GITHUB_OUTPUT
-
       - name: Calculate SHA256
         id: sha
         run: |
-          curl -sL "${{ steps.release.outputs.tarball_url }}" | sha256sum | cut -d' ' -f1 > sha256.txt
-          echo "sha256=$(cat sha256.txt)" >> $GITHUB_OUTPUT
+          VERSION=${{ needs.bump-version.outputs.version }}
+          URL="https://github.com/${{ github.repository }}/archive/refs/tags/v${VERSION}.tar.gz"
+          sleep 10
+          SHA256=$(curl -sL "$URL" | sha256sum | cut -d' ' -f1)
+          echo "sha256=$SHA256" >> $GITHUB_OUTPUT
+          echo "url=$URL" >> $GITHUB_OUTPUT
 
       - name: Update formula
         run: |
-          VERSION="${{ steps.release.outputs.version }}"
+          VERSION="${{ needs.bump-version.outputs.version }}"
           SHA256="${{ steps.sha.outputs.sha256 }}"
-
-          # Update version and SHA256 in the formula
-          sed -i "s|url \"https://github.com/nikolasil/chronicle-mcp/archive/refs/tags/v.*.tar.gz\"|url \"https://github.com/nikolasil/chronicle-mcp/archive/refs/tags/v${VERSION}.tar.gz\"|" Formula/chronicle-mcp.rb
-          sed -i "s|sha256 \"TO_BE_UPDATED_WITH_ACTUAL_SHA256\"|sha256 \"${SHA256}\"|" Formula/chronicle-mcp.rb
-
-          echo "Updated formula to version $VERSION with SHA256 $SHA256"
+          URL="${{ steps.sha.outputs.url }}"
+          sed -i "s|url \"https://github.com/.*\"|url \"$URL\"|" Formula/chronicle-mcp.rb
+          sed -i "s|sha256 \".*\"|sha256 \"$SHA256\"|" Formula/chronicle-mcp.rb
 
       - name: Commit and push changes
         run: |
