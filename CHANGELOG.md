@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.1.0] - 2024-02-12
+## [1.1.0] - 2025-02-12
 
 ### Added
 
@@ -122,7 +122,7 @@ ChronicleMCP follows [Semantic Versioning](https://semver.org/):
 
 | Version | Release Date | Status |
 |---------|-------------|--------|
-| 1.1.0 | 2024-02-12 | Current |
+| 1.1.0 | 2025-02-12 | Current |
 | 1.0.0 | 2024-01-15 | Stable |
 
 ---
