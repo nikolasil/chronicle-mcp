@@ -53,6 +53,9 @@ dev = [
 ]
 config = ["tomli>=2.0.0"]
 
+[project.scripts]
+chronicle-mcp = "chronicle_mcp.cli:cli"
+
 [project.urls]
 Homepage = "https://github.com/nikolasil/chronicle-mcp"
 Repository = "https://github.com/nikolasil/chronicle-mcp"
