@@ -311,7 +311,8 @@ def search_by_domain(
             params.append(f"%{exclude}%")
 
     where_clause = " AND ".join(sql_conditions)
-    sql = f"SELECT title, url, last_visit_time FROM urls WHERE {where_clause} ORDER BY last_visit_time DESC LIMIT ?"
+    # nosec B608 - where_clause is built from controlled literals, not user input
+    sql = f"SELECT title, url, last_visit_time FROM urls WHERE {where_clause} ORDER BY last_visit_time DESC LIMIT ?"  # nosec B608
     params.append(limit)
 
     cursor.execute(sql, params)
@@ -576,7 +577,8 @@ def search_history_advanced(
         "title": "title ASC",
     }.get(sort_by, "last_visit_time DESC")
 
-    sql = f"SELECT title, url, last_visit_time FROM urls WHERE {where_clause} ORDER BY {order_by} LIMIT ?"
+    # nosec B608 - both where_clause and order_by are built from controlled literals
+    sql = f"SELECT title, url, last_visit_time FROM urls WHERE {where_clause} ORDER BY {order_by} LIMIT ?"  # nosec B608
     params.append(limit)
 
     cursor.execute(sql, params)
