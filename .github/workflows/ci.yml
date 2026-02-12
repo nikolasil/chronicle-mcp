@@ -152,4 +152,5 @@ jobs:
           tool: pytest
           output-file-path: benchmark.json
           save-data-file: true
-          skip-fetch-gh-pages: true
+          comment-on-alert: false
+          summary-always: false

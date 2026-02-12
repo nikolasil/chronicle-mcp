@@ -20,14 +20,12 @@ from chronicle_mcp.connection import ConnectionError, get_history_connection
 from chronicle_mcp.database import (
     count_domain_visits as db_count_visits,
     export_history as db_export_history,
-)
-from chronicle_mcp.database import (
     format_results,
+    get_top_domains as db_get_top_domains,
     query_history,
     query_recent_history,
+    search_by_date as db_search_by_date,
 )
-from chronicle_mcp.database import get_top_domains as db_get_top_domains
-from chronicle_mcp.database import search_by_date as db_search_by_date
 from chronicle_mcp.paths import get_available_browsers, get_browser_path
 
 setup_logging()
