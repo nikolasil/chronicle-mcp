@@ -12,7 +12,7 @@ import tempfile
 import time
 from collections.abc import Generator
 from contextlib import contextmanager
-from typing import Any
+from typing import Any, Callable
 
 from chronicle_mcp.paths import get_browser_path
 
@@ -168,7 +168,7 @@ def get_history_connection(
         raise
 
 
-def execute_with_connection(browser: str, func: callable[[sqlite3.Connection], Any]) -> Any:
+def execute_with_connection(browser: str, func: Callable[[sqlite3.Connection], Any]) -> Any:
     """Execute a function with a database connection.
 
     This is a convenience function for synchronous operations that need
