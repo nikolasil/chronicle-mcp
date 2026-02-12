@@ -19,7 +19,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
-from chronicle_mcp.config import setup_logging
+from chronicle_mcp.config import get_version, setup_logging
 from chronicle_mcp.connection import (
     BrowserNotFoundError,
     ConnectionError,
@@ -62,7 +62,7 @@ async def health_check(request: Request) -> JSONResponse:
         {
             "status": "healthy",
             "service": "chronicle-mcp",
-            "version": "1.1.0",
+            "version": get_version(),
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
     )

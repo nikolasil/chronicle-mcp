@@ -484,7 +484,10 @@ def fuzzy_match_score(s1: str, s2: str) -> float:
 
     from difflib import SequenceMatcher
 
-    return SequenceMatcher(None, s1_lower, s2_lower).ratio()
+    score1 = SequenceMatcher(None, s1_lower, s2_lower).ratio()
+    score2 = SequenceMatcher(None, s2_lower, s1_lower).ratio()
+
+    return max(score1, score2)
 
 
 def search_with_fuzzy(

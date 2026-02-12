@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chronicle-mcp"
-version = "0.0.0"
+version = "1.1.9"
 description = "MCP server for secure local browser history access"
 readme = "README.md"
 license = {text = "MIT"}
@@ -29,6 +29,7 @@ dependencies = [
     "httpx>=0.25.0",
     "uvicorn>=0.25.0",
     "starlette>=0.35.0",
+    "cachetools>=5.0.0",
 ]
 
 [project.optional-dependencies]
@@ -98,3 +99,25 @@ ignore_missing_imports = true
 [[tool.mypy.overrides]]
 module = ["mcp.*", "cachetools.*"]
 ignore_errors = true
+
+[tool.deptry]
+pep621_dev_dependency_groups = ["dev"]
+
+ignore = [
+    "pytest",
+    "pytest-benchmark",
+    "pytest-cov",
+    "pytest-mock",
+    "pytest-asyncio",
+    "hypothesis",
+    "ruff",
+    "mypy",
+    "types-cachetools",
+    "pre-commit",
+    "build",
+    "twine",
+    "safety",
+    "deptry",
+    "pip-audit",
+    "shellcheck-py",
+]
