@@ -1,4 +1,18 @@
+"""ChronicleMCP - Browser history access for AI agents."""
+
+__version__ = "1.1.0"
+
 from chronicle_mcp.config import Config, load_config, logger, setup_logging
+from chronicle_mcp.connection import (
+    BrowserNotFoundError,
+    BrowserPathNotFoundError,
+    ConnectionError,
+    DatabaseLockedError,
+    PermissionError,
+    cleanup_temp_file,
+    execute_with_connection,
+    get_history_connection,
+)
 from chronicle_mcp.database import (
     count_domain_visits,
     format_chrome_timestamp,
@@ -39,4 +53,12 @@ __all__ = [
     "load_config",
     "setup_logging",
     "logger",
+    "get_history_connection",
+    "execute_with_connection",
+    "cleanup_temp_file",
+    "ConnectionError",
+    "BrowserNotFoundError",
+    "BrowserPathNotFoundError",
+    "PermissionError",
+    "DatabaseLockedError",
 ]

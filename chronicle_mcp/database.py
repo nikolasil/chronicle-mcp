@@ -5,7 +5,28 @@ from urllib.parse import urlparse
 def sanitize_url(url: str) -> str:
     """Removes sensitive query parameters from URLs."""
     parsed = urlparse(url)
-    sensitive_params = {"token", "session", "key", "password", "auth", "sid", "access_token"}
+    sensitive_params = {
+        "token",
+        "session",
+        "key",
+        "password",
+        "auth",
+        "sid",
+        "access_token",
+        "api_key",
+        "apikey",
+        "api-secret",
+        "secret",
+        "api_token",
+        "apitoken",
+        "bearer",
+        "jwt",
+        "csrf",
+        "xsrf",
+        "nonce",
+        "salt",
+        "hash",
+    }
 
     query_parts = []
     for part in parsed.query.split("&"):
@@ -172,6 +193,12 @@ def search_by_date(
         start_dt = datetime.fromisoformat(start_date)
         end_dt = datetime.fromisoformat(end_date)
 
+        # Ensure both datetimes are timezone-aware (UTC)
+        if start_dt.tzinfo is None:
+            start_dt = start_dt.replace(tzinfo=timezone.utc)
+        if end_dt.tzinfo is None:
+            end_dt = end_dt.replace(tzinfo=timezone.utc)
+
         start_microseconds = int((start_dt - chrome_epoch).total_seconds() * 1_000_000)
         end_microseconds = int((end_dt - chrome_epoch).total_seconds() * 1_000_000)
     except ValueError:
@@ -211,8 +238,12 @@ def format_results(
     if format_type == "json":
         import json
 
-        items = [{"title": title, "url": url, "timestamp": ts} for title, url, ts in rows]
+        items = [
+            {"title": title, "url": sanitize_url(url), "timestamp": ts} for title, url, ts in rows
+        ]
         return json.dumps({"results": items, "count": len(items)})
 
-    results = [f"- **{title}**\n  URL: {url}\n  Timestamp: {ts}" for title, url, ts in rows]
+    results = [
+        f"- **{title}**\n  URL: {sanitize_url(url)}\n  Timestamp: {ts}" for title, url, ts in rows
+    ]
     return "\n\n".join(results)

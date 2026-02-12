@@ -1,14 +1,20 @@
 import json
 import sqlite3
 
+from chronicle_mcp.database import (
+    count_domain_visits,
+    format_results,
+    get_top_domains,
+    query_history,
+    sanitize_url,
+)
+
 
 class TestQueryHistory:
     """Tests for history query functions."""
 
     def test_query_history_basic(self, sample_chrome_db):
         """Test basic history query returns results."""
-        from chronicle_mcp.database import query_history
-
         conn = sqlite3.connect(sample_chrome_db)
         try:
             rows = query_history(conn, "python", limit=5)
@@ -20,8 +26,6 @@ class TestQueryHistory:
 
     def test_query_history_no_results(self, sample_chrome_db):
         """Test query with no matches returns empty list."""
-        from chronicle_mcp.database import query_history
-
         conn = sqlite3.connect(sample_chrome_db)
         try:
             rows = query_history(conn, "nonexistent_xyz_query", limit=5)
@@ -31,8 +35,6 @@ class TestQueryHistory:
 
     def test_query_history_limit(self, sample_chrome_db):
         """Test that limit is respected."""
-        from chronicle_mcp.database import query_history
-
         conn = sqlite3.connect(sample_chrome_db)
         try:
             rows = query_history(conn, "https", limit=2)
@@ -46,8 +48,6 @@ class TestSanitizeUrl:
 
     def test_sanitize_url_removes_token(self):
         """Test that sensitive tokens are removed from URLs."""
-        from chronicle_mcp.database import sanitize_url
-
         url = "https://example.com/page?token=secret123&other=value"
         result = sanitize_url(url)
 
@@ -56,8 +56,6 @@ class TestSanitizeUrl:
 
     def test_sanitize_url_removes_multiple_sensitive_params(self):
         """Test removal of multiple sensitive parameters."""
-        from chronicle_mcp.database import sanitize_url
-
         url = "https://example.com/page?token=abc&session=xyz&key=123&name=test"
         result = sanitize_url(url)
 
@@ -68,8 +66,6 @@ class TestSanitizeUrl:
 
     def test_sanitize_url_preserves_structure(self):
         """Test that URL structure is preserved after sanitization."""
-        from chronicle_mcp.database import sanitize_url
-
         url = "https://github.com/user/repo?tab=repos"
         result = sanitize_url(url)
 
@@ -82,8 +78,6 @@ class TestFormatResults:
 
     def test_format_results_markdown(self, sample_chrome_db):
         """Test Markdown format output."""
-        from chronicle_mcp.database import format_results, query_history
-
         conn = sqlite3.connect(sample_chrome_db)
         try:
             rows = query_history(conn, "python", limit=1)
@@ -96,8 +90,6 @@ class TestFormatResults:
 
     def test_format_results_json(self, sample_chrome_db):
         """Test JSON format output."""
-        from chronicle_mcp.database import format_results, query_history
-
         conn = sqlite3.connect(sample_chrome_db)
         try:
             rows = query_history(conn, "python", limit=1)
@@ -112,8 +104,6 @@ class TestFormatResults:
 
     def test_format_results_empty(self):
         """Test empty results return not found message."""
-        from chronicle_mcp.database import format_results
-
         result = format_results([], "nonexistent", "markdown")
         assert "No history found" in result
 
@@ -123,8 +113,6 @@ class TestCountDomainVisits:
 
     def test_count_domain_visits_basic(self, sample_chrome_db):
         """Test counting visits to a domain."""
-        from chronicle_mcp.database import count_domain_visits
-
         conn = sqlite3.connect(sample_chrome_db)
         try:
             count = count_domain_visits(conn, "github.com")
@@ -134,8 +122,6 @@ class TestCountDomainVisits:
 
     def test_count_domain_visits_nonexistent(self, sample_chrome_db):
         """Test counting visits to nonexistent domain."""
-        from chronicle_mcp.database import count_domain_visits
-
         conn = sqlite3.connect(sample_chrome_db)
         try:
             count = count_domain_visits(conn, "nonexistent.xyz")
@@ -149,8 +135,6 @@ class TestGetTopDomains:
 
     def test_get_top_domains_basic(self, sample_chrome_db):
         """Test getting top domains returns results."""
-        from chronicle_mcp.database import get_top_domains
-
         conn = sqlite3.connect(sample_chrome_db)
         try:
             domains = get_top_domains(conn, limit=5)
@@ -163,8 +147,6 @@ class TestGetTopDomains:
 
     def test_get_top_domains_limit(self, sample_chrome_db):
         """Test that limit is respected."""
-        from chronicle_mcp.database import get_top_domains
-
         conn = sqlite3.connect(sample_chrome_db)
         try:
             domains = get_top_domains(conn, limit=2)
