@@ -16,11 +16,13 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 
-@click.group()
+@click.group(invoke_without_command=True)
 @click.pass_context
 def cli(ctx: click.Context) -> None:
     """ChronicleMCP - MCP server for secure local browser history access."""
-    pass
+    if ctx.invoked_subcommand is None:
+        from chronicle_mcp.cli import run_command
+        ctx.invoke(run_command)
 
 
 @cli.command("version")
