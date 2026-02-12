@@ -63,6 +63,7 @@ Issues = "https://github.com/nikolasil/chronicle-mcp/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
+exclude = ["tests*", "Formula"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
