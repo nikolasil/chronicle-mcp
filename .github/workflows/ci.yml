@@ -150,6 +150,5 @@ jobs:
         with:
           name: Python Benchmark
           tool: pytest
-          output: benchmark.json
-          fail-on-warning: false
-          fail-on-error: false
+          output-file-path: benchmark.json
+          save-data-file: true
