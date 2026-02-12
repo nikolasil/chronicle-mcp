@@ -60,8 +60,9 @@ jobs:
 
       - name: Stop server
         run: |
-          pkill -f "chronicle_mcp serve"
-          pkill -f "uvicorn"
+          pkill -f "chronicle_mcp serve" || true
+          pkill -f "uvicorn" || true
+        if: always()
 
   cross-platform-test:
     runs-on: ${{ matrix.os }}
