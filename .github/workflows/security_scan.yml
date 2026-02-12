@@ -67,8 +67,8 @@ jobs:
 
       - name: Run Safety check
         run: |
-          safety scan --json --output safety-report.json || true
-          safety scan
+          safety scan --output json > safety-report.json || true
+          safety scan --output screen || true
 
       - name: Upload Safety results
         uses: actions/upload-artifact@v4
