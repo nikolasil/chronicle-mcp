@@ -10,6 +10,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get release info
         id: release
@@ -41,4 +44,4 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add Formula/chronicle-mcp.rb
-          git diff --staged --quiet || (git commit -m "chore: update Homebrew formula to v${{ steps.release.outputs.version }}" && git push)
+          git diff --staged --quiet || (git commit -m "chore: update Homebrew formula to v${{ steps.release.outputs.version }}" && git push origin HEAD:main)
