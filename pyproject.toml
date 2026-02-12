@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "chronicle-mcp"
-version = "1.2.12"
+version = "1.2.13"
 description = "MCP server for secure local browser history access"
 readme = "README.md"
 license = {text = "MIT"}
