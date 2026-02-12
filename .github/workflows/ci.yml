@@ -104,7 +104,7 @@ jobs:
         uses: codespell-project/actions-codespell@v2
         with:
           skip: ".git,*.svg,*.png,*.md,.github/workflows/ci.yml"
-          ignore_words_list: "crate,nd,parm,ro,te"
+          ignore_words_list: "and,param,be,to,the"
 
   cross-platform-test:
     runs-on: ${{ matrix.os }}
