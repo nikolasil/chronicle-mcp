@@ -118,7 +118,9 @@ class WebhookManager:
                     return True
                 else:
                     webhook.failure_count += 1
-                    logger.warning(f"Webhook {webhook.id} failed with status: {response.status_code}")
+                    logger.warning(
+                        f"Webhook {webhook.id} failed with status: {response.status_code}"
+                    )
                     return False
         except Exception as e:
             webhook.failure_count += 1
