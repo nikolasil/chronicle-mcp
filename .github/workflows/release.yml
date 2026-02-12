@@ -28,6 +28,7 @@ jobs:
       - name: Update version in pyproject.toml
         run: |
           VERSION="${{ steps.get_version.outputs.VERSION }}"
+          # Only replaces version in the [project] section
           sed -i "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
 
       - name: Commit version bump
@@ -158,8 +159,10 @@ jobs:
         run: |
           VERSION=${{ needs.bump-version.outputs.version }}
           URL="https://github.com/${{ github.repository }}/archive/refs/tags/v${VERSION}.tar.gz"
-          sleep 10
+          # Source tarballs can take a moment to generate after tag push
+          sleep 15
           SHA256=$(curl -sL "$URL" | sha256sum | cut -d' ' -f1)
+          if [ -z "$SHA256" ] || [ ${#SHA256} -ne 64 ]; then echo "Failed to get SHA256"; exit 1; fi
           echo "sha256=$SHA256" >> $GITHUB_OUTPUT
           echo "url=$URL" >> $GITHUB_OUTPUT
 
@@ -168,8 +171,10 @@ jobs:
           VERSION="${{ needs.bump-version.outputs.version }}"
           SHA256="${{ steps.sha.outputs.sha256 }}"
           URL="${{ steps.sha.outputs.url }}"
-          sed -i "s|url \"https://github.com/.*\"|url \"$URL\"|" Formula/chronicle-mcp.rb
-          sed -i "s|sha256 \".*\"|sha256 \"$SHA256\"|" Formula/chronicle-mcp.rb
+          
+          # Target only lines starting with '  url' or '  sha256' to avoid homepage/head
+          sed -i "s|^  url \".*\"|  url \"$URL\"|" Formula/chronicle-mcp.rb
+          sed -i "s|^  sha256 \".*\"|  sha256 \"$SHA256\"|" Formula/chronicle-mcp.rb
 
       - name: Commit and push changes
         run: |
@@ -177,7 +182,7 @@ jobs:
           git config --local user.name "GitHub Action"
           git add Formula/chronicle-mcp.rb
           if ! git diff --staged --quiet; then
-            git commit -m "chore: update Homebrew formula to v${{ steps.release.outputs.version }}"
+            git commit -m "chore: update Homebrew formula to v${{ needs.bump-version.outputs.version }}"
             git pull --rebase origin main
             git push origin HEAD:main
           fi
