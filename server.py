@@ -19,6 +19,7 @@ from chronicle_mcp.config import setup_logging
 from chronicle_mcp.connection import ConnectionError, get_history_connection
 from chronicle_mcp.database import (
     count_domain_visits as db_count_visits,
+    export_history as db_export_history,
 )
 from chronicle_mcp.database import (
     format_results,
@@ -516,7 +517,7 @@ def export_history(
 
     try:
         with get_history_connection(browser_lower) as conn:
-            return export_history(conn, format_type, limit, query)
+            return db_export_history(conn, format_type, limit, query)
 
     except ConnectionError as e:
         return f"Error: {e.message}"

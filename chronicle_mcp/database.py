@@ -1,6 +1,7 @@
 import re
 import sqlite3
 from datetime import datetime, timedelta, timezone
+from typing import Any
 from urllib.parse import urlparse
 
 
@@ -320,7 +321,7 @@ def search_by_domain(
     ]
 
 
-def get_browser_stats(conn: sqlite3.Connection) -> dict:
+def get_browser_stats(conn: sqlite3.Connection) -> dict[str, Any]:
     """
     Gets browsing statistics for the database.
 

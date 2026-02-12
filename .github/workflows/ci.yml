@@ -103,7 +103,7 @@ jobs:
       - name: Run codespell
         uses: codespell-project/actions-codespell@v2
         with:
-          skip: ".git,*.svg,*.png,*.md"
+          skip: ".git,*.svg,*.png,*.md,.github/workflows/ci.yml"
           ignore_words_list: "crate,nd,parm,ro,te"
 
   cross-platform-test:
