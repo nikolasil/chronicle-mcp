@@ -28,13 +28,9 @@ jobs:
           pip install --upgrade pip
           pip install -e ".[dev]"
 
-      - name: Create synthetic browser history
-        run: |
-          python tests/scripts/create_synthetic_history.py --browser ${{ matrix.browser }} --limit 100
-
       - name: Run integration tests
         run: |
-          pytest tests/test_integration.py -v --browser ${{ matrix.browser }}
+          pytest tests/test_integration.py -v -k "${{ matrix.browser }} or not browser"
 
   http-integration:
     runs-on: ubuntu-latest
