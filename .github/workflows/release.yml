@@ -99,6 +99,7 @@ jobs:
 
       - name: Remove non-package directories
         run: rm -rf Formula tests .github
+        shell: bash
 
       - name: Set up Python
         uses: actions/setup-python@v5
