@@ -10,8 +10,8 @@ from chronicle_mcp.protocols.http import app
 
 
 @pytest.fixture
-def http_client():
-    """Provides a synchronous HTTP client for testing."""
+def http_client(mock_chrome_path):
+    """Provides a synchronous HTTP client for testing with mocked browser."""
     with TestClient(app=app) as client:
         yield client
 
