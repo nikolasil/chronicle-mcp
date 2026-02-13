@@ -177,12 +177,20 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Run TruffleHog
+      - name: Run TruffleHog (PR)
+        if: github.event_name == 'pull_request'
         uses: trufflesecurity/trufflehog@main
         with:
           path: './'
           base: 'main'
           head: 'HEAD'
+          extra_args: --only-verified
+
+      - name: Run TruffleHog (Push to main)
+        if: github.event_name != 'pull_request'
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: './'
           extra_args: --only-verified
 
   security-summary:
