@@ -149,7 +149,7 @@ jobs:
           output-file-path: benchmark.json
           save-data-file: true
           comment-on-alert: false
-          summary-always: true
-          auto-push: true
+          summary-always: false
+          auto-push: false
           gh-pages-branch: gh-pages
           github-token: ${{ secrets.GITHUB_TOKEN }}
