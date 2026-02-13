@@ -1,266 +1,346 @@
 # ChronicleMCP Architecture
 
-This document describes the internal architecture of ChronicleMCP.
+This document describes the internal architecture of ChronicleMCP after the restructuring for improved maintainability.
 
 ## Overview
 
-ChronicleMCP is a secure, local-first Model Context Protocol (MCP) server that provides AI agents with access to local browser history data.
+ChronicleMCP is a secure, local-first Model Context Protocol (MCP) server that provides AI agents with access to local browser history data. The codebase follows a layered architecture with clear separation of concerns.
+
+## New Layered Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      ChronicleMCP                           │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐   │
-│  │   CLI       │    │   MCP       │    │   HTTP      │   │
-│  │   Interface │    │   Server    │    │   Server    │   │
-│  └──────┬──────┘    └──────┬──────┘    └──────┬──────┘   │
-│         │                   │                   │           │
-│         └───────────────────┴───────────────────┘           │
-│                             │                               │
-│                    ┌────────▼────────┐                     │
-│                    │   Connection    │                     │
-│                    │   Manager       │                     │
-│                    └────────┬────────┘                     │
-│                             │                               │
-│                    ┌────────▼────────┐                     │
-│                    │   Database     │                     │
-│                    │   Operations   │                     │
-│                    └────────┬────────┘                     │
-│                             │                               │
-│                    ┌────────▼────────┐                     │
-│                    │   Browser      │                     │
-│                    │   Paths         │                     │
-│                    └─────────────────┘                     │
-└─────────────────────────────────────────────────────────────┘
+│                      Protocol Layer                          │
+│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐     │
+│  │   CLI       │    │   MCP       │    │   HTTP      │     │
+│  │   Interface │    │   Protocol  │    │   Protocol  │     │
+│  └──────┬──────┘    └──────┬──────┘    └──────┬──────┘     │
+└─────────┼──────────────────┼───────────────────┼───────────┘
+          │                  │                   │
+          └──────────────────┼───────────────────┘
+                             │
+┌────────────────────────────▼──────────────────────────────┐
+│                    Service Layer (Core)                   │
+│  ┌─────────────────────────────────────────────────────┐ │
+│  │   HistoryService                                      │ │
+│  │   ├─ search_history()                                 │ │
+│  │   ├─ get_recent_history()                             │ │
+│  │   ├─ count_visits()                                   │ │
+│  │   ├─ list_top_domains()                               │ │
+│  │   └─ ... (all business logic)                         │ │
+│  └─────────────────────────────────────────────────────┘ │
+│                                                            │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐       │
+│  │ Validation  │  │ Formatters  │  │ Exceptions  │       │
+│  └─────────────┘  └─────────────┘  └─────────────┘       │
+└────────────────────────────────────────────────────────────┘
+                             │
+┌────────────────────────────▼──────────────────────────────┐
+│                   Infrastructure Layer                     │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐       │
+│  │ Connection  │  │  Database   │  │    Paths    │       │
+│  │   Manager   │  │ Operations  │  │  Detection  │       │
+│  └─────────────┘  └─────────────┘  └─────────────┘       │
+└────────────────────────────────────────────────────────────┘
+                             │
+                    ┌────────▼────────┐
+                    │  Browser History │
+                    │    Databases     │
+                    └──────────────────┘
 ```
 
 ## Project Structure
 
 ```
 chronicle-mcp/
-├── server.py                 # MCP server with tools
 ├── chronicle_mcp/
 │   ├── __init__.py          # Package exports
 │   ├── cli.py               # CLI commands
+│   ├── server.py            # Entry point (imports from protocols)
+│   ├── core/                # Business Logic Layer (NEW)
+│   │   ├── __init__.py
+│   │   ├── services.py      # HistoryService - all business logic
+│   │   ├── validation.py    # Input validation functions
+│   │   ├── formatters.py    # Response formatting
+│   │   └── exceptions.py    # Service-level exceptions
+│   ├── protocols/           # Protocol Adapters (NEW)
+│   │   ├── __init__.py
+│   │   ├── mcp.py          # MCP protocol adapter
+│   │   └── http.py         # HTTP protocol adapter
 │   ├── connection.py        # Database connection management
-│   ├── config.py            # Configuration loading
-│   ├── database.py          # Query functions
+│   ├── database.py          # Query operations
 │   ├── paths.py             # Browser path detection
-│   └── server_http.py       # HTTP server
+│   └── config.py            # Configuration loading
 ├── tests/
 │   ├── conftest.py          # Pytest fixtures
-│   ├── test_*.py            # All tests
-├── Dockerfile               # Container definition
-├── pyproject.toml          # Project configuration
-└── README.md               # Documentation
+│   ├── unit/
+│   │   ├── core/           # Service layer tests
+│   │   ├── protocols/      # Protocol adapter tests
+│   │   └── infrastructure/ # Infrastructure tests
+│   └── integration/        # Integration tests
+├── Dockerfile
+├── pyproject.toml
+└── README.md
 ```
 
-## Components
+## Component Responsibilities
 
-### 1. CLI Interface (`chronicle_mcp/cli.py`)
+### 1. Protocol Layer
 
-The CLI provides command-line access to ChronicleMCP functionality.
+Thin adapters that handle protocol-specific concerns:
 
-**Commands:**
-- `run` - Run MCP server (stdio or SSE)
-- `serve` - Start long-running HTTP server
-- `status` - Check server status
-- `logs` - View server logs
-- `version` - Show version
-- `list-browsers` - List available browsers
-- `completion` - Generate shell completions
+#### CLI Interface (`chronicle_mcp/cli.py`)
+- Command-line parsing
+- Delegates to appropriate protocol
+- Process management (PID files, logging)
 
-### 2. MCP Server (`server.py`)
+#### MCP Protocol (`chronicle_mcp/protocols/mcp.py`)
+- FastMCP tool registration
+- MCP-specific error handling (returns string errors)
+- Calls HistoryService methods
 
-The MCP (Model Context Protocol) server provides tools for AI agents.
+#### HTTP Protocol (`chronicle_mcp/protocols/http.py`)
+- Starlette route handlers
+- HTTP-specific error handling (returns JSONResponse with status codes)
+- Calls HistoryService methods
 
-**Available Tools:**
-- `search_history` - Search by query
-- `get_recent_history` - Recent history
-- `count_visits` - Count domain visits
-- `list_top_domains` - Top domains
-- `search_history_by_date` - Date-range search
-- `list_available_browsers` - List browsers
+### 2. Service Layer (Core)
 
-### 3. HTTP Server (`chronicle_mcp/server_http.py`)
+Contains all business logic, shared by all protocols.
 
-Provides RESTful API endpoints for web applications.
+#### HistoryService (`chronicle_mcp/core/services.py`)
 
-**Endpoints:**
-- `GET /health` - Health check
-- `GET /ready` - Readiness check
-- `GET /metrics` - Basic metrics
-- `GET /api/browsers` - List browsers
-- `POST /api/search` - Search history
-- `POST /api/recent` - Recent history
-- `POST /api/count` - Count visits
-- `POST /api/top-domains` - Top domains
-- `POST /api/search-date` - Search by date
+Central service class providing all operations:
 
-### 4. Connection Manager (`chronicle_mcp/connection.py`)
+```python
+class HistoryService:
+    @classmethod
+    def search_history(cls, query, limit, browser, format_type) -> dict:
+        # Validates inputs
+        # Executes database query
+        # Returns structured data
+```
 
-Manages database connections with safety features:
+**Methods:**
+- `list_available_browsers()` - Get available browsers
+- `search_history()` - Search by query
+- `get_recent_history()` - Recent history
+- `count_visits()` - Count domain visits
+- `list_top_domains()` - Top domains
+- `search_history_by_date()` - Date-range search
+- `delete_history()` - Delete entries
+- `search_by_domain()` - Domain-specific search
+- `get_browser_stats()` - Statistics
+- `get_most_visited_pages()` - Most visited pages
+- `export_history()` - Export to CSV/JSON
+- `search_history_advanced()` - Advanced search
+- `sync_history()` - Sync between browsers
 
-- **Temp File Copying**: Creates temporary copies of browser databases to avoid "Database Locked" errors
-- **Auto Cleanup**: Removes temp files after each query
-- **Error Handling**: Specific error types for different failure modes:
-  - `BrowserNotFoundError`
-  - `BrowserPathNotFoundError`
-  - `PermissionError`
-  - `DatabaseLockedError`
+#### Validation (`chronicle_mcp/core/validation.py`)
 
-### 5. Database Operations (`chronicle_mcp/database.py`)
+Pure functions for input validation:
 
-Core database query functions:
+```python
+def validate_browser(browser: str) -> str:
+    # Returns lowercase browser name
+    # Raises ValidationError if invalid
 
-- `query_history()` - Search history
-- `query_recent_history()` - Recent entries
-- `count_domain_visits()` - Count visits
-- `get_top_domains()` - Top domains
-- `search_by_date()` - Date-range search
-- `format_results()` - Format output
-- `sanitize_url()` - Remove sensitive params
-- `format_chrome_timestamp()` - Convert timestamps
+def validate_limit(limit: int, min_val: int, max_val: int) -> int:
+    # Returns validated limit
+    # Raises ValidationError if out of range
+```
 
-### 6. Browser Paths (`chronicle_mcp/paths.py`)
+**Functions:**
+- `validate_browser()` - Browser name validation
+- `validate_query()` - Query string validation
+- `validate_limit()` - Numeric limit validation
+- `validate_hours()` - Hours validation
+- `validate_format_type()` - Format type validation
+- `validate_domain()` - Domain validation
+- `validate_date_range()` - Date range validation
+- `validate_sort_by()` - Sort order validation
+- `validate_fuzzy_threshold()` - Fuzzy threshold validation
+- `validate_search_options()` - Search option validation
+- `validate_merge_strategy()` - Merge strategy validation
+- `validate_browsers_different()` - Browser difference check
+- `validate_exclude_domains()` - Exclude domains validation
 
-Detects browser history database paths:
+#### Formatters (`chronicle_mcp/core/formatters.py`)
 
-**Supported Browsers:**
-- Chrome (Windows, macOS, Linux)
-- Edge (Windows, macOS, Linux)
-- Firefox (Windows, macOS, Linux)
+Pure functions for response formatting:
+
+```python
+def format_search_results(rows, query, format_type) -> str:
+    # Returns formatted string (markdown or JSON)
+```
+
+**Functions:**
+- `format_search_results()` - Search results formatting
+- `format_recent_results()` - Recent history formatting
+- `format_domain_visits()` - Visit count formatting
+- `format_top_domains()` - Top domains formatting
+- `format_most_visited_pages()` - Most visited pages formatting
+- `format_domain_search_results()` - Domain search formatting
+- `format_advanced_search_results()` - Advanced search formatting
+- `format_browser_stats()` - Stats formatting
+- `format_export()` - Export formatting
+- `format_delete_preview()` - Delete preview formatting
+- `format_delete_result()` - Delete result formatting
+- `format_sync_preview()` - Sync preview formatting
+- `format_sync_result()` - Sync result formatting
+- `format_available_browsers()` - Browser list formatting
+- `format_error_message()` - Error message formatting
+
+#### Exceptions (`chronicle_mcp/core/exceptions.py`)
+
+Service-layer exception hierarchy:
+
+```python
+ServiceError (base)
+├── ValidationError
+├── BrowserNotFoundError
+├── BrowserPathNotFoundError
+├── DatabaseLockedError
+├── PermissionDeniedError
+├── DatabaseError
+├── UnsupportedFormatError
+└── InvalidDateRangeError
+```
+
+### 3. Infrastructure Layer
+
+Low-level operations, protocol-agnostic.
+
+#### Connection Manager (`chronicle_mcp/connection.py`)
+
+- Creates temporary copies of browser databases
+- Manages database connections
+- Handles cleanup
+- Provides context manager for safe access
+
+#### Database Operations (`chronicle_mcp/database.py`)
+
+- SQLite query execution
+- URL sanitization
+- Timestamp formatting
+- Schema detection (Chrome/Firefox/Safari)
+
+#### Browser Paths (`chronicle_mcp/paths.py`)
+
+- Browser path detection per OS
+- Path expansion (environment variables, home directory)
+- Glob pattern matching for Firefox profiles
 
 ## Data Flow
 
-### Query Flow
+### Service Layer Flow
 
 ```
-1. CLI/MCP/HTTP receives request
+1. Protocol Adapter receives request
          ↓
-2. Validate input parameters
+2. Call HistoryService.method()
          ↓
-3. Get browser path from paths.py
+3. Validate inputs (validation.py)
          ↓
-4. Create temp database copy (connection.py)
+4. Execute business logic
          ↓
-5. Execute query (database.py)
+5. Query database (via connection.py)
          ↓
-6. Format results
+6. Format results (formatters.py)
          ↓
-7. Clean up temp file
+7. Return structured data (dict/list)
          ↓
-8. Return response
+8. Protocol Adapter formats for protocol
+         ↓
+9. Return response
 ```
 
-### Temp File Lifecycle
+### Example: Search History
 
+```python
+# HTTP Protocol
+@app.route("/api/search", methods=["POST"])
+async def search_endpoint(request):
+    data = await request.json()
+    try:
+        result = HistoryService.search_history(
+            query=data["query"],
+            limit=data.get("limit", 5),
+            browser=data.get("browser", "chrome"),
+            format_type=data.get("format", "markdown")
+        )
+        return JSONResponse({"results": result["message"]})
+    except ServiceError as e:
+        return error_response(e.message, 400)
+
+# MCP Protocol
+@mcp.tool()
+def search_history(query, limit, browser, format_type):
+    try:
+        result = HistoryService.search_history(
+            query=query, limit=limit,
+            browser=browser, format_type=format_type
+        )
+        return result["message"]
+    except ServiceError as e:
+        return f"Error: {e.message}"
 ```
-Query Request
-     ↓
-Create temp filename (unique per query)
-     ↓
-Copy browser DB to temp file
-     ↓
-Open SQLite connection
-     ↓
-Execute query
-     ↓
-Close connection
-     ↓
-Delete temp file
-     ↓
-Response
-```
+
+## Key Benefits of New Architecture
+
+### 1. Single Source of Truth
+- All business logic in `HistoryService`
+- No code duplication between protocols
+- Changes made once, applied everywhere
+
+### 2. Testability
+- Service layer can be tested independently
+- Pure validation/formatting functions are easy to test
+- Protocol adapters are thin and mostly delegation
+
+### 3. Maintainability
+- Clear separation of concerns
+- Each layer has single responsibility
+- Easy to understand and modify
+
+### 4. Extensibility
+- Easy to add new protocols (WebSocket, gRPC, etc.)
+- Just create new adapter in `protocols/`
+- Reuse existing service layer
+
+### 5. Error Handling Consistency
+- Service layer raises exceptions
+- Each protocol catches and converts appropriately
+- MCP: String error messages
+- HTTP: Status codes + JSON
 
 ## Security
 
-### Privacy-First Design
-
-1. **Local Only**: All data stays on the local machine
-2. **No Cloud Sync**: No external servers contacted
-3. **Temp Files**: Browser DB copied to temp location
-4. **Auto Cleanup**: Temp files deleted after each query
+All security features remain unchanged:
 
 ### URL Sanitization
+Sensitive query parameters removed from URLs before returning.
 
-Sensitive query parameters are automatically removed:
+### Privacy-First
+- All data stays local
+- Temporary file copies deleted after each query
+- No external servers contacted
 
+## Migration Notes
+
+If you were using the old structure:
+
+### Old imports:
 ```python
-SENSITIVE_PARAMS = {"token", "session", "key", "password", "auth", "sid", "access_token"}
+from server import mcp, search_history
+from chronicle_mcp.server_http import run_http_server
 ```
 
-Example:
-- Input: `https://api.example.com?key=secret123&name=test`
-- Output: `https://api.example.com?name=test`
-
-### Error Messages
-
-No sensitive information exposed in error messages:
-- ✅ "Error: chrome history not found"
-- ❌ "Error: /Users/john/Library/Application Support/Google/Chrome/History not found"
-
-## Performance
-
-### Optimization Strategies
-
-1. **Temp File Copy**: Small files (~MB) copy quickly
-2. **SQLite Indexes**: Pre-indexed columns for fast queries
-3. **Limit Parameters**: Default limits prevent large result sets
-4. **Connection Pooling**: Not used (each query uses fresh connection)
-
-### Benchmarks
-
-| Operation | Typical Time |
-|-----------|--------------|
-| Search (10 results) | < 100ms |
-| Recent history (20 results) | < 100ms |
-| Count visits | < 50ms |
-| Top domains | < 100ms |
-| Date-range search | < 100ms |
-
-## Configuration
-
-### Environment Variables
-
-```bash
-CHRONICLE_CONFIG=~/.config/chronicle-mcp/config.toml
-CHRONICLE_PORT=8080
-CHRONICLE_HOST=127.0.0.1
-CHRONICLE_BROWSER=chrome
-```
-
-### Config File (`~/.config/chronicle-mcp/config.toml`)
-
-```toml
-[default]
-browser = "chrome"
-limit = 10
-format = "markdown"
-log_level = "INFO"
-```
-
-## Dependencies
-
-### Core Dependencies
-
-```
-fastmcp>=0.2.0      # MCP server framework
-click>=8.0.0        # CLI framework
-starlette>=0.35.0   # HTTP framework
-uvicorn>=0.25.0     # ASGI server
-httpx>=0.25.0       # HTTP client
-```
-
-### Development Dependencies
-
-```
-pytest>=7.0.0       # Testing
-pytest-cov>=4.0.0   # Coverage
-ruff>=0.1.0        # Linting/formatting
-mypy>=1.0.0        # Type checking
-pre-commit>=3.0.0  # Git hooks
+### New imports:
+```python
+from chronicle_mcp.protocols import mcp
+from chronicle_mcp.protocols.http import run_http_server
+from chronicle_mcp.core import HistoryService
 ```
 
 ---
@@ -270,4 +350,5 @@ pre-commit>=3.0.0  # Git hooks
 - [CLI Reference](CLI.md)
 - [API Documentation](API.md)
 - [Installation Guide](INSTALL.md)
+- [Contributing Guide](CONTRIBUTING.md)
 - [GitHub Repository](https://github.com/nikolasil/chronicle-mcp)
