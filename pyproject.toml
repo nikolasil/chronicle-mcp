@@ -74,6 +74,13 @@ markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
     "performance: marks tests as performance tests",
+    "chrome: marks tests for Chrome browser",
+    "firefox: marks tests for Firefox browser",
+    "edge: marks tests for Edge browser",
+    "brave: marks tests for Brave browser",
+    "safari: marks tests for Safari browser",
+    "vivaldi: marks tests for Vivaldi browser",
+    "opera: marks tests for Opera browser",
 ]
 
 [tool.pytest-cov]
