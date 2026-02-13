@@ -200,14 +200,14 @@ jobs:
         run: |
           chmod +x ./binary/${{ matrix.release_name }}
           ./binary/${{ matrix.release_name }} --help
-          ./binary/${{ matrix.release_name }} --version || true
+          ./binary/${{ matrix.release_name }} version
 
       - name: Smoke test binary (Windows)
         if: matrix.os == 'windows-latest'
         shell: pwsh
         run: |
           & "./binary/${{ matrix.release_name }}" --help
-          & "./binary/${{ matrix.release_name }}" --version || $true
+          & "./binary/${{ matrix.release_name }}" version
 
   publish:
     needs: [bump-version, build, build-binaries, smoke-test-binaries]
