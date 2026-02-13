@@ -23,8 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `/api/search-date` - Search by date endpoint
 
 - **CLI Interface**: Full command-line interface with commands:
-  - `run` - Run MCP server (stdio or SSE transport)
-  - `serve` - Start long-running HTTP server
+  - `mcp` - Run MCP server (stdio or SSE transport)
+  - `http` - Start HTTP REST API server
   - `status` - Check server status
   - `logs` - View server logs
   - `version` - Show version

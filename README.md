@@ -38,11 +38,11 @@
 # Install
 pip install chronicle-mcp
 
-# Run in stdio mode (for AI agents like Claude, Cursor)
-chronicle-mcp run
+# Run MCP server (stdio mode for AI agents like Claude, Cursor)
+chronicle-mcp mcp
 
 # Or start an HTTP server
-chronicle-mcp serve --port 8080
+chronicle-mcp http --port 8080
 
 # Check available browsers
 chronicle-mcp list-browsers
@@ -111,40 +111,40 @@ brew install chronicle-mcp
 
 ### CLI Commands
 
-#### `chronicle-mcp run`
+#### `chronicle-mcp mcp`
 
-Run the MCP server in stdio mode (default for AI agents).
+Run the MCP server for AI agents.
 
 ```bash
-# Stdio mode (default)
-chronicle-mcp run
+# Stdio mode (default for AI assistants)
+chronicle-mcp mcp
 
 # SSE mode for HTTP clients
-chronicle-mcp run --transport sse --port 8080
+chronicle-mcp mcp --sse --port 8080
 ```
 
 | Option | Description |
 |--------|-------------|
-| `--transport` | Transport mode: `stdio` or `sse` |
+| `--sse` | Use SSE transport instead of stdio |
 | `--host` | Host to bind (SSE mode only) |
 | `--port` | Port to listen on (SSE mode only) |
 
-#### `chronicle-mcp serve`
+#### `chronicle-mcp http`
 
-Start a long-running HTTP/SSE server.
+Start a long-running HTTP REST API server.
 
 ```bash
 # Default (foreground, port 8080)
-chronicle-mcp serve
+chronicle-mcp http
 
 # Custom port
-chronicle-mcp serve --port 9000
+chronicle-mcp http --port 9000
 
 # Daemon mode
-chronicle-mcp serve --port 8080 --daemon
+chronicle-mcp http --port 8080 --daemon
 
 # Different browser
-chronicle-mcp serve --browser firefox
+chronicle-mcp http --browser firefox
 ```
 
 | Option | Description |
@@ -479,8 +479,11 @@ pytest --cov=chronicle_mcp
 ### Development Server
 
 ```bash
-# Run with MCP Inspector
-python server.py dev
+# Run MCP server (stdio mode)
+python -m chronicle_mcp mcp
+
+# Run HTTP server
+python -m chronicle_mcp http --port 8080
 ```
 
 ### Code Quality

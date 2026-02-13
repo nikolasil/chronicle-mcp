@@ -6,31 +6,31 @@ This document provides a complete reference for all CLI commands, options, and e
 
 | Command | Description |
 |---------|-------------|
-| [run](#chronicle-mcp-run) | Run the MCP server |
-| [serve](#chronicle-mcp-serve) | Start a long-running HTTP/SSE server |
-| [status](#chronicle-mcp-status) | Check server status |
-| [logs](#chronicle-mcp-logs) | View server logs |
+| [mcp](#chronicle-mcp-mcp) | Run the MCP server |
+| [http](#chronicle-mcp-http) | Start the HTTP REST API server |
+| [status](#chronicle-mcp-status) | Check HTTP server status |
+| [logs](#chronicle-mcp-logs) | View HTTP server logs |
 | [version](#chronicle-mcp-version) | Show version information |
 | [list-browsers](#chronicle-mcp-list-browsers) | List available browsers |
 | [completion](#chronicle-mcp-completion) | Generate shell completions |
 
 ---
 
-## `chronicle-mcp run`
+## `chronicle-mcp mcp`
 
-Run the MCP server in stdio or SSE mode.
+Run the MCP server for AI assistants.
 
 ### Syntax
 
 ```bash
-chronicle-mcp run [OPTIONS]
+chronicle-mcp mcp [OPTIONS]
 ```
 
 ### Options
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `--transport` | Choice | `stdio` | Transport mode: `stdio` or `sse` |
+| `--sse` | Flag | `false` | Use SSE transport instead of stdio |
 | `--host` | String | `127.0.0.1` | Host to bind (SSE mode only) |
 | `--port` | Integer | `8080` | Port to listen on (SSE mode only) |
 
@@ -38,16 +38,16 @@ chronicle-mcp run [OPTIONS]
 
 ```bash
 # Run in stdio mode (default for AI agents)
-chronicle-mcp run
+chronicle-mcp mcp
 
 # Run in SSE mode
-chronicle-mcp run --transport sse
+chronicle-mcp mcp --sse
 
 # SSE mode with custom port
-chronicle-mcp run --transport sse --port 9000
+chronicle-mcp mcp --sse --port 9000
 
 # SSE mode listening on all interfaces
-chronicle-mcp run --transport sse --host 0.0.0.0 --port 8080
+chronicle-mcp mcp --sse --host 0.0.0.0 --port 8080
 ```
 
 ### Use Cases
@@ -57,14 +57,14 @@ chronicle-mcp run --transport sse --host 0.0.0.0 --port 8080
 
 ---
 
-## `chronicle-mcp serve`
+## `chronicle-mcp http`
 
-Start a long-running HTTP/SSE server as a daemon or in foreground.
+Start a long-running HTTP REST API server.
 
 ### Syntax
 
 ```bash
-chronicle-mcp serve [OPTIONS]
+chronicle-mcp http [OPTIONS]
 ```
 
 ### Options
@@ -81,29 +81,29 @@ chronicle-mcp serve [OPTIONS]
 
 ```bash
 # Default (foreground, port 8080)
-chronicle-mcp serve
+chronicle-mcp http
 
 # Custom port
-chronicle-mcp serve --port 9000
+chronicle-mcp http --port 9000
 
 # Listen on all interfaces
-chronicle-mcp serve --host 0.0.0.0 --port 8080
+chronicle-mcp http --host 0.0.0.0 --port 8080
 
 # Different default browser
-chronicle-mcp serve --browser firefox
+chronicle-mcp http --browser firefox
 
 # Run in background (daemon)
-chronicle-mcp serve --port 8080 --daemon
+chronicle-mcp http --port 8080 --daemon
 
 # Full options
-chronicle-mcp serve --host 0.0.0.0 --port 8080 --browser chrome --daemon
+chronicle-mcp http --host 0.0.0.0 --port 8080 --browser chrome --daemon
 ```
 
 ### Daemon Mode
 
 When running in daemon mode:
-- A PID file is created at `~/.tmp/chronicle-mcp-<port>.pid`
-- Logs are written to `~/.tmp/chronicle-mcp-<port>.log`
+- A PID file is created at `/tmp/chronicle-mcp-<port>.pid`
+- Logs are written to `/tmp/chronicle-mcp-<port>.log`
 - Use `status` to check if the server is running
 - Use `logs` to view server output
 
@@ -111,7 +111,7 @@ When running in daemon mode:
 
 ## `chronicle-mcp status`
 
-Check if the ChronicleMCP server is running.
+Check if the ChronicleMCP HTTP server is running.
 
 ### Syntax
 
@@ -156,7 +156,7 @@ ChronicleMCP is NOT running (stale PID file, PID: 12345)
 
 ## `chronicle-mcp logs`
 
-View logs from the ChronicleMCP server.
+View logs from the ChronicleMCP HTTP server.
 
 ### Syntax
 
@@ -292,7 +292,7 @@ These environment variables can be used to configure the CLI:
 ```bash
 export CHRONICLE_PORT=9000
 export CHRONICLE_BROWSER=firefox
-chronicle-mcp serve
+chronicle-mcp http
 ```
 
 ---
