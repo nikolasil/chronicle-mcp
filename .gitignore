@@ -19,6 +19,7 @@ build/
 *.egg-info/
 *.egg
 *.whl
+*.spec
 .pytest_cache/
 .coverage
 htmlcov/
