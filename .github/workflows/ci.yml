@@ -170,3 +170,5 @@ jobs:
           save-data-file: true
           comment-on-alert: false
           summary-always: false
+          auto-push: true
+          gh-pages-branch: gh-pages
