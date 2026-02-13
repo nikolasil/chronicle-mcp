@@ -76,16 +76,16 @@ class HistoryService:
     """Service layer for browser history operations."""
 
     @staticmethod
-    def _with_connection(browser: str, operation: Callable) -> Any:
+    def _with_connection(browser: str, operation: Callable[..., Any]) -> Any:
         """Execute an operation with a database connection.
-        
+
         Args:
             browser: Browser name
             operation: Function that takes a connection and returns data
-            
+
         Returns:
             Result of the operation
-            
+
         Raises:
             BrowserNotFoundError: If browser not found
             DatabaseLockedError: If database is locked
@@ -111,7 +111,7 @@ class HistoryService:
     @classmethod
     def list_available_browsers(cls) -> dict[str, Any]:
         """Get list of available browsers.
-        
+
         Returns:
             Dictionary with list of browsers and formatted message
         """
@@ -130,13 +130,13 @@ class HistoryService:
         format_type: str = "markdown"
     ) -> dict[str, Any]:
         """Search browser history.
-        
+
         Args:
             query: Search term
             limit: Maximum results (1-100)
             browser: Browser to search
             format_type: 'markdown' or 'json'
-            
+
         Returns:
             Dictionary with results and formatted message
         """
@@ -144,14 +144,14 @@ class HistoryService:
         query_clean = validate_query(query)
         limit_val = validate_limit(limit, 1, 100)
         format_clean = validate_format_type(format_type)
-        
+
         logger.info(f"Searching history for '{query_clean}' in {browser_lower} (limit={limit_val})")
-        
+
         rows = cls._with_connection(
             browser_lower,
             lambda conn: query_history(conn, query_clean, limit_val)
         )
-        
+
         return {
             "results": rows,
             "count": len(rows),
@@ -168,13 +168,13 @@ class HistoryService:
         format_type: str = "markdown"
     ) -> dict[str, Any]:
         """Get recent browsing history.
-        
+
         Args:
             hours: Hours to look back
             limit: Maximum results (1-100)
             browser: Browser to search
             format_type: 'markdown' or 'json'
-            
+
         Returns:
             Dictionary with results and formatted message
         """
@@ -182,12 +182,12 @@ class HistoryService:
         hours_val = validate_hours(hours)
         limit_val = validate_limit(limit, 1, 100)
         format_clean = validate_format_type(format_type)
-        
+
         rows = cls._with_connection(
             browser_lower,
             lambda conn: query_recent_history(conn, hours_val, limit_val)
         )
-        
+
         return {
             "results": rows,
             "count": len(rows),
@@ -198,22 +198,22 @@ class HistoryService:
     @classmethod
     def count_visits(cls, domain: str, browser: str = "chrome") -> dict[str, Any]:
         """Count visits to a domain.
-        
+
         Args:
             domain: Domain to count
             browser: Browser to search
-            
+
         Returns:
             Dictionary with count and formatted message
         """
         browser_lower = validate_browser(browser)
         domain_clean = validate_domain(domain)
-        
+
         count = cls._with_connection(
             browser_lower,
             lambda conn: count_domain_visits(conn, domain_clean)
         )
-        
+
         return {
             "domain": domain_clean,
             "browser": browser_lower,
@@ -229,24 +229,24 @@ class HistoryService:
         format_type: str = "markdown"
     ) -> dict[str, Any]:
         """Get most visited domains.
-        
+
         Args:
             limit: Maximum results (1-50)
             browser: Browser to search
             format_type: 'markdown' or 'json'
-            
+
         Returns:
             Dictionary with domains and formatted message
         """
         browser_lower = validate_browser(browser)
         limit_val = validate_limit(limit, 1, 50)
         format_clean = validate_format_type(format_type)
-        
+
         domains = cls._with_connection(
             browser_lower,
             lambda conn: db_get_top_domains(conn, limit_val)
         )
-        
+
         return {
             "domains": domains,
             "count": len(domains),
@@ -264,7 +264,7 @@ class HistoryService:
         format_type: str = "markdown"
     ) -> dict[str, Any]:
         """Search history within a date range.
-        
+
         Args:
             query: Search term
             start_date: Start date (YYYY-MM-DD)
@@ -272,7 +272,7 @@ class HistoryService:
             limit: Maximum results (1-100)
             browser: Browser to search
             format_type: 'markdown' or 'json'
-            
+
         Returns:
             Dictionary with results and formatted message
         """
@@ -281,12 +281,12 @@ class HistoryService:
         start_clean, end_clean = validate_date_range(start_date, end_date)
         limit_val = validate_limit(limit, 1, 100)
         format_clean = validate_format_type(format_type)
-        
+
         rows = cls._with_connection(
             browser_lower,
             lambda conn: db_search_by_date(conn, query_clean, start_clean, end_clean, limit_val)
         )
-        
+
         return {
             "results": rows,
             "count": len(rows),
@@ -305,20 +305,20 @@ class HistoryService:
         confirm: bool = False
     ) -> dict[str, Any]:
         """Delete history entries matching a query.
-        
+
         Args:
             query: Search term to match
             limit: Maximum entries to delete (1-500)
             browser: Browser to search
             confirm: If True, actually delete; if False, preview only
-            
+
         Returns:
             Dictionary with deletion info and formatted message
         """
         browser_lower = validate_browser(browser)
         query_clean = validate_query(query)
         limit_val = validate_limit(limit, 1, 500)
-        
+
         if not confirm:
             # Preview mode - just count matches
             rows = cls._with_connection(
@@ -326,20 +326,20 @@ class HistoryService:
                 lambda conn: query_history(conn, query_clean, limit_val)
             )
             count = len(rows)
-            
+
             return {
                 "preview": True,
                 "query": query_clean,
                 "count": count,
                 "message": format_delete_preview(query_clean, count)
             }
-        
+
         # Actually delete
         deleted = cls._with_connection(
             browser_lower,
             lambda conn: db_delete_history(conn, query_clean, limit_val)
         )
-        
+
         return {
             "deleted": deleted,
             "query": query_clean,
@@ -358,7 +358,7 @@ class HistoryService:
         exclude_domains: list[str] | None = None
     ) -> dict[str, Any]:
         """Search history within a specific domain.
-        
+
         Args:
             domain: Domain to search within
             query: Optional search term within domain
@@ -366,7 +366,7 @@ class HistoryService:
             browser: Browser to search
             format_type: 'markdown' or 'json'
             exclude_domains: Domains to exclude
-            
+
         Returns:
             Dictionary with results and formatted message
         """
@@ -375,14 +375,14 @@ class HistoryService:
         limit_val = validate_limit(limit, 1, 100)
         format_clean = validate_format_type(format_type)
         exclude_clean = validate_exclude_domains(exclude_domains)
-        
+
         rows = cls._with_connection(
             browser_lower,
             lambda conn: db_search_by_domain(
                 conn, domain_clean, query, limit_val, exclude_clean
             )
         )
-        
+
         return {
             "results": rows,
             "count": len(rows),
@@ -394,17 +394,17 @@ class HistoryService:
     @classmethod
     def get_browser_stats(cls, browser: str = "chrome") -> dict[str, Any]:
         """Get browser statistics.
-        
+
         Args:
             browser: Browser to analyze
-            
+
         Returns:
             Dictionary with statistics and formatted message
         """
         browser_lower = validate_browser(browser)
-        
+
         stats = cls._with_connection(browser_lower, db_get_browser_stats)
-        
+
         return {
             "stats": stats,
             "message": format_browser_stats(stats)
@@ -418,24 +418,24 @@ class HistoryService:
         format_type: str = "markdown"
     ) -> dict[str, Any]:
         """Get most visited individual pages.
-        
+
         Args:
             limit: Maximum results (1-100)
             browser: Browser to search
             format_type: 'markdown' or 'json'
-            
+
         Returns:
             Dictionary with pages and formatted message
         """
         browser_lower = validate_browser(browser)
         limit_val = validate_limit(limit, 1, 100)
         format_clean = validate_format_type(format_type)
-        
+
         pages = cls._with_connection(
             browser_lower,
             lambda conn: db_get_most_visited_pages(conn, limit_val)
         )
-        
+
         return {
             "pages": pages,
             "count": len(pages),
@@ -451,25 +451,25 @@ class HistoryService:
         browser: str = "chrome"
     ) -> dict[str, Any]:
         """Export history to CSV or JSON.
-        
+
         Args:
             format_type: 'csv' or 'json'
             limit: Maximum entries (1-10000)
             query: Optional search filter
             browser: Browser to export
-            
+
         Returns:
             Dictionary with exported data and formatted content
         """
         browser_lower = validate_browser(browser)
         format_clean = validate_format_type(format_type, export=True)
         limit_val = validate_limit(limit, 1, 10000)
-        
+
         content = cls._with_connection(
             browser_lower,
             lambda conn: db_export_history(conn, format_clean, limit_val, query)
         )
-        
+
         return {
             "content": content,
             "format": format_clean,
@@ -490,7 +490,7 @@ class HistoryService:
         fuzzy_threshold: float = 0.6
     ) -> dict[str, Any]:
         """Advanced search with multiple options.
-        
+
         Args:
             query: Search term
             limit: Maximum results (1-100)
@@ -501,7 +501,7 @@ class HistoryService:
             use_regex: Use regex matching
             use_fuzzy: Use fuzzy matching
             fuzzy_threshold: Minimum similarity (0.0-1.0)
-            
+
         Returns:
             Dictionary with results and formatted message
         """
@@ -513,14 +513,14 @@ class HistoryService:
         exclude_clean = validate_exclude_domains(exclude_domains)
         threshold_val = validate_fuzzy_threshold(fuzzy_threshold)
         validate_search_options(use_regex, use_fuzzy)
-        
+
         options = {
             "sort_by": sort_clean,
             "use_regex": use_regex,
             "use_fuzzy": use_fuzzy,
             "fuzzy_threshold": threshold_val if use_fuzzy else None
         }
-        
+
         rows = cls._with_connection(
             browser_lower,
             lambda conn: db_search_history_advanced(
@@ -528,7 +528,7 @@ class HistoryService:
                 sort_clean, use_regex, use_fuzzy, threshold_val
             )
         )
-        
+
         return {
             "results": rows,
             "count": len(rows),
@@ -546,13 +546,13 @@ class HistoryService:
         dry_run: bool = True
     ) -> dict[str, Any]:
         """Sync history between browsers.
-        
+
         Args:
             source_browser: Source browser name
             target_browser: Target browser name
             merge_strategy: How to merge ('latest', 'combine', 'dedupe')
             dry_run: If True, preview only
-            
+
         Returns:
             Dictionary with sync info and formatted message
         """
@@ -560,17 +560,17 @@ class HistoryService:
         target = validate_browser(target_browser)
         validate_browsers_different(source, target)
         strategy = validate_merge_strategy(merge_strategy)
-        
+
         # Check paths exist
         source_path = get_browser_path(source)
         target_path = get_browser_path(target)
-        
+
         if not source_path:
             raise BrowserNotFoundError(source)
-        
+
         if not target_path:
             raise BrowserNotFoundError(target)
-        
+
         # Get source entries count
         import json
         entries_json = cls._with_connection(
@@ -579,7 +579,7 @@ class HistoryService:
         )
         entries_data = json.loads(entries_json)
         entries_count = len(entries_data.get("entries", []))
-        
+
         if dry_run:
             return {
                 "dry_run": True,
@@ -589,7 +589,7 @@ class HistoryService:
                 "merge_strategy": strategy,
                 "message": format_sync_preview(source, target, entries_count, strategy)
             }
-        
+
         # TODO: Implement actual sync logic
         return {
             "dry_run": False,

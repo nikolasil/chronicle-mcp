@@ -45,10 +45,10 @@ def error_response(message: str, status_code: int = 400) -> JSONResponse:
 
 def handle_service_error_http(error: Exception) -> JSONResponse:
     """Convert service exceptions to HTTP error responses.
-    
+
     Args:
         error: Exception from service layer
-        
+
     Returns:
         JSONResponse with appropriate status code
     """
@@ -102,10 +102,10 @@ async def ready_check(request: Request) -> JSONResponse:
 async def metrics_check(request: Request) -> JSONResponse:
     """Basic metrics endpoint."""
     global REQUEST_COUNT, REQUEST_LATENCY_TOTAL, START_TIME
-    
+
     uptime = time.time() - START_TIME
     avg_latency = REQUEST_LATENCY_TOTAL / REQUEST_COUNT if REQUEST_COUNT > 0 else 0
-    
+
     return JSONResponse({
         "uptime_seconds": uptime,
         "requests_total": REQUEST_COUNT,
@@ -118,15 +118,15 @@ async def metrics_check(request: Request) -> JSONResponse:
 async def prometheus_metrics(request: Request) -> Response:
     """Prometheus metrics endpoint."""
     global REQUEST_COUNT, REQUEST_LATENCY_TOTAL, START_TIME
-    
+
     uptime = time.time() - START_TIME
     avg_latency = REQUEST_LATENCY_TOTAL / REQUEST_COUNT if REQUEST_COUNT > 0 else 0
-    
+
     try:
         browsers_count = len(HistoryService.list_available_browsers()["browsers"])
     except Exception:
         browsers_count = 0
-    
+
     metrics = f"""# HELP chronicle_uptime_seconds Server uptime in seconds
 # TYPE chronicle_uptime_seconds gauge
 chronicle_uptime_seconds {uptime}
@@ -169,7 +169,7 @@ async def search_endpoint(request: Request) -> JSONResponse:
             browser=data.get("browser", default_browser),
             format_type=data.get("format", "markdown")
         )
-        
+
         if data.get("format") == "json":
             return JSONResponse({
                 "results": result["results"],
@@ -190,7 +190,7 @@ async def recent_endpoint(request: Request) -> JSONResponse:
             browser=data.get("browser", default_browser),
             format_type=data.get("format", "markdown")
         )
-        
+
         if data.get("format") == "json":
             return JSONResponse({
                 "results": result["results"],
@@ -249,7 +249,7 @@ async def search_date_endpoint(request: Request) -> JSONResponse:
             browser=data.get("browser", default_browser),
             format_type=data.get("format", "markdown")
         )
-        
+
         if data.get("format") == "json":
             return JSONResponse({
                 "results": result["results"],
@@ -270,7 +270,7 @@ async def delete_endpoint(request: Request) -> JSONResponse:
             browser=data.get("browser", default_browser),
             confirm=data.get("confirm", False)
         )
-        
+
         if result.get("preview"):
             return JSONResponse({
                 "preview": True,
@@ -300,7 +300,7 @@ async def domain_search_endpoint(request: Request) -> JSONResponse:
             format_type=data.get("format", "markdown"),
             exclude_domains=data.get("exclude_domains")
         )
-        
+
         if data.get("format") == "json":
             return JSONResponse({
                 "domain": result["domain"],
@@ -356,7 +356,7 @@ async def export_endpoint(request: Request) -> Response:
             query=data.get("query"),
             browser=data.get("browser", default_browser)
         )
-        
+
         content_type = "text/csv" if result["format"] == "csv" else "application/json"
         return Response(
             content=result["content"],
@@ -382,7 +382,7 @@ async def advanced_search_endpoint(request: Request) -> JSONResponse:
             use_fuzzy=data.get("use_fuzzy", False),
             fuzzy_threshold=data.get("fuzzy_threshold", 0.6)
         )
-        
+
         if data.get("format") == "json":
             return JSONResponse({
                 "query": result["query"],
@@ -408,7 +408,7 @@ async def sync_endpoint(request: Request) -> JSONResponse:
             merge_strategy=data.get("merge_strategy", "latest"),
             dry_run=data.get("dry_run", True)
         )
-        
+
         return JSONResponse({
             "dry_run": result.get("dry_run", True),
             "source": result["source"],
@@ -470,7 +470,7 @@ def run_http_server(
     default_browser_: str = "chrome",
 ) -> None:
     """Run the HTTP/SSE server.
-    
+
     Args:
         host: Host to bind to
         port: Port to listen on
@@ -478,9 +478,9 @@ def run_http_server(
     """
     global default_browser
     default_browser = default_browser_
-    
+
     import uvicorn
-    
+
     config = uvicorn.Config(app, host=host, port=port, log_level="info")
     server = uvicorn.Server(config)
     server.run()
@@ -488,15 +488,15 @@ def run_http_server(
 
 if __name__ == "__main__":
     import sys
-    
+
     host = "127.0.0.1"
     port = 8080
-    
+
     if len(sys.argv) > 1:
         try:
             port = int(sys.argv[1])
         except ValueError:
             pass
-    
+
     print(f"Starting ChronicleMCP HTTP server on {host}:{port}")
     run_http_server(host=host, port=port)

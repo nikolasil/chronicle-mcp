@@ -5,7 +5,7 @@ All business logic is delegated to the HistoryService in the core layer.
 """
 
 import logging
-from typing import Any
+from typing import Any, cast
 
 from fastmcp import FastMCP
 
@@ -38,10 +38,10 @@ def tool(func: Any) -> Any:
 
 def handle_service_error(error: Exception) -> str:
     """Convert service exceptions to MCP error strings.
-    
+
     Args:
         error: Exception from service layer
-        
+
     Returns:
         Formatted error message for MCP response
     """
@@ -65,13 +65,13 @@ def handle_service_error(error: Exception) -> str:
 @tool
 def list_available_browsers() -> str:
     """Returns a list of browsers with detected history databases on this system.
-    
+
     Returns:
         List of available browsers (chrome, edge, firefox)
     """
     try:
         result = HistoryService.list_available_browsers()
-        return result["message"]
+        return cast(str, result["message"])
     except Exception as e:
         return handle_service_error(e)
 
@@ -84,13 +84,13 @@ def search_history(
     format_type: str = "markdown",
 ) -> str:
     """Searches browser history for keywords in titles or URLs.
-    
+
     Args:
         query: Search term to look for in titles or URLs
         limit: Maximum number of results to return (1-100)
         browser: Browser to search (chrome, edge, firefox) - case insensitive
         format_type: Output format (markdown or json)
-    
+
     Returns:
         Formatted list of matching history entries or error message
     """
@@ -101,7 +101,7 @@ def search_history(
             browser=browser,
             format_type=format_type
         )
-        return result["message"]
+        return cast(str, result["message"])
     except Exception as e:
         return handle_service_error(e)
 
@@ -114,13 +114,13 @@ def get_recent_history(
     format_type: str = "markdown",
 ) -> str:
     """Gets recent browsing history from the last N hours.
-    
+
     Args:
         hours: Number of hours to look back (default: 24)
         limit: Maximum number of results (1-100, default: 20)
         browser: Browser to search (chrome, edge, firefox)
         format_type: Output format (markdown or json)
-    
+
     Returns:
         Formatted list of recent history entries or error message
     """
@@ -131,7 +131,7 @@ def get_recent_history(
             browser=browser,
             format_type=format_type
         )
-        return result["message"]
+        return cast(str, result["message"])
     except Exception as e:
         return handle_service_error(e)
 
@@ -139,17 +139,17 @@ def get_recent_history(
 @tool
 def count_visits(domain: str, browser: str = "chrome") -> str:
     """Counts total visits to a specific domain.
-    
+
     Args:
         domain: Domain to count (e.g., 'github.com', 'stackoverflow.com')
         browser: Browser to search (chrome, edge, firefox)
-    
+
     Returns:
         Number of visits to the domain or error message
     """
     try:
         result = HistoryService.count_visits(domain=domain, browser=browser)
-        return result["message"]
+        return cast(str, result["message"])
     except Exception as e:
         return handle_service_error(e)
 
@@ -161,12 +161,12 @@ def list_top_domains(
     format_type: str = "markdown",
 ) -> str:
     """Gets the most visited domains from browser history.
-    
+
     Args:
         limit: Maximum number of domains to return (1-50, default: 10)
         browser: Browser to search (chrome, edge, firefox)
         format_type: Output format (markdown or json)
-    
+
     Returns:
         Formatted list of top domains or error message
     """
@@ -176,7 +176,7 @@ def list_top_domains(
             browser=browser,
             format_type=format_type
         )
-        return result["message"]
+        return cast(str, result["message"])
     except Exception as e:
         return handle_service_error(e)
 
@@ -191,7 +191,7 @@ def search_history_by_date(
     format_type: str = "markdown",
 ) -> str:
     """Searches browser history within a date range.
-    
+
     Args:
         query: Search term to look for in titles or URLs
         start_date: Start date in ISO format (YYYY-MM-DD)
@@ -199,7 +199,7 @@ def search_history_by_date(
         limit: Maximum number of results (1-100)
         browser: Browser to search (chrome, edge, firefox)
         format_type: Output format (markdown or json)
-    
+
     Returns:
         Formatted list of matching history entries or error message
     """
@@ -212,7 +212,7 @@ def search_history_by_date(
             browser=browser,
             format_type=format_type
         )
-        return result["message"]
+        return cast(str, result["message"])
     except Exception as e:
         return handle_service_error(e)
 
@@ -225,13 +225,13 @@ def delete_history(
     confirm: bool = False,
 ) -> str:
     """Deletes history entries matching a query.
-    
+
     Args:
         query: Search term to match for deletion
         limit: Maximum number of entries to delete (1-500)
         browser: Browser to search (chrome, edge, firefox)
         confirm: Must be True to actually delete; False returns preview
-    
+
     Returns:
         Number of entries deleted or preview message
     """
@@ -242,7 +242,7 @@ def delete_history(
             browser=browser,
             confirm=confirm
         )
-        return result["message"]
+        return cast(str, result["message"])
     except Exception as e:
         return handle_service_error(e)
 
@@ -257,7 +257,7 @@ def search_by_domain(
     exclude_domains: list[str] | None = None,
 ) -> str:
     """Searches history within specific domain(s).
-    
+
     Args:
         domain: Domain to search within (e.g., 'github.com', 'docs.python.org')
         query: Optional search term within the domain
@@ -265,7 +265,7 @@ def search_by_domain(
         browser: Browser to search (chrome, edge, firefox)
         format_type: Output format (markdown or json)
         exclude_domains: Domains to exclude from results
-    
+
     Returns:
         Formatted list of matching history entries or error message
     """
@@ -278,7 +278,7 @@ def search_by_domain(
             format_type=format_type,
             exclude_domains=exclude_domains
         )
-        return result["message"]
+        return cast(str, result["message"])
     except Exception as e:
         return handle_service_error(e)
 
@@ -286,16 +286,16 @@ def search_by_domain(
 @tool
 def get_browser_stats(browser: str = "chrome") -> str:
     """Gets browsing statistics for the browser database.
-    
+
     Args:
         browser: Browser to get stats for (chrome, edge, firefox)
-    
+
     Returns:
         JSON string with browsing statistics
     """
     try:
         result = HistoryService.get_browser_stats(browser=browser)
-        return result["message"]
+        return cast(str, result["message"])
     except Exception as e:
         return handle_service_error(e)
 
@@ -307,12 +307,12 @@ def get_most_visited_pages(
     format_type: str = "markdown",
 ) -> str:
     """Gets the most visited individual pages.
-    
+
     Args:
         limit: Maximum number of pages to return (1-100)
         browser: Browser to search (chrome, edge, firefox)
         format_type: Output format (markdown or json)
-    
+
     Returns:
         Formatted list of most visited pages or error message
     """
@@ -322,7 +322,7 @@ def get_most_visited_pages(
             browser=browser,
             format_type=format_type
         )
-        return result["message"]
+        return cast(str, result["message"])
     except Exception as e:
         return handle_service_error(e)
 
@@ -335,13 +335,13 @@ def export_history(
     browser: str = "chrome",
 ) -> str:
     """Exports history to CSV or JSON format.
-    
+
     Args:
         format_type: Export format (csv or json)
         limit: Maximum entries to export (1-10000)
         query: Optional search filter
         browser: Browser to export from (chrome, edge, firefox)
-    
+
     Returns:
         CSV or JSON formatted history data
     """
@@ -352,7 +352,7 @@ def export_history(
             query=query,
             browser=browser
         )
-        return result["content"]
+        return cast(str, result["content"])
     except Exception as e:
         return handle_service_error(e)
 
@@ -370,7 +370,7 @@ def search_history_advanced(
     fuzzy_threshold: float = 0.6,
 ) -> str:
     """Advanced search with multiple options.
-    
+
     Args:
         query: Search term to look for in titles or URLs
         limit: Maximum number of results (1-100)
@@ -381,7 +381,7 @@ def search_history_advanced(
         use_regex: Use regex pattern matching
         use_fuzzy: Use fuzzy matching for typos
         fuzzy_threshold: Minimum similarity score for fuzzy matching (0.0-1.0)
-    
+
     Returns:
         Formatted list of matching history entries or error message
     """
@@ -397,7 +397,7 @@ def search_history_advanced(
             use_fuzzy=use_fuzzy,
             fuzzy_threshold=fuzzy_threshold
         )
-        return result["message"]
+        return cast(str, result["message"])
     except Exception as e:
         return handle_service_error(e)
 
@@ -410,13 +410,13 @@ def sync_history(
     dry_run: bool = True,
 ) -> str:
     """Syncs history between browsers.
-    
+
     Args:
         source_browser: Browser to copy history from
         target_browser: Browser to copy history to
         merge_strategy: How to handle duplicates (latest, combine, dedupe)
         dry_run: If True, show what would be done without making changes
-    
+
     Returns:
         Summary of sync operation
     """
@@ -427,7 +427,7 @@ def sync_history(
             merge_strategy=merge_strategy,
             dry_run=dry_run
         )
-        return result["message"]
+        return cast(str, result["message"])
     except Exception as e:
         return handle_service_error(e)
 

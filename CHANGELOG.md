@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - New `core/` module with centralized business logic (HistoryService)
   - New `protocols/` module with thin MCP and HTTP adapters
   - Better separation of concerns and maintainability
-  
+
 - **CLI Simplification**: Clearer command structure
   - `chronicle-mcp mcp` - Run MCP server (replaces `run`)
   - `chronicle-mcp http` - Run HTTP server (replaces `serve`)
@@ -273,7 +273,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Query Caching**: Improved performance with caching
 - **New Browsers**: Added Brave, Safari, Vivaldi, Opera support
 - **Advanced Search**: Regex and fuzzy matching support
-- **New MCP Tools**: 
+- **New MCP Tools**:
   - `delete_history` - Delete history entries
   - `search_by_domain` - Domain-specific search
   - `get_browser_stats` - Browser statistics
