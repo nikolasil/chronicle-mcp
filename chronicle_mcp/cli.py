@@ -55,12 +55,12 @@ def version_command(ctx: click.Context) -> None:
 def run_command(ctx: click.Context, transport: str, host: str, port: int) -> None:
     """Run the ChronicleMCP server."""
     if transport == "stdio":
-        from server import mcp
+        from chronicle_mcp.protocols.mcp import mcp
 
         click.echo("Starting ChronicleMCP in stdio mode...")
         mcp.run()
     else:
-        from chronicle_mcp.server_http import run_http_server
+        from chronicle_mcp.protocols.http import run_http_server
 
         click.echo(f"Starting ChronicleMCP in SSE mode on {host}:{port}...")
         run_http_server(host=host, port=port)
@@ -97,7 +97,7 @@ def serve_command(
     foreground: bool,
 ) -> None:
     """Start ChronicleMCP as a long-running HTTP/SSE server."""
-    from chronicle_mcp.server_http import run_http_server
+    from chronicle_mcp.protocols.http import run_http_server
 
     pid_file = Path(tempfile.gettempdir()) / f"chronicle-mcp-{port}.pid"
     log_file = Path(tempfile.gettempdir()) / f"chronicle-mcp-{port}.log"
