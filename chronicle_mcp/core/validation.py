@@ -4,7 +4,7 @@ This module provides validation functions for all service inputs.
 Validation functions raise ValidationError on failure.
 """
 
-from chronicle_mcp.core.exceptions import ValidationError, InvalidDateRangeError
+from chronicle_mcp.core.exceptions import InvalidDateRangeError, ValidationError
 
 VALID_BROWSERS = [
     "chrome", "edge", "firefox", "brave", "safari", "vivaldi", "opera"

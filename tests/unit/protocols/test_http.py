@@ -5,7 +5,7 @@ These tests verify the HTTP REST API endpoints.
 
 import pytest
 import pytest_asyncio
-from httpx import AsyncClient, ASGITransport
+from httpx import ASGITransport, AsyncClient
 
 from chronicle_mcp.protocols.http import app
 

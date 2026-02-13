@@ -11,8 +11,7 @@ Usage:
 
 import sys
 
-from chronicle_mcp.protocols.mcp import MCP_TOOLS, get_registered_tools, mcp
-
+from chronicle_mcp.protocols.mcp import get_registered_tools, mcp
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--help":

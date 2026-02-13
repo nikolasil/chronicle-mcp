@@ -6,8 +6,8 @@ They are marked with browser names to allow selective execution.
 
 import pytest
 
-from chronicle_mcp.core.services import HistoryService
 from chronicle_mcp.core.exceptions import BrowserNotFoundError
+from chronicle_mcp.core.services import HistoryService
 
 
 @pytest.mark.chrome
