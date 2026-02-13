@@ -72,23 +72,23 @@ class TestCLI:
     def test_cli_run_help(self):
         """Test that CLI run command help works."""
         with pytest.raises(SystemExit) as exc_info:
-            with patch.object(sys, "argv", ["chronicle-mcp", "run", "--help"]):
+            with patch.object(sys, "argv", ["chronicle-mcp", "mcp", "--help"]):
                 cli.cli()
         assert exc_info.value.code == 0
 
-    def test_cli_run_sse_help(self):
-        """Test that CLI run command with SSE transport help works."""
+    def test_cli_mcp_sse_help(self):
+        """Test that CLI mcp command with SSE help works."""
         with pytest.raises(SystemExit) as exc_info:
             with patch.object(
-                sys, "argv", ["chronicle-mcp", "run", "--transport", "sse", "--help"]
+                sys, "argv", ["chronicle-mcp", "mcp", "--sse", "--help"]
             ):
                 cli.cli()
         assert exc_info.value.code == 0
 
-    def test_cli_serve_help(self):
-        """Test that CLI serve command help works."""
+    def test_cli_http_help(self):
+        """Test that CLI http command help works."""
         with pytest.raises(SystemExit) as exc_info:
-            with patch.object(sys, "argv", ["chronicle-mcp", "serve", "--help"]):
+            with patch.object(sys, "argv", ["chronicle-mcp", "http", "--help"]):
                 cli.cli()
         assert exc_info.value.code == 0
 

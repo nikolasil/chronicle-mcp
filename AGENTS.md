@@ -24,11 +24,14 @@ pip install -e ".[dev]"
 ### Development Server
 
 ```bash
-# MCP Inspector for stdio mode
-python -m chronicle_mcp.server dev
+# MCP server (stdio mode - for AI assistants)
+chronicle-mcp mcp
 
-# HTTP server for testing
-chronicle-mcp serve --port 8080
+# MCP server (SSE mode)
+chronicle-mcp mcp --sse --port 8080
+
+# HTTP REST API server
+chronicle-mcp http --port 8080
 ```
 
 ### Running Tests
@@ -65,18 +68,18 @@ mypy chronicle_mcp/        # Type checking
 ### Available Commands
 
 ```bash
-# Run MCP server
-chronicle-mcp run                          # stdio mode
-chronicle-mcp run --transport sse        # SSE mode
+# Run MCP server (for AI assistants)
+chronicle-mcp mcp                          # stdio mode (default)
+chronicle-mcp mcp --sse                   # SSE mode
 
-# Start HTTP server
-chronicle-mcp serve --port 8080          # Foreground
-chronicle-mcp serve --port 8080 --daemon  # Background
+# Run HTTP REST API server
+chronicle-mcp http --port 8080            # Foreground
+chronicle-mcp http --port 8080 --daemon   # Background
 
-# Check status
+# Check HTTP server status
 chronicle-mcp status --port 8080
 
-# View logs
+# View HTTP server logs
 chronicle-mcp logs --port 8080 --lines 50
 
 # Check version
