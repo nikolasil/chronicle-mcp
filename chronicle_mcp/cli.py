@@ -16,40 +16,40 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 
-@click.group()
-@click.pass_context
+@click.group()  # type: ignore[untyped-decorator]
+@click.pass_context  # type: ignore[untyped-decorator]
 def cli(ctx: click.Context) -> None:
     """ChronicleMCP - MCP server for secure local browser history access."""
     pass
 
 
-@cli.command("version")
-@click.pass_context
+@cli.command("version")  # type: ignore[untyped-decorator]
+@click.pass_context  # type: ignore[untyped-decorator]
 def version_command(ctx: click.Context) -> None:
     """Show the version of ChronicleMCP."""
     version = get_version()
     click.echo(f"ChronicleMCP version: {version}")
 
 
-@cli.command("mcp")
-@click.option(
+@cli.command("mcp")  # type: ignore[untyped-decorator]
+@click.option(  # type: ignore[untyped-decorator]
     "--sse",
     is_flag=True,
     default=False,
     help="Use SSE (Server-Sent Events) transport instead of stdio",
 )
-@click.option(
+@click.option(  # type: ignore[untyped-decorator]
     "--host",
     default="127.0.0.1",
     help="Host to bind to (only for SSE mode)",
 )
-@click.option(
+@click.option(  # type: ignore[untyped-decorator]
     "--port",
     type=int,
     default=8080,
     help="Port to bind to (only for SSE mode)",
 )
-@click.pass_context
+@click.pass_context  # type: ignore[untyped-decorator]
 def mcp_command(ctx: click.Context, sse: bool, host: str, port: int) -> None:
     """Run the MCP server for AI assistants."""
     if sse:
@@ -64,29 +64,29 @@ def mcp_command(ctx: click.Context, sse: bool, host: str, port: int) -> None:
         mcp.run()
 
 
-@cli.command("http")
-@click.option(
+@cli.command("http")  # type: ignore[untyped-decorator]
+@click.option(  # type: ignore[untyped-decorator]
     "--host",
     default="127.0.0.1",
     help="Host to bind HTTP server to",
 )
-@click.option(
+@click.option(  # type: ignore[untyped-decorator]
     "--port",
     type=int,
     default=8080,
     help="Port to bind HTTP server to",
 )
-@click.option(
+@click.option(  # type: ignore[untyped-decorator]
     "--browser",
     default="chrome",
     help="Default browser to use",
 )
-@click.option(
+@click.option(  # type: ignore[untyped-decorator]
     "--foreground/--daemon",
     default=True,
     help="Run in foreground or as daemon",
 )
-@click.pass_context
+@click.pass_context  # type: ignore[untyped-decorator]
 def http_command(
     ctx: click.Context,
     host: str,
@@ -143,14 +143,14 @@ def http_command(
     run_http_server(host=host, port=port, default_browser_=browser)
 
 
-@cli.command("status")
-@click.option(
+@cli.command("status")  # type: ignore[untyped-decorator]
+@click.option(  # type: ignore[untyped-decorator]
     "--port",
     type=int,
     default=8080,
     help="Port to check",
 )
-@click.pass_context
+@click.pass_context  # type: ignore[untyped-decorator]
 def status_command(ctx: click.Context, port: int) -> None:
     """Check if the HTTP server is running."""
     pid_file = Path(tempfile.gettempdir()) / f"chronicle-mcp-{port}.pid"
@@ -167,20 +167,20 @@ def status_command(ctx: click.Context, port: int) -> None:
         click.echo(f"ChronicleMCP is NOT running (stale PID file, PID: {pid})")
 
 
-@cli.command("logs")
-@click.option(
+@cli.command("logs")  # type: ignore[untyped-decorator]
+@click.option(  # type: ignore[untyped-decorator]
     "--port",
     type=int,
     default=8080,
     help="Port to get logs from",
 )
-@click.option(
+@click.option(  # type: ignore[untyped-decorator]
     "--lines",
     type=int,
     default=50,
     help="Number of lines to show",
 )
-@click.pass_context
+@click.pass_context  # type: ignore[untyped-decorator]
 def logs_command(ctx: click.Context, port: int, lines: int) -> None:
     """Show logs from the HTTP server."""
     log_file = Path(tempfile.gettempdir()) / f"chronicle-mcp-{port}.log"
@@ -195,9 +195,9 @@ def logs_command(ctx: click.Context, port: int, lines: int) -> None:
     click.echo("\n".join(recent_lines))
 
 
-@cli.command("completion")
-@click.argument("shell", type=click.Choice(["bash", "zsh", "fish"]))
-@click.pass_context
+@cli.command("completion")  # type: ignore[untyped-decorator]
+@click.argument("shell", type=click.Choice(["bash", "zsh", "fish"]))  # type: ignore[untyped-decorator]
+@click.pass_context  # type: ignore[untyped-decorator]
 def completion_command(ctx: click.Context, shell: str) -> None:
     """Generate shell completion script."""
     if shell == "bash":
@@ -245,8 +245,8 @@ complete -c chronicle-mcp -l sse -d "Use SSE transport"
 """)
 
 
-@cli.command("list-browsers")
-@click.pass_context
+@cli.command("list-browsers")  # type: ignore[untyped-decorator]
+@click.pass_context  # type: ignore[untyped-decorator]
 def list_browsers_command(ctx: click.Context) -> None:
     """List available browsers on the system."""
     browsers = get_available_browsers()

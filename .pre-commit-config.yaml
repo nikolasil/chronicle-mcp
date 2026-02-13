@@ -23,7 +23,7 @@ repos:
     rev: v1.19.1
     hooks:
       - id: mypy
-        additional_dependencies: [types-requests]
+        additional_dependencies: [types-requests, types-cachetools]
         files: ^chronicle_mcp/
         args: [--ignore-missing-imports, --strict]
 
