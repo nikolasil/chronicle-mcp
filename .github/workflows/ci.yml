@@ -133,6 +133,13 @@ jobs:
             echo "No benchmark tests found"
           fi
 
+      - name: Display benchmark results
+        if: hashFiles('benchmark.json') != ''
+        run: |
+          echo "### Benchmark Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          cat benchmark.json | python -m json.tool >> $GITHUB_STEP_SUMMARY || echo "Results saved to benchmark.json"
+
       - name: Upload benchmark results
         uses: benchmark-action/github-action-benchmark@v1
         if: hashFiles('benchmark.json') != ''
@@ -142,7 +149,7 @@ jobs:
           output-file-path: benchmark.json
           save-data-file: true
           comment-on-alert: false
-          summary-always: false
+          summary-always: true
           auto-push: false
           gh-pages-branch: gh-pages
           github-token: ${{ secrets.GITHUB_TOKEN }}
