@@ -149,7 +149,7 @@ jobs:
         shell: bash
         run: |
           pip install --no-deps --no-build-isolation -e .
-          pyinstaller --onefile --collect-all fastmcp --collect-all rich --collect-all chronicle_mcp --name chronicle-mcp chronicle_mcp/__main__.py
+          pyinstaller --onefile --collect-all fastmcp --collect-all rich --collect-all chronicle_mcp --collect-all docket --collect-all fakeredis --collect-all lupa --name chronicle-mcp chronicle_mcp/__main__.py
           mv dist/chronicle-mcp* dist/${{ matrix.release_name }}
 
       - name: Test binary (Unix)
