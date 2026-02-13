@@ -24,7 +24,7 @@ repos:
     hooks:
       - id: mypy
         additional_dependencies: [types-requests]
-        files: ^(chronicle_mcp|server\.py)$
+        files: ^chronicle_mcp/
         args: [--ignore-missing-imports, --strict]
 
   - repo: https://github.com/codespell-project/codespell
