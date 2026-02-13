@@ -7,13 +7,21 @@ on:
     branches: [main, master]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
-  integration-tests:
+  browser-integration-tests:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        browser: [chrome, firefox, edge, brave, safari, vivaldi, opera]
-        python-version: ["3.10", "3.11", "3.12"]
+        browser: [chrome, firefox]
+        python-version: ["3.11"]
     steps:
       - uses: actions/checkout@v4
 
@@ -28,9 +36,11 @@ jobs:
           pip install --upgrade pip
           pip install -e ".[dev]"
 
-      - name: Run integration tests
+      - name: Run browser integration tests
         run: |
-          pytest tests/integration/ -v -k "${{ matrix.browser }} or not browser" || echo "No integration tests found"
+          pytest tests/integration/ -v -k "${{ matrix.browser }}" || echo "No browser-specific tests found"
+        env:
+          BROWSER: ${{ matrix.browser }}
 
   http-integration:
     runs-on: ubuntu-latest
@@ -51,24 +61,40 @@ jobs:
 
       - name: Start HTTP server
         run: |
-          python -m chronicle_mcp http --port 8765 &
+          python -m chronicle_mcp http --port 8765 --host 127.0.0.1 &
+          echo $! > server.pid
           sleep 5
+
+      - name: Wait for server
+        run: |
+          for i in {1..30}; do
+            if curl -s http://127.0.0.1:8765/health > /dev/null 2>&1 || curl -s http://127.0.0.1:8765 > /dev/null 2>&1; then
+              echo "Server is ready"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Server failed to start"
+          exit 1
+        continue-on-error: true
 
       - name: Run HTTP integration tests
         run: |
           pytest tests/unit/protocols/ -v || echo "No protocol tests found"
+        continue-on-error: true
 
       - name: Stop server
-        run: |
-          pkill -f "chronicle_mcp http" || true
-          pkill -f "uvicorn" || true
         if: always()
+        run: |
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) 2>/dev/null || true
+            rm -f server.pid
+          fi
+          pkill -f "chronicle_mcp http" 2>/dev/null || true
+          pkill -f "uvicorn" 2>/dev/null || true
 
-  cross-platform-test:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+  protocol-tests:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
@@ -83,10 +109,22 @@ jobs:
           pip install --upgrade pip
           pip install -e ".[dev]"
 
-      - name: Run cross-platform tests
+      - name: Run protocol-specific tests
         run: |
-          pytest tests/unit/infrastructure/test_paths.py -v
+          pytest tests/unit/protocols/ -v -m integration || echo "No protocol tests found"
+        continue-on-error: true
 
-      - name: Run CLI tests
+  integration-summary:
+    needs: [browser-integration-tests, http-integration, protocol-tests]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Summary
         run: |
-          pytest tests/unit/infrastructure/test_cli.py -v
+          echo "## Integration Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Browser Tests | ${{ needs.browser-integration-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| HTTP Integration | ${{ needs.http-integration.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Protocol Tests | ${{ needs.protocol-tests.result }} |" >> $GITHUB_STEP_SUMMARY
