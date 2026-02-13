@@ -9,6 +9,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+---
+
+## [1.3.3] - 2026-02-13
+
+### Fixed
+
+- Version bump and release automation
+- Documentation updates
+
+---
+
+## [1.3.2] - 2026-02-13
+
+### Fixed
+
+- Version handling improvements
+- CI/CD workflow refinements
+
+---
+
+## [1.3.1] - 2026-02-13
+
+### Fixed
+
+- Release process improvements
+- Version extraction fixes
+
+---
+
+## [1.3.0] - 2026-02-13
+
 ### Changed
 
 - **Major Architecture Refactoring**: Restructured codebase with layered architecture
@@ -431,11 +462,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Version | Release Date | Major Changes |
 |---------|-------------|---------------|
-| 1.2.19 | 2026-02-13 | Latest stable with CI/CD improvements |
+| 1.3.3 | 2026-02-13 | Latest stable with architecture refactoring |
+| 1.3.0 | 2026-02-13 | Major architecture refactoring with service layer |
+| 1.2.19 | 2026-02-13 | CI/CD improvements |
 | 1.2.0 | 2026-02-13 | Enhanced CI/CD and release automation |
 | 1.1.0 | 2026-02-12 | HTTP server and CLI interface added |
 | 1.0.0 | 2024-01-15 | Initial stable release |
-| 0.1.0 | 2024-01-10 | Prototype release |
 
 ---
 
