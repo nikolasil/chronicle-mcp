@@ -350,5 +350,5 @@ from chronicle_mcp.core import HistoryService
 - [CLI Reference](CLI.md)
 - [API Documentation](API.md)
 - [Installation Guide](INSTALL.md)
-- [Contributing Guide](CONTRIBUTING.md)
+- [Contributing Guide](../CONTRIBUTING.md)
 - [GitHub Repository](https://github.com/nikolasil/chronicle-mcp)
