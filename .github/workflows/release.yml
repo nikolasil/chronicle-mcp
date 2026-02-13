@@ -52,7 +52,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
           cache: 'pip'
 
       - name: Build package
@@ -100,14 +100,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyinstaller
           pip install --no-deps fastmcp docket
-          pip install authlib cyclopts exceptiongroup httpx jsonref jsonschema-path mcp openapi-pydantic packaging platformdirs py-key-value-aio pydantic pydocket pyperclip python-dotenv rich uvicorn websockets aioredis fakeredis
+          pip install authlib cyclopts exceptiongroup httpx jsonref jsonschema-path mcp openapi-pydantic packaging platformdirs py-key-value-aio pydantic pydocket pyperclip python-dotenv rich uvicorn websockets aioredis fakeredis lupa
           pip install cachetools
 
       - name: Build binary
         shell: bash
         run: |
           pip install --no-deps --no-build-isolation -e .
-          pyinstaller --onefile --collect-all fastmcp --collect-all rich --collect-all chronicle_mcp --name chronicle-mcp chronicle_mcp/cli.py
+          pyinstaller --onefile --collect-all fastmcp --collect-all rich --collect-all chronicle_mcp --collect-all docket --collect-all fakeredis --collect-all lupa --name chronicle-mcp chronicle_mcp/__main__.py
           # Rename the binary so they don't collide when downloaded together
           mv dist/chronicle-mcp* dist/${{ matrix.release_name }}
 

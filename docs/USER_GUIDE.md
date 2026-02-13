@@ -336,5 +336,5 @@ search_history("query", limit=10)
 ## Getting Help
 
 - [GitHub Issues](https://github.com/nikolasil/chronicle-mcp/issues)
-- [Contributing Guide](CONTRIBUTING.md)
+- [Contributing Guide](../CONTRIBUTING.md)
 - [API Documentation](API.md)

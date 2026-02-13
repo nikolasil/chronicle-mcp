@@ -36,7 +36,7 @@ class WebhookManager:
         self.webhooks: dict[str, Webhook] = {}
         self.event_queue: asyncio.Queue[WebhookEvent] = asyncio.Queue()
         self._running = False
-        self._worker_task: asyncio.Task | None = None
+        self._worker_task: asyncio.Task[None] | None = None
 
     def register_webhook(
         self,

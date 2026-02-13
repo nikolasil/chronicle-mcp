@@ -15,7 +15,6 @@ RUN apk add --no-cache \
 
 COPY pyproject.toml .
 COPY chronicle_mcp ./chronicle_mcp
-COPY server.py .
 
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -e . \
@@ -30,4 +29,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
 
 ENTRYPOINT ["python", "-m", "chronicle_mcp"]
 
-CMD ["serve", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["http", "--host", "0.0.0.0", "--port", "8080"]

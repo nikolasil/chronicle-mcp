@@ -8,7 +8,6 @@ on:
     paths:
       - 'Dockerfile'
       - 'pyproject.toml'
-      - 'server.py'
       - 'chronicle_mcp/**'
   workflow_dispatch:
 

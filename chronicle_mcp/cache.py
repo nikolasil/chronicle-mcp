@@ -62,10 +62,10 @@ class QueryCache:
 default_cache = QueryCache(ttl_seconds=300, max_size=1000)
 
 
-def cached_query(ttl_seconds: int = 300) -> Callable:
+def cached_query(ttl_seconds: int = 300) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     """Decorator to cache query results."""
 
-    def decorator(func: Callable) -> Callable:
+    def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         cache = QueryCache(ttl_seconds=ttl_seconds)
 
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:

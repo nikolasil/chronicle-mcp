@@ -110,7 +110,7 @@ docker run -p 8080:8080 ghcr.io/nikolasil/chronicle-mcp:latest
 docker run -d -p 8080:8080 --name chronicle-mcp ghcr.io/nikolasil/chronicle-mcp:latest
 
 # With custom port
-docker run -d -p 9000:8080 --name chronicle-mcp ghcr.io/nikolasil/chronicle-mcp:latest serve --port 8080
+docker run -d -p 9000:8080 --name chronicle-mcp ghcr.io/nikolasil/chronicle-mcp:latest http --port 8080
 ```
 
 ### Docker Compose
@@ -321,7 +321,7 @@ Available browsers:
 ### Run a Quick Test
 
 ```bash
-chronicle-mcp serve --port 8080 &
+chronicle-mcp http --port 8080 &
 sleep 2
 curl http://localhost:8080/health
 pkill -f chronicle-mcp
@@ -381,7 +381,7 @@ sudo usermod -aG docker $USER
 **Solution:**
 ```bash
 # Use different port
-chronicle-mcp serve --port 9000
+chronicle-mcp http --port 9000
 ```
 
 ---

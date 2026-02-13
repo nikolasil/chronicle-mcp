@@ -6,7 +6,7 @@ Thank you for your interest in contributing to ChronicleMCP! This document outli
 
 ### Prerequisites
 
-- Python 3.8 or higher
+- Python 3.10 or higher
 - Git
 - A GitHub account
 
@@ -177,10 +177,10 @@ import pytest
 
 def test_search_history_with_results(sample_chrome_db):
     """Test that search returns matching results."""
-    from chronicle_mcp.server import search_history
+    from chronicle_mcp.core import HistoryService
 
-    result = search_history("python", limit=5)
-    assert "python" in result.lower()
+    result = HistoryService.search_history("python", limit=5, browser="chrome", format_type="markdown")
+    assert "python" in result["message"].lower()
 ```
 
 ## Reporting Bugs

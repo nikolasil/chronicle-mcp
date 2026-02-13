@@ -7,7 +7,317 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.1.0] - 2025-02-12
+## [Unreleased]
+
+### Changed
+
+- **Major Architecture Refactoring**: Restructured codebase with layered architecture
+  - New `core/` module with centralized business logic (HistoryService)
+  - New `protocols/` module with thin MCP and HTTP adapters
+  - Better separation of concerns and maintainability
+
+- **CLI Simplification**: Clearer command structure
+  - `chronicle-mcp mcp` - Run MCP server (replaces `run`)
+  - `chronicle-mcp http` - Run HTTP server (replaces `serve`)
+  - `chronicle-mcp mcp --sse` - SSE mode (replaces `--transport sse`)
+
+### Added
+
+- **Service Layer**: Centralized business logic in `HistoryService`
+- **Validation Module**: Comprehensive input validation
+- **Formatters Module**: Consistent response formatting
+- **Exception Hierarchy**: Structured error handling
+- **Comprehensive Tests**: 95+ new unit tests for core layer
+
+---
+
+## [1.2.19] - 2026-02-13
+
+### Fixed
+
+- Library dependency issues
+- Version handling improvements
+
+---
+
+## [1.2.18] - 2026-02-13
+
+### Fixed
+
+- Library dependency fixes
+- Build artifact improvements
+
+---
+
+## [1.2.17] - 2026-02-13
+
+### Fixed
+
+- Naming of build artifacts
+- Library dependency updates
+
+---
+
+## [1.2.16] - 2026-02-13
+
+### Changed
+
+- Improved build and release process
+- Better cross-platform support
+
+---
+
+## [1.2.15] - 2026-02-13
+
+### Fixed
+
+- Rich library compatibility
+- Build system improvements
+
+---
+
+## [1.2.14] - 2026-02-13
+
+### Fixed
+
+- Build configuration for binaries
+- Include all files in distributions
+
+---
+
+## [1.2.13] - 2026-02-13
+
+### Fixed
+
+- Platform-specific build issues
+- Windows-specific error handling
+
+---
+
+## [1.2.12] - 2026-02-13
+
+### Fixed
+
+- Version update workflow
+- Release automation improvements
+
+---
+
+## [1.2.11] - 2026-02-13
+
+### Fixed
+
+- Platform build configuration
+- Version handling in CI/CD
+
+---
+
+## [1.2.10] - 2026-02-13
+
+### Fixed
+
+- Release workflow improvements
+- Version bumping automation
+
+---
+
+## [1.2.9] - 2026-02-13
+
+### Fixed
+
+- CLI command improvements
+- Build process refinements
+
+---
+
+## [1.2.8] - 2026-02-13
+
+### Fixed
+
+- Version field corrections
+- CI/CD workflow updates
+
+---
+
+## [1.2.7] - 2026-02-13
+
+### Changed
+
+- Merged release and Homebrew workflows
+- Improved version management
+
+---
+
+## [1.2.6] - 2026-02-13
+
+### Fixed
+
+- CI workflow permissions
+- Release process improvements
+
+---
+
+## [1.2.5] - 2026-02-13
+
+### Fixed
+
+- Detached HEAD handling in CI
+- Release workflow stability
+
+---
+
+## [1.2.4] - 2026-02-13
+
+### Fixed
+
+- pip-audit CVE ignore configuration
+- CI workflow improvements
+
+---
+
+## [1.2.3] - 2026-02-13
+
+### Fixed
+
+- Trailing whitespace cleanup
+- CI workflow refinements
+
+---
+
+## [1.2.2] - 2026-02-13
+
+### Changed
+
+- Version update workflow improvements
+- Better release automation
+
+---
+
+## [1.2.1] - 2026-02-13
+
+### Fixed
+
+- Detached HEAD issue in workflows
+- CI/CD stability improvements
+
+---
+
+## [1.2.0] - 2026-02-13
+
+### Added
+
+- **Enhanced CI/CD**: Comprehensive GitHub Actions workflows
+  - Automated testing across platforms
+  - Security scanning with Trivy and Bandit
+  - Automatic Homebrew formula updates
+  - Container image builds
+
+### Fixed
+
+- Library dependency management
+- Version extraction from git tags
+- Build and release automation
+
+---
+
+## [1.1.9] - 2026-02-12
+
+### Fixed
+
+- Version handling improvements
+- Build process fixes
+
+---
+
+## [1.1.8] - 2026-02-12
+
+### Fixed
+
+- CI workflow improvements
+- Release process fixes
+
+---
+
+## [1.1.7] - 2026-02-12
+
+### Fixed
+
+- Import ordering issues
+- Test fixture improvements
+
+---
+
+## [1.1.6] - 2026-02-12
+
+### Fixed
+
+- GitHub Actions workflow errors
+- Cross-platform test compatibility
+
+---
+
+## [1.1.5] - 2026-02-12
+
+### Fixed
+
+- Comprehensive documentation updates
+- CI workflow improvements
+
+---
+
+## [1.1.4] - 2026-02-12
+
+### Added
+
+- **Webhook Notifications**: Support for webhook callbacks
+- **Query Caching**: Improved performance with caching
+- **New Browsers**: Added Brave, Safari, Vivaldi, Opera support
+- **Advanced Search**: Regex and fuzzy matching support
+- **New MCP Tools**:
+  - `delete_history` - Delete history entries
+  - `search_by_domain` - Domain-specific search
+  - `get_browser_stats` - Browser statistics
+  - `get_most_visited_pages` - Most visited pages
+  - `export_history` - Export to CSV/JSON
+  - `search_history_advanced` - Advanced search options
+  - `sync_history` - Sync between browsers
+
+### Fixed
+
+- URL sanitization improvements
+- Test coverage expansion (104+ tests)
+- Docker multi-platform support
+
+---
+
+## [1.1.3] - 2026-02-12
+
+### Fixed
+
+- Version extraction from tags
+- CI workflow improvements
+
+---
+
+## [1.1.2] - 2026-02-12
+
+### Fixed
+
+- Release asset handling
+- Binary distribution fixes
+
+---
+
+## [1.1.1] - 2026-02-12
+
+### Fixed
+
+- TestPyPI integration
+- Release workflow improvements
+
+---
+
+## [1.1.0] - 2026-02-12
 
 ### Added
 
@@ -64,6 +374,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.0.1] - 2024-01-20
+
+### Fixed
+
+- Import issues in test modules
+- Mock fixture improvements for browser path detection
+- Ruff linting and formatting compliance
+- Type hint corrections
+
+---
+
 ## [1.0.0] - 2024-01-15
 
 ### Added
@@ -94,19 +415,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [Unreleased] - Future
+## [0.1.0] - 2024-01-10
 
-### Planned
+### Added
 
-- **Additional Browsers**: Safari (macOS) support
-- **Authentication**: API key support for HTTP server
-- **Rate Limiting**: Request throttling
-- **Metrics**: Prometheus-compatible metrics endpoint
-- **Browser Extensions**: Chrome/Firefox extensions
-- **Additional Installation Methods**:
-  - MSI installer (Windows)
-  - DEB/RPM packages (Linux)
-  - Homebrew (Linux/macOS)
+- **Prototype Release**: Initial proof of concept
+- Basic MCP server with shadow copy logic
+- SQLite database access
+- Browser path detection
+- README with usage instructions
+
+---
+
+## Version History Summary
+
+| Version | Release Date | Major Changes |
+|---------|-------------|---------------|
+| 1.2.19 | 2026-02-13 | Latest stable with CI/CD improvements |
+| 1.2.0 | 2026-02-13 | Enhanced CI/CD and release automation |
+| 1.1.0 | 2026-02-12 | HTTP server and CLI interface added |
+| 1.0.0 | 2024-01-15 | Initial stable release |
+| 0.1.0 | 2024-01-10 | Prototype release |
 
 ---
 
@@ -117,13 +446,6 @@ ChronicleMCP follows [Semantic Versioning](https://semver.org/):
 - **MAJOR**: Breaking changes
 - **MINOR**: New features (backward compatible)
 - **PATCH**: Bug fixes (backward compatible)
-
-### Version History
-
-| Version | Release Date | Status |
-|---------|-------------|--------|
-| 1.1.0 | 2025-02-12 | Current |
-| 1.0.0 | 2024-01-15 | Stable |
 
 ---
 
@@ -140,6 +462,24 @@ pip install --upgrade chronicle-mcp
 New features are opt-in:
 - HTTP server: `chronicle-mcp serve`
 - CLI tools: `chronicle-mcp --help`
+
+### From 1.1.x to 1.2.x
+
+No breaking changes. Upgrade:
+
+```bash
+pip install --upgrade chronicle-mcp
+```
+
+### From 1.2.x to Unreleased (Next Version)
+
+**Breaking Changes**:
+- CLI commands changed:
+  - `chronicle-mcp run` → `chronicle-mcp mcp`
+  - `chronicle-mcp serve` → `chronicle-mcp http`
+  - `--transport sse` → `--sse`
+
+Update your scripts and automation accordingly.
 
 ---
 

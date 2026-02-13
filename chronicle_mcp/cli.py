@@ -16,88 +16,86 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 
-@click.group(invoke_without_command=True)
-@click.pass_context
+@click.group()  # type: ignore[untyped-decorator]
+@click.pass_context  # type: ignore[untyped-decorator]
 def cli(ctx: click.Context) -> None:
     """ChronicleMCP - MCP server for secure local browser history access."""
-    if ctx.invoked_subcommand is None:
-        from chronicle_mcp.cli import run_command
-        ctx.invoke(run_command)
+    pass
 
 
-@cli.command("version")
-@click.pass_context
+@cli.command("version")  # type: ignore[untyped-decorator]
+@click.pass_context  # type: ignore[untyped-decorator]
 def version_command(ctx: click.Context) -> None:
     """Show the version of ChronicleMCP."""
     version = get_version()
     click.echo(f"ChronicleMCP version: {version}")
 
 
-@cli.command("run")
-@click.option(
-    "--transport",
-    type=click.Choice(["stdio", "sse"]),
-    default="stdio",
-    help="Transport mode for MCP communication",
+@cli.command("mcp")  # type: ignore[untyped-decorator]
+@click.option(  # type: ignore[untyped-decorator]
+    "--sse",
+    is_flag=True,
+    default=False,
+    help="Use SSE (Server-Sent Events) transport instead of stdio",
 )
-@click.option(
+@click.option(  # type: ignore[untyped-decorator]
     "--host",
     default="127.0.0.1",
-    help="Host to bind HTTP server to (only for SSE transport)",
+    help="Host to bind to (only for SSE mode)",
 )
-@click.option(
+@click.option(  # type: ignore[untyped-decorator]
     "--port",
     type=int,
     default=8080,
-    help="Port to bind HTTP server to (only for SSE transport)",
+    help="Port to bind to (only for SSE mode)",
 )
-@click.pass_context
-def run_command(ctx: click.Context, transport: str, host: str, port: int) -> None:
-    """Run the ChronicleMCP server."""
-    if transport == "stdio":
-        from server import mcp
+@click.pass_context  # type: ignore[untyped-decorator]
+def mcp_command(ctx: click.Context, sse: bool, host: str, port: int) -> None:
+    """Run the MCP server for AI assistants."""
+    if sse:
+        from chronicle_mcp.protocols.http import run_http_server
 
-        click.echo("Starting ChronicleMCP in stdio mode...")
-        mcp.run()
-    else:
-        from chronicle_mcp.server_http import run_http_server
-
-        click.echo(f"Starting ChronicleMCP in SSE mode on {host}:{port}...")
+        click.echo(f"Starting ChronicleMCP MCP server (SSE) on {host}:{port}...")
         run_http_server(host=host, port=port)
+    else:
+        from chronicle_mcp.protocols.mcp import mcp
+
+        click.echo("Starting ChronicleMCP MCP server (stdio)...")
+        mcp.run()
 
 
-@cli.command("serve")
-@click.option(
+@cli.command("http")  # type: ignore[untyped-decorator]
+@click.option(  # type: ignore[untyped-decorator]
     "--host",
     default="127.0.0.1",
     help="Host to bind HTTP server to",
 )
-@click.option(
+@click.option(  # type: ignore[untyped-decorator]
     "--port",
     type=int,
     default=8080,
     help="Port to bind HTTP server to",
 )
-@click.option(
+@click.option(  # type: ignore[untyped-decorator]
     "--browser",
     default="chrome",
     help="Default browser to use",
 )
-@click.option(
+@click.option(  # type: ignore[untyped-decorator]
     "--foreground/--daemon",
     default=True,
     help="Run in foreground or as daemon",
 )
-@click.pass_context
-def serve_command(
+@click.pass_context  # type: ignore[untyped-decorator]
+def http_command(
     ctx: click.Context,
     host: str,
     port: int,
     browser: str,
     foreground: bool,
 ) -> None:
-    """Start ChronicleMCP as a long-running HTTP/SSE server."""
-    from chronicle_mcp.server_http import run_http_server
+    """Run the HTTP REST API server."""
+    from chronicle_mcp.protocols.http import run_http_server
 
     pid_file = Path(tempfile.gettempdir()) / f"chronicle-mcp-{port}.pid"
     log_file = Path(tempfile.gettempdir()) / f"chronicle-mcp-{port}.log"
@@ -118,7 +116,7 @@ def serve_command(
             sys.executable,
             "-m",
             "chronicle_mcp",
-            "serve",
+            "http",
             "--host",
             host,
             "--port",
@@ -141,20 +139,20 @@ def serve_command(
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
-    click.echo(f"Starting ChronicleMCP server on {host}:{port}")
+    click.echo(f"Starting ChronicleMCP HTTP server on {host}:{port}")
     run_http_server(host=host, port=port, default_browser_=browser)
 
 
-@cli.command("status")
-@click.option(
+@cli.command("status")  # type: ignore[untyped-decorator]
+@click.option(  # type: ignore[untyped-decorator]
     "--port",
     type=int,
     default=8080,
     help="Port to check",
 )
-@click.pass_context
+@click.pass_context  # type: ignore[untyped-decorator]
 def status_command(ctx: click.Context, port: int) -> None:
-    """Check if the ChronicleMCP server is running."""
+    """Check if the HTTP server is running."""
     pid_file = Path(tempfile.gettempdir()) / f"chronicle-mcp-{port}.pid"
 
     if not pid_file.exists():
@@ -169,22 +167,22 @@ def status_command(ctx: click.Context, port: int) -> None:
         click.echo(f"ChronicleMCP is NOT running (stale PID file, PID: {pid})")
 
 
-@cli.command("logs")
-@click.option(
+@cli.command("logs")  # type: ignore[untyped-decorator]
+@click.option(  # type: ignore[untyped-decorator]
     "--port",
     type=int,
     default=8080,
     help="Port to get logs from",
 )
-@click.option(
+@click.option(  # type: ignore[untyped-decorator]
     "--lines",
     type=int,
     default=50,
     help="Number of lines to show",
 )
-@click.pass_context
+@click.pass_context  # type: ignore[untyped-decorator]
 def logs_command(ctx: click.Context, port: int, lines: int) -> None:
-    """Show logs from the ChronicleMCP server."""
+    """Show logs from the HTTP server."""
     log_file = Path(tempfile.gettempdir()) / f"chronicle-mcp-{port}.log"
 
     if not log_file.exists():
@@ -197,9 +195,9 @@ def logs_command(ctx: click.Context, port: int, lines: int) -> None:
     click.echo("\n".join(recent_lines))
 
 
-@cli.command("completion")
-@click.argument("shell", type=click.Choice(["bash", "zsh", "fish"]))
-@click.pass_context
+@cli.command("completion")  # type: ignore[untyped-decorator]
+@click.argument("shell", type=click.Choice(["bash", "zsh", "fish"]))  # type: ignore[untyped-decorator]
+@click.pass_context  # type: ignore[untyped-decorator]
 def completion_command(ctx: click.Context, shell: str) -> None:
     """Generate shell completion script."""
     if shell == "bash":
@@ -210,9 +208,9 @@ _chronicle_mcp_completions() {
     local cur prev words cword
     _init_completion || return
     if [[ "$cur" == "--"* ]]; then
-        COMPREPLY=( $(compgen -W "--help --version --transport --host --port --browser" -- "$cur") )
+        COMPREPLY=( $(compgen -W "--help --version --host --port --browser --sse --foreground --daemon" -- "$cur") )
     else
-        COMPREPLY=( $(compgen -W "run serve status logs completion version" -- "$cur") )
+        COMPREPLY=( $(compgen -W "mcp http status logs completion version list-browsers" -- "$cur") )
     fi
 }
 complete -F _chronicle_mcp_completions chronicle-mcp
@@ -226,10 +224,10 @@ _chronicle_mcp() {
     options=(
         "--help:Show help"
         "--version:Show version"
-        "--transport:Transport mode (stdio or sse)"
         "--host:Host to bind"
         "--port:Port to bind"
         "--browser:Default browser"
+        "--sse:Use SSE transport"
     )
     _describe -t command 'chronicle-mcp command' options
 }
@@ -237,18 +235,18 @@ compdef _chronicle_mcp chronicle-mcp
 """)
     elif shell == "fish":
         click.echo("""# chronicle-mcp fish completion
-complete -c chronicle-mcp -f -a "(chronicle-mcp run serve status logs completion version)"
+complete -c chronicle-mcp -f -a "(chronicle-mcp mcp http status logs completion version list-browsers)"
 complete -c chronicle-mcp -l help -d "Show help"
 complete -c chronicle-mcp -l version -d "Show version"
-complete -c chronicle-mcp -l transport -d "Transport mode" -a "stdio sse"
 complete -c chronicle-mcp -l host -d "Host to bind"
 complete -c chronicle-mcp -l port -d "Port to bind"
 complete -c chronicle-mcp -l browser -d "Default browser"
+complete -c chronicle-mcp -l sse -d "Use SSE transport"
 """)
 
 
-@cli.command("list-browsers")
-@click.pass_context
+@cli.command("list-browsers")  # type: ignore[untyped-decorator]
+@click.pass_context  # type: ignore[untyped-decorator]
 def list_browsers_command(ctx: click.Context) -> None:
     """List available browsers on the system."""
     browsers = get_available_browsers()
