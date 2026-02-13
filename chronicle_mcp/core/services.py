@@ -138,18 +138,11 @@ class HistoryService:
             Dictionary with list of browsers and formatted message
         """
         browsers = get_available_browsers()
-        return {
-            "browsers": browsers,
-            "message": format_available_browsers(browsers)
-        }
+        return {"browsers": browsers, "message": format_available_browsers(browsers)}
 
     @classmethod
     def search_history(
-        cls,
-        query: str,
-        limit: int = 5,
-        browser: str = "chrome",
-        format_type: str = "markdown"
+        cls, query: str, limit: int = 5, browser: str = "chrome", format_type: str = "markdown"
     ) -> dict[str, Any]:
         """Search browser history.
 
@@ -170,15 +163,14 @@ class HistoryService:
         logger.info(f"Searching history for '{query_clean}' in {browser_lower} (limit={limit_val})")
 
         rows = cls._with_connection(
-            browser_lower,
-            lambda conn: query_history(conn, query_clean, limit_val)
+            browser_lower, lambda conn: query_history(conn, query_clean, limit_val)
         )
 
         return {
             "results": rows,
             "count": len(rows),
             "query": query_clean,
-            "message": format_search_results(rows, query_clean, format_clean)
+            "message": format_search_results(rows, query_clean, format_clean),
         }
 
     @classmethod
@@ -187,7 +179,7 @@ class HistoryService:
         hours: int = 24,
         limit: int = 20,
         browser: str = "chrome",
-        format_type: str = "markdown"
+        format_type: str = "markdown",
     ) -> dict[str, Any]:
         """Get recent browsing history.
 
@@ -206,15 +198,14 @@ class HistoryService:
         format_clean = validate_format_type(format_type)
 
         rows = cls._with_connection(
-            browser_lower,
-            lambda conn: query_recent_history(conn, hours_val, limit_val)
+            browser_lower, lambda conn: query_recent_history(conn, hours_val, limit_val)
         )
 
         return {
             "results": rows,
             "count": len(rows),
             "hours": hours_val,
-            "message": format_recent_results(rows, hours_val, format_clean)
+            "message": format_recent_results(rows, hours_val, format_clean),
         }
 
     @classmethod
@@ -232,23 +223,19 @@ class HistoryService:
         domain_clean = validate_domain(domain)
 
         count = cls._with_connection(
-            browser_lower,
-            lambda conn: count_domain_visits(conn, domain_clean)
+            browser_lower, lambda conn: count_domain_visits(conn, domain_clean)
         )
 
         return {
             "domain": domain_clean,
             "browser": browser_lower,
             "count": count,
-            "message": format_domain_visits(domain_clean, browser_lower, count)
+            "message": format_domain_visits(domain_clean, browser_lower, count),
         }
 
     @classmethod
     def list_top_domains(
-        cls,
-        limit: int = 10,
-        browser: str = "chrome",
-        format_type: str = "markdown"
+        cls, limit: int = 10, browser: str = "chrome", format_type: str = "markdown"
     ) -> dict[str, Any]:
         """Get most visited domains.
 
@@ -265,14 +252,13 @@ class HistoryService:
         format_clean = validate_format_type(format_type)
 
         domains = cls._with_connection(
-            browser_lower,
-            lambda conn: db_get_top_domains(conn, limit_val)
+            browser_lower, lambda conn: db_get_top_domains(conn, limit_val)
         )
 
         return {
             "domains": domains,
             "count": len(domains),
-            "message": format_top_domains(domains, format_clean)
+            "message": format_top_domains(domains, format_clean),
         }
 
     @classmethod
@@ -283,7 +269,7 @@ class HistoryService:
         end_date: str,
         limit: int = 10,
         browser: str = "chrome",
-        format_type: str = "markdown"
+        format_type: str = "markdown",
     ) -> dict[str, Any]:
         """Search history within a date range.
 
@@ -306,7 +292,7 @@ class HistoryService:
 
         rows = cls._with_connection(
             browser_lower,
-            lambda conn: db_search_by_date(conn, query_clean, start_clean, end_clean, limit_val)
+            lambda conn: db_search_by_date(conn, query_clean, start_clean, end_clean, limit_val),
         )
 
         return {
@@ -315,16 +301,12 @@ class HistoryService:
             "query": query_clean,
             "start_date": start_clean,
             "end_date": end_clean,
-            "message": format_search_results(rows, query_clean, format_clean)
+            "message": format_search_results(rows, query_clean, format_clean),
         }
 
     @classmethod
     def delete_history(
-        cls,
-        query: str,
-        limit: int = 100,
-        browser: str = "chrome",
-        confirm: bool = False
+        cls, query: str, limit: int = 100, browser: str = "chrome", confirm: bool = False
     ) -> dict[str, Any]:
         """Delete history entries matching a query.
 
@@ -344,8 +326,7 @@ class HistoryService:
         if not confirm:
             # Preview mode - just count matches
             rows = cls._with_connection(
-                browser_lower,
-                lambda conn: query_history(conn, query_clean, limit_val)
+                browser_lower, lambda conn: query_history(conn, query_clean, limit_val)
             )
             count = len(rows)
 
@@ -353,20 +334,19 @@ class HistoryService:
                 "preview": True,
                 "query": query_clean,
                 "count": count,
-                "message": format_delete_preview(query_clean, count)
+                "message": format_delete_preview(query_clean, count),
             }
 
         # Actually delete
         deleted = cls._with_connection(
-            browser_lower,
-            lambda conn: db_delete_history(conn, query_clean, limit_val)
+            browser_lower, lambda conn: db_delete_history(conn, query_clean, limit_val)
         )
 
         return {
             "deleted": deleted,
             "query": query_clean,
             "browser": browser_lower,
-            "message": format_delete_result(query_clean, browser_lower, deleted)
+            "message": format_delete_result(query_clean, browser_lower, deleted),
         }
 
     @classmethod
@@ -377,7 +357,7 @@ class HistoryService:
         limit: int = 20,
         browser: str = "chrome",
         format_type: str = "markdown",
-        exclude_domains: list[str] | None = None
+        exclude_domains: list[str] | None = None,
     ) -> dict[str, Any]:
         """Search history within a specific domain.
 
@@ -400,9 +380,7 @@ class HistoryService:
 
         rows = cls._with_connection(
             browser_lower,
-            lambda conn: db_search_by_domain(
-                conn, domain_clean, query, limit_val, exclude_clean
-            )
+            lambda conn: db_search_by_domain(conn, domain_clean, query, limit_val, exclude_clean),
         )
 
         return {
@@ -410,7 +388,7 @@ class HistoryService:
             "count": len(rows),
             "domain": domain_clean,
             "query": query,
-            "message": format_domain_search_results(rows, domain_clean, query, format_clean)
+            "message": format_domain_search_results(rows, domain_clean, query, format_clean),
         }
 
     @classmethod
@@ -427,17 +405,11 @@ class HistoryService:
 
         stats = cls._with_connection(browser_lower, db_get_browser_stats)
 
-        return {
-            "stats": stats,
-            "message": format_browser_stats(stats)
-        }
+        return {"stats": stats, "message": format_browser_stats(stats)}
 
     @classmethod
     def get_most_visited_pages(
-        cls,
-        limit: int = 20,
-        browser: str = "chrome",
-        format_type: str = "markdown"
+        cls, limit: int = 20, browser: str = "chrome", format_type: str = "markdown"
     ) -> dict[str, Any]:
         """Get most visited individual pages.
 
@@ -454,14 +426,13 @@ class HistoryService:
         format_clean = validate_format_type(format_type)
 
         pages = cls._with_connection(
-            browser_lower,
-            lambda conn: db_get_most_visited_pages(conn, limit_val)
+            browser_lower, lambda conn: db_get_most_visited_pages(conn, limit_val)
         )
 
         return {
             "pages": pages,
             "count": len(pages),
-            "message": format_most_visited_pages(pages, format_clean)
+            "message": format_most_visited_pages(pages, format_clean),
         }
 
     @classmethod
@@ -470,7 +441,7 @@ class HistoryService:
         format_type: str = "csv",
         limit: int = 1000,
         query: str | None = None,
-        browser: str = "chrome"
+        browser: str = "chrome",
     ) -> dict[str, Any]:
         """Export history to CSV or JSON.
 
@@ -488,15 +459,10 @@ class HistoryService:
         limit_val = validate_limit(limit, 1, 10000)
 
         content = cls._with_connection(
-            browser_lower,
-            lambda conn: db_export_history(conn, format_clean, limit_val, query)
+            browser_lower, lambda conn: db_export_history(conn, format_clean, limit_val, query)
         )
 
-        return {
-            "content": content,
-            "format": format_clean,
-            "browser": browser_lower
-        }
+        return {"content": content, "format": format_clean, "browser": browser_lower}
 
     @classmethod
     def search_history_advanced(
@@ -509,7 +475,7 @@ class HistoryService:
         sort_by: str = "date",
         use_regex: bool = False,
         use_fuzzy: bool = False,
-        fuzzy_threshold: float = 0.6
+        fuzzy_threshold: float = 0.6,
     ) -> dict[str, Any]:
         """Advanced search with multiple options.
 
@@ -540,15 +506,21 @@ class HistoryService:
             "sort_by": sort_clean,
             "use_regex": use_regex,
             "use_fuzzy": use_fuzzy,
-            "fuzzy_threshold": threshold_val if use_fuzzy else None
+            "fuzzy_threshold": threshold_val if use_fuzzy else None,
         }
 
         rows = cls._with_connection(
             browser_lower,
             lambda conn: db_search_history_advanced(
-                conn, query_clean, limit_val, exclude_clean,
-                sort_clean, use_regex, use_fuzzy, threshold_val
-            )
+                conn,
+                query_clean,
+                limit_val,
+                exclude_clean,
+                sort_clean,
+                use_regex,
+                use_fuzzy,
+                threshold_val,
+            ),
         )
 
         return {
@@ -556,7 +528,7 @@ class HistoryService:
             "count": len(rows),
             "query": query_clean,
             "options": options,
-            "message": format_advanced_search_results(rows, query_clean, format_clean, options)
+            "message": format_advanced_search_results(rows, query_clean, format_clean, options),
         }
 
     @classmethod
@@ -565,7 +537,7 @@ class HistoryService:
         source_browser: str,
         target_browser: str,
         merge_strategy: str = "latest",
-        dry_run: bool = True
+        dry_run: bool = True,
     ) -> dict[str, Any]:
         """Sync history between browsers.
 
@@ -595,9 +567,9 @@ class HistoryService:
 
         # Get source entries count
         import json
+
         entries_json = cls._with_connection(
-            source,
-            lambda conn: db_export_history(conn, "json", 10000)
+            source, lambda conn: db_export_history(conn, "json", 10000)
         )
         entries_data = json.loads(entries_json)
         entries_count = len(entries_data.get("entries", []))
@@ -609,7 +581,7 @@ class HistoryService:
                 "target": target,
                 "entries_count": entries_count,
                 "merge_strategy": strategy,
-                "message": format_sync_preview(source, target, entries_count, strategy)
+                "message": format_sync_preview(source, target, entries_count, strategy),
             }
 
         # TODO: Implement actual sync logic
@@ -619,5 +591,5 @@ class HistoryService:
             "target": target,
             "entries_count": entries_count,
             "merge_strategy": strategy,
-            "message": format_sync_result(source, target, entries_count, strategy)
+            "message": format_sync_result(source, target, entries_count, strategy),
         }

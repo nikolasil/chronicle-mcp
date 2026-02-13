@@ -6,9 +6,7 @@ Validation functions raise ValidationError on failure.
 
 from chronicle_mcp.core.exceptions import InvalidDateRangeError, ValidationError
 
-VALID_BROWSERS = [
-    "chrome", "edge", "firefox", "brave", "safari", "vivaldi", "opera"
-]
+VALID_BROWSERS = ["chrome", "edge", "firefox", "brave", "safari", "vivaldi", "opera"]
 
 VALID_FORMATS = ["markdown", "json"]
 VALID_EXPORT_FORMATS = ["csv", "json"]
@@ -35,7 +33,7 @@ def validate_browser(browser: str) -> str:
     if browser_lower not in VALID_BROWSERS:
         raise ValidationError(
             f"Invalid browser '{browser}'. Valid options: {', '.join(VALID_BROWSERS)}",
-            field="browser"
+            field="browser",
         )
 
     return browser_lower
@@ -60,7 +58,9 @@ def validate_query(query: str | None, field_name: str = "query") -> str:
     return query.strip()
 
 
-def validate_limit(limit: int, min_val: int = 1, max_val: int = 100, field_name: str = "limit") -> int:
+def validate_limit(
+    limit: int, min_val: int = 1, max_val: int = 100, field_name: str = "limit"
+) -> int:
     """Validate limit parameter.
 
     Args:
@@ -76,15 +76,11 @@ def validate_limit(limit: int, min_val: int = 1, max_val: int = 100, field_name:
         ValidationError: If limit is out of range
     """
     if not isinstance(limit, int):
-        raise ValidationError(
-            f"{field_name.capitalize()} must be an integer",
-            field=field_name
-        )
+        raise ValidationError(f"{field_name.capitalize()} must be an integer", field=field_name)
 
     if limit < min_val or limit > max_val:
         raise ValidationError(
-            f"{field_name.capitalize()} must be between {min_val} and {max_val}",
-            field=field_name
+            f"{field_name.capitalize()} must be between {min_val} and {max_val}", field=field_name
         )
 
     return limit
@@ -133,8 +129,7 @@ def validate_format_type(format_type: str, export: bool = False) -> str:
     if format_lower not in valid_formats:
         valid_list = ", ".join(valid_formats)
         raise ValidationError(
-            f"Invalid format_type '{format_type}'. Valid options: {valid_list}",
-            field="format_type"
+            f"Invalid format_type '{format_type}'. Valid options: {valid_list}", field="format_type"
         )
 
     return format_lower
@@ -181,19 +176,16 @@ def validate_date_range(start_date: str, end_date: str) -> tuple[str, str]:
     # Basic ISO format validation
     try:
         from datetime import datetime
-        start_dt = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
-        end_dt = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+
+        start_dt = datetime.fromisoformat(start_date.replace("Z", "+00:00"))
+        end_dt = datetime.fromisoformat(end_date.replace("Z", "+00:00"))
 
         if start_dt > end_dt:
             raise InvalidDateRangeError(
-                start_date, end_date,
-                "Start date must be before or equal to end date"
+                start_date, end_date, "Start date must be before or equal to end date"
             )
     except ValueError as e:
-        raise InvalidDateRangeError(
-            start_date, end_date,
-            f"Invalid date format: {e}"
-        )
+        raise InvalidDateRangeError(start_date, end_date, f"Invalid date format: {e}")
 
     return start_date.strip(), end_date.strip()
 
@@ -217,7 +209,7 @@ def validate_sort_by(sort_by: str) -> str:
     if sort_lower not in VALID_SORT_ORDERS:
         raise ValidationError(
             f"Invalid sort_by '{sort_by}'. Valid options: {', '.join(VALID_SORT_ORDERS)}",
-            field="sort_by"
+            field="sort_by",
         )
 
     return sort_lower
@@ -240,8 +232,7 @@ def validate_fuzzy_threshold(threshold: float) -> float:
 
     if not 0.0 <= threshold <= 1.0:
         raise ValidationError(
-            "Fuzzy threshold must be between 0.0 and 1.0",
-            field="fuzzy_threshold"
+            "Fuzzy threshold must be between 0.0 and 1.0", field="fuzzy_threshold"
         )
 
     return float(threshold)
@@ -259,8 +250,7 @@ def validate_search_options(use_regex: bool, use_fuzzy: bool) -> None:
     """
     if use_regex and use_fuzzy:
         raise ValidationError(
-            "Cannot use both regex and fuzzy matching simultaneously",
-            field="search_options"
+            "Cannot use both regex and fuzzy matching simultaneously", field="search_options"
         )
 
 
@@ -283,7 +273,7 @@ def validate_merge_strategy(strategy: str) -> str:
     if strategy_lower not in VALID_MERGE_STRATEGIES:
         raise ValidationError(
             f"Invalid merge_strategy '{strategy}'. Valid options: {', '.join(VALID_MERGE_STRATEGIES)}",
-            field="merge_strategy"
+            field="merge_strategy",
         )
 
     return strategy_lower
@@ -300,10 +290,7 @@ def validate_browsers_different(source: str, target: str) -> None:
         ValidationError: If browsers are the same
     """
     if source.lower() == target.lower():
-        raise ValidationError(
-            "Source and target browsers must be different",
-            field="browsers"
-        )
+        raise ValidationError("Source and target browsers must be different", field="browsers")
 
 
 def validate_exclude_domains(exclude_domains: list[str] | None) -> list[str]:

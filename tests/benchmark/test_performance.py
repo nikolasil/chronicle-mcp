@@ -51,13 +51,13 @@ def test_db():
     for title, url, ts, vc in sample_urls:
         conn.execute(
             "INSERT INTO urls (title, url, last_visit_time, visit_count) VALUES (?, ?, ?, ?)",
-            (title, url, ts, vc)
+            (title, url, ts, vc),
         )
 
     for i in range(100):
         conn.execute(
             "INSERT INTO urls (title, url, last_visit_time, visit_count) VALUES (?, ?, ?, ?)",
-            (f"Site {i}", f"https://example{i}.com/page", 19500001000000000 + i * 1000000, 1)
+            (f"Site {i}", f"https://example{i}.com/page", 19500001000000000 + i * 1000000, 1),
         )
 
     conn.commit()

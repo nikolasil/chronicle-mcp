@@ -86,10 +86,7 @@ class TestSearchEndpoints:
 
     async def test_search_endpoint(self, http_client):
         """Test search endpoint."""
-        response = await http_client.post(
-            "/api/search",
-            json={"query": "test", "limit": 5}
-        )
+        response = await http_client.post("/api/search", json={"query": "test", "limit": 5})
         assert response.status_code == 200
         data = response.json()
         assert "results" in data
@@ -97,8 +94,7 @@ class TestSearchEndpoints:
     async def test_search_with_format_json(self, http_client):
         """Test search with JSON format."""
         response = await http_client.post(
-            "/api/search",
-            json={"query": "test", "limit": 5, "format": "json"}
+            "/api/search", json={"query": "test", "limit": 5, "format": "json"}
         )
         assert response.status_code == 200
         data = response.json()
@@ -107,20 +103,14 @@ class TestSearchEndpoints:
 
     async def test_recent_endpoint(self, http_client):
         """Test recent history endpoint."""
-        response = await http_client.post(
-            "/api/recent",
-            json={"hours": 24, "limit": 10}
-        )
+        response = await http_client.post("/api/recent", json={"hours": 24, "limit": 10})
         assert response.status_code == 200
         data = response.json()
         assert "results" in data
 
     async def test_count_endpoint(self, http_client):
         """Test count visits endpoint."""
-        response = await http_client.post(
-            "/api/count",
-            json={"domain": "github.com"}
-        )
+        response = await http_client.post("/api/count", json={"domain": "github.com"})
         assert response.status_code == 200
         data = response.json()
         assert "domain" in data
@@ -129,10 +119,7 @@ class TestSearchEndpoints:
 
     async def test_top_domains_endpoint(self, http_client):
         """Test top domains endpoint."""
-        response = await http_client.post(
-            "/api/top-domains",
-            json={"limit": 10}
-        )
+        response = await http_client.post("/api/top-domains", json={"limit": 10})
         assert response.status_code == 200
         data = response.json()
         assert "domains" in data
@@ -145,16 +132,14 @@ class TestAdvancedSearchEndpoints:
     async def test_domain_search(self, http_client):
         """Test domain search endpoint."""
         response = await http_client.post(
-            "/api/domain-search",
-            json={"domain": "github.com", "limit": 10}
+            "/api/domain-search", json={"domain": "github.com", "limit": 10}
         )
         assert response.status_code == 200
 
     async def test_advanced_search(self, http_client):
         """Test advanced search endpoint."""
         response = await http_client.post(
-            "/api/advanced-search",
-            json={"query": "test", "limit": 10}
+            "/api/advanced-search", json={"query": "test", "limit": 10}
         )
         assert response.status_code == 200
         data = response.json()
@@ -169,8 +154,8 @@ class TestAdvancedSearchEndpoints:
                 "limit": 10,
                 "use_regex": True,
                 "use_fuzzy": False,
-                "sort_by": "date"
-            }
+                "sort_by": "date",
+            },
         )
         assert response.status_code == 200
 
@@ -181,19 +166,13 @@ class TestExportEndpoints:
 
     async def test_export_csv(self, http_client):
         """Test CSV export."""
-        response = await http_client.post(
-            "/api/export",
-            json={"format_type": "csv", "limit": 10}
-        )
+        response = await http_client.post("/api/export", json={"format_type": "csv", "limit": 10})
         assert response.status_code == 200
         assert "text/csv" in response.headers["content-type"]
 
     async def test_export_json(self, http_client):
         """Test JSON export."""
-        response = await http_client.post(
-            "/api/export",
-            json={"format_type": "json", "limit": 10}
-        )
+        response = await http_client.post("/api/export", json={"format_type": "json", "limit": 10})
         assert response.status_code == 200
         assert "application/json" in response.headers["content-type"]
 
@@ -205,8 +184,7 @@ class TestDeleteEndpoints:
     async def test_delete_preview(self, http_client):
         """Test delete preview mode."""
         response = await http_client.post(
-            "/api/delete",
-            json={"query": "test", "limit": 10, "confirm": False}
+            "/api/delete", json={"query": "test", "limit": 10, "confirm": False}
         )
         assert response.status_code == 200
         data = response.json()
@@ -221,11 +199,7 @@ class TestSyncEndpoints:
         """Test sync in dry-run mode."""
         response = await http_client.post(
             "/api/sync",
-            json={
-                "source_browser": "chrome",
-                "target_browser": "firefox",
-                "dry_run": True
-            }
+            json={"source_browser": "chrome", "target_browser": "firefox", "dry_run": True},
         )
         assert response.status_code in (200, 404)
         data = response.json()
@@ -246,7 +220,6 @@ class TestErrorHandling:
     async def test_search_invalid_browser(self, http_client):
         """Test error handling for invalid browser."""
         response = await http_client.post(
-            "/api/search",
-            json={"query": "test", "browser": "invalid_browser_xyz"}
+            "/api/search", json={"query": "test", "browser": "invalid_browser_xyz"}
         )
         assert response.status_code in (200, 400, 404)

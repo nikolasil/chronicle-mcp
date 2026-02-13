@@ -71,12 +71,14 @@ def handle_service_error_http(error: Exception) -> JSONResponse:
 
 async def health_check(request: Request) -> JSONResponse:
     """Health check endpoint."""
-    return JSONResponse({
-        "status": "healthy",
-        "service": "chronicle-mcp",
-        "version": get_version(),
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-    })
+    return JSONResponse(
+        {
+            "status": "healthy",
+            "service": "chronicle-mcp",
+            "version": get_version(),
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
+    )
 
 
 async def ready_check(request: Request) -> JSONResponse:
@@ -84,19 +86,24 @@ async def ready_check(request: Request) -> JSONResponse:
     try:
         result = HistoryService.list_available_browsers()
         browsers = result["browsers"]
-        return JSONResponse({
-            "status": "ready" if browsers else "degraded",
-            "service": "chronicle-mcp",
-            "browsers": browsers,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        })
+        return JSONResponse(
+            {
+                "status": "ready" if browsers else "degraded",
+                "service": "chronicle-mcp",
+                "browsers": browsers,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+        )
     except Exception as e:
-        return JSONResponse({
-            "status": "error",
-            "service": "chronicle-mcp",
-            "error": str(e),
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-        }, status_code=500)
+        return JSONResponse(
+            {
+                "status": "error",
+                "service": "chronicle-mcp",
+                "error": str(e),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+            status_code=500,
+        )
 
 
 async def metrics_check(request: Request) -> JSONResponse:
@@ -106,13 +113,15 @@ async def metrics_check(request: Request) -> JSONResponse:
     uptime = time.time() - START_TIME
     avg_latency = REQUEST_LATENCY_TOTAL / REQUEST_COUNT if REQUEST_COUNT > 0 else 0
 
-    return JSONResponse({
-        "uptime_seconds": uptime,
-        "requests_total": REQUEST_COUNT,
-        "requests_per_second": REQUEST_COUNT / uptime if uptime > 0 else 0,
-        "average_latency_seconds": avg_latency,
-        "browsers_available": len(HistoryService.list_available_browsers()["browsers"]),
-    })
+    return JSONResponse(
+        {
+            "uptime_seconds": uptime,
+            "requests_total": REQUEST_COUNT,
+            "requests_per_second": REQUEST_COUNT / uptime if uptime > 0 else 0,
+            "average_latency_seconds": avg_latency,
+            "browsers_available": len(HistoryService.list_available_browsers()["browsers"]),
+        }
+    )
 
 
 async def prometheus_metrics(request: Request) -> Response:
@@ -167,14 +176,11 @@ async def search_endpoint(request: Request) -> JSONResponse:
             query=data.get("query", ""),
             limit=data.get("limit", 5),
             browser=data.get("browser", default_browser),
-            format_type=data.get("format", "markdown")
+            format_type=data.get("format", "markdown"),
         )
 
         if data.get("format") == "json":
-            return JSONResponse({
-                "results": result["results"],
-                "count": result["count"]
-            })
+            return JSONResponse({"results": result["results"], "count": result["count"]})
         return JSONResponse({"results": result["message"]})
     except Exception as e:
         return handle_service_error_http(e)
@@ -188,14 +194,11 @@ async def recent_endpoint(request: Request) -> JSONResponse:
             hours=data.get("hours", 24),
             limit=data.get("limit", 20),
             browser=data.get("browser", default_browser),
-            format_type=data.get("format", "markdown")
+            format_type=data.get("format", "markdown"),
         )
 
         if data.get("format") == "json":
-            return JSONResponse({
-                "results": result["results"],
-                "count": result["count"]
-            })
+            return JSONResponse({"results": result["results"], "count": result["count"]})
         return JSONResponse({"results": result["message"]})
     except Exception as e:
         return handle_service_error_http(e)
@@ -206,14 +209,11 @@ async def count_endpoint(request: Request) -> JSONResponse:
     try:
         data = await request.json()
         result = HistoryService.count_visits(
-            domain=data.get("domain", ""),
-            browser=data.get("browser", default_browser)
+            domain=data.get("domain", ""), browser=data.get("browser", default_browser)
         )
-        return JSONResponse({
-            "domain": result["domain"],
-            "browser": result["browser"],
-            "count": result["count"]
-        })
+        return JSONResponse(
+            {"domain": result["domain"], "browser": result["browser"], "count": result["count"]}
+        )
     except Exception as e:
         return handle_service_error_http(e)
 
@@ -225,14 +225,9 @@ async def top_domains_endpoint(request: Request) -> JSONResponse:
         result = HistoryService.list_top_domains(
             limit=data.get("limit", 10),
             browser=data.get("browser", default_browser),
-            format_type="json"  # Always return structured data
+            format_type="json",  # Always return structured data
         )
-        return JSONResponse({
-            "domains": [
-                {"domain": d, "visits": v}
-                for d, v in result["domains"]
-            ]
-        })
+        return JSONResponse({"domains": [{"domain": d, "visits": v} for d, v in result["domains"]]})
     except Exception as e:
         return handle_service_error_http(e)
 
@@ -247,14 +242,11 @@ async def search_date_endpoint(request: Request) -> JSONResponse:
             end_date=data.get("end_date", ""),
             limit=data.get("limit", 10),
             browser=data.get("browser", default_browser),
-            format_type=data.get("format", "markdown")
+            format_type=data.get("format", "markdown"),
         )
 
         if data.get("format") == "json":
-            return JSONResponse({
-                "results": result["results"],
-                "count": result["count"]
-            })
+            return JSONResponse({"results": result["results"], "count": result["count"]})
         return JSONResponse({"results": result["message"]})
     except Exception as e:
         return handle_service_error_http(e)
@@ -268,22 +260,26 @@ async def delete_endpoint(request: Request) -> JSONResponse:
             query=data.get("query", ""),
             limit=data.get("limit", 100),
             browser=data.get("browser", default_browser),
-            confirm=data.get("confirm", False)
+            confirm=data.get("confirm", False),
         )
 
         if result.get("preview"):
-            return JSONResponse({
-                "preview": True,
+            return JSONResponse(
+                {
+                    "preview": True,
+                    "query": result["query"],
+                    "count": result["count"],
+                    "message": result["message"],
+                }
+            )
+        return JSONResponse(
+            {
+                "deleted": result["deleted"],
                 "query": result["query"],
-                "count": result["count"],
-                "message": result["message"]
-            })
-        return JSONResponse({
-            "deleted": result["deleted"],
-            "query": result["query"],
-            "browser": result["browser"],
-            "message": result["message"]
-        })
+                "browser": result["browser"],
+                "message": result["message"],
+            }
+        )
     except Exception as e:
         return handle_service_error_http(e)
 
@@ -298,18 +294,20 @@ async def domain_search_endpoint(request: Request) -> JSONResponse:
             limit=data.get("limit", 20),
             browser=data.get("browser", default_browser),
             format_type=data.get("format", "markdown"),
-            exclude_domains=data.get("exclude_domains")
+            exclude_domains=data.get("exclude_domains"),
         )
 
         if data.get("format") == "json":
-            return JSONResponse({
-                "domain": result["domain"],
-                "results": [
-                    {"title": title, "url": url, "timestamp": ts}
-                    for title, url, ts in result["results"]
-                ],
-                "count": result["count"]
-            })
+            return JSONResponse(
+                {
+                    "domain": result["domain"],
+                    "results": [
+                        {"title": title, "url": url, "timestamp": ts}
+                        for title, url, ts in result["results"]
+                    ],
+                    "count": result["count"],
+                }
+            )
         return JSONResponse({"results": result["message"]})
     except Exception as e:
         return handle_service_error_http(e)
@@ -319,9 +317,7 @@ async def browser_stats_endpoint(request: Request) -> JSONResponse:
     """Browser stats endpoint."""
     try:
         data = await request.json() if await request.body() else {}
-        result = HistoryService.get_browser_stats(
-            browser=data.get("browser", default_browser)
-        )
+        result = HistoryService.get_browser_stats(browser=data.get("browser", default_browser))
         return JSONResponse(result["stats"])
     except Exception as e:
         return handle_service_error_http(e)
@@ -334,14 +330,16 @@ async def most_visited_endpoint(request: Request) -> JSONResponse:
         result = HistoryService.get_most_visited_pages(
             limit=data.get("limit", 20),
             browser=data.get("browser", default_browser),
-            format_type="json"  # Always return structured data
+            format_type="json",  # Always return structured data
         )
-        return JSONResponse({
-            "pages": [
-                {"title": title, "url": url, "visits": visits}
-                for title, url, visits in result["pages"]
-            ]
-        })
+        return JSONResponse(
+            {
+                "pages": [
+                    {"title": title, "url": url, "visits": visits}
+                    for title, url, visits in result["pages"]
+                ]
+            }
+        )
     except Exception as e:
         return handle_service_error_http(e)
 
@@ -354,14 +352,11 @@ async def export_endpoint(request: Request) -> Response:
             format_type=data.get("format_type", "csv"),
             limit=data.get("limit", 1000),
             query=data.get("query"),
-            browser=data.get("browser", default_browser)
+            browser=data.get("browser", default_browser),
         )
 
         content_type = "text/csv" if result["format"] == "csv" else "application/json"
-        return Response(
-            content=result["content"],
-            media_type=content_type
-        )
+        return Response(content=result["content"], media_type=content_type)
     except Exception as e:
         error = handle_service_error_http(e)
         return error
@@ -380,19 +375,21 @@ async def advanced_search_endpoint(request: Request) -> JSONResponse:
             sort_by=data.get("sort_by", "date"),
             use_regex=data.get("use_regex", False),
             use_fuzzy=data.get("use_fuzzy", False),
-            fuzzy_threshold=data.get("fuzzy_threshold", 0.6)
+            fuzzy_threshold=data.get("fuzzy_threshold", 0.6),
         )
 
         if data.get("format") == "json":
-            return JSONResponse({
-                "query": result["query"],
-                "results": [
-                    {"title": title, "url": url, "timestamp": ts}
-                    for title, url, ts in result["results"]
-                ],
-                "count": result["count"],
-                "options": result["options"]
-            })
+            return JSONResponse(
+                {
+                    "query": result["query"],
+                    "results": [
+                        {"title": title, "url": url, "timestamp": ts}
+                        for title, url, ts in result["results"]
+                    ],
+                    "count": result["count"],
+                    "options": result["options"],
+                }
+            )
         return JSONResponse({"results": result["message"]})
     except Exception as e:
         return handle_service_error_http(e)
@@ -406,17 +403,19 @@ async def sync_endpoint(request: Request) -> JSONResponse:
             source_browser=data.get("source_browser", ""),
             target_browser=data.get("target_browser", ""),
             merge_strategy=data.get("merge_strategy", "latest"),
-            dry_run=data.get("dry_run", True)
+            dry_run=data.get("dry_run", True),
         )
 
-        return JSONResponse({
-            "dry_run": result.get("dry_run", True),
-            "source": result["source"],
-            "target": result["target"],
-            "entries_count": result["entries_count"],
-            "merge_strategy": result["merge_strategy"],
-            "message": result["message"]
-        })
+        return JSONResponse(
+            {
+                "dry_run": result.get("dry_run", True),
+                "source": result["source"],
+                "target": result["target"],
+                "entries_count": result["entries_count"],
+                "merge_strategy": result["merge_strategy"],
+                "message": result["message"],
+            }
+        )
     except Exception as e:
         return handle_service_error_http(e)
 

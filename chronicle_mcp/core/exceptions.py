@@ -28,10 +28,7 @@ class BrowserNotFoundError(ServiceError):
 
     def __init__(self, browser: str):
         self.browser = browser
-        super().__init__(
-            message=f"Could not find {browser} history",
-            code="BROWSER_NOT_FOUND"
-        )
+        super().__init__(message=f"Could not find {browser} history", code="BROWSER_NOT_FOUND")
 
 
 class BrowserPathNotFoundError(ServiceError):
@@ -41,8 +38,7 @@ class BrowserPathNotFoundError(ServiceError):
         self.browser = browser
         self.path = path
         super().__init__(
-            message=f"Could not find {browser} history at {path}",
-            code="PATH_NOT_FOUND"
+            message=f"Could not find {browser} history at {path}", code="PATH_NOT_FOUND"
         )
 
 
@@ -52,8 +48,7 @@ class DatabaseLockedError(ServiceError):
     def __init__(self, browser: str):
         self.browser = browser
         super().__init__(
-            message=f"Unable to access {browser} history database (locked)",
-            code="DATABASE_LOCKED"
+            message=f"Unable to access {browser} history database (locked)", code="DATABASE_LOCKED"
         )
 
 
@@ -65,7 +60,7 @@ class PermissionDeniedError(ServiceError):
         self.path = path
         super().__init__(
             message=f"Permission denied accessing {browser} history at {path}",
-            code="PERMISSION_DENIED"
+            code="PERMISSION_DENIED",
         )
 
 
@@ -84,7 +79,7 @@ class UnsupportedFormatError(ServiceError):
         self.supported = supported
         super().__init__(
             message=f"Unsupported format '{format_type}'. Valid: {', '.join(supported)}",
-            code="UNSUPPORTED_FORMAT"
+            code="UNSUPPORTED_FORMAT",
         )
 
 
@@ -94,7 +89,4 @@ class InvalidDateRangeError(ServiceError):
     def __init__(self, start_date: str, end_date: str, reason: str):
         self.start_date = start_date
         self.end_date = end_date
-        super().__init__(
-            message=f"Invalid date range: {reason}",
-            code="INVALID_DATE_RANGE"
-        )
+        super().__init__(message=f"Invalid date range: {reason}", code="INVALID_DATE_RANGE")

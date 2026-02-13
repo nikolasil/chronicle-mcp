@@ -79,9 +79,7 @@ class TestCLI:
     def test_cli_mcp_sse_help(self):
         """Test that CLI mcp command with SSE help works."""
         with pytest.raises(SystemExit) as exc_info:
-            with patch.object(
-                sys, "argv", ["chronicle-mcp", "mcp", "--sse", "--help"]
-            ):
+            with patch.object(sys, "argv", ["chronicle-mcp", "mcp", "--sse", "--help"]):
                 cli.cli()
         assert exc_info.value.code == 0
 

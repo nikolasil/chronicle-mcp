@@ -96,10 +96,7 @@ def search_history(
     """
     try:
         result = HistoryService.search_history(
-            query=query,
-            limit=limit,
-            browser=browser,
-            format_type=format_type
+            query=query, limit=limit, browser=browser, format_type=format_type
         )
         return cast(str, result["message"])
     except Exception as e:
@@ -126,10 +123,7 @@ def get_recent_history(
     """
     try:
         result = HistoryService.get_recent_history(
-            hours=hours,
-            limit=limit,
-            browser=browser,
-            format_type=format_type
+            hours=hours, limit=limit, browser=browser, format_type=format_type
         )
         return cast(str, result["message"])
     except Exception as e:
@@ -172,9 +166,7 @@ def list_top_domains(
     """
     try:
         result = HistoryService.list_top_domains(
-            limit=limit,
-            browser=browser,
-            format_type=format_type
+            limit=limit, browser=browser, format_type=format_type
         )
         return cast(str, result["message"])
     except Exception as e:
@@ -210,7 +202,7 @@ def search_history_by_date(
             end_date=end_date,
             limit=limit,
             browser=browser,
-            format_type=format_type
+            format_type=format_type,
         )
         return cast(str, result["message"])
     except Exception as e:
@@ -237,10 +229,7 @@ def delete_history(
     """
     try:
         result = HistoryService.delete_history(
-            query=query,
-            limit=limit,
-            browser=browser,
-            confirm=confirm
+            query=query, limit=limit, browser=browser, confirm=confirm
         )
         return cast(str, result["message"])
     except Exception as e:
@@ -276,7 +265,7 @@ def search_by_domain(
             limit=limit,
             browser=browser,
             format_type=format_type,
-            exclude_domains=exclude_domains
+            exclude_domains=exclude_domains,
         )
         return cast(str, result["message"])
     except Exception as e:
@@ -318,9 +307,7 @@ def get_most_visited_pages(
     """
     try:
         result = HistoryService.get_most_visited_pages(
-            limit=limit,
-            browser=browser,
-            format_type=format_type
+            limit=limit, browser=browser, format_type=format_type
         )
         return cast(str, result["message"])
     except Exception as e:
@@ -347,10 +334,7 @@ def export_history(
     """
     try:
         result = HistoryService.export_history(
-            format_type=format_type,
-            limit=limit,
-            query=query,
-            browser=browser
+            format_type=format_type, limit=limit, query=query, browser=browser
         )
         return cast(str, result["content"])
     except Exception as e:
@@ -395,7 +379,7 @@ def search_history_advanced(
             sort_by=sort_by,
             use_regex=use_regex,
             use_fuzzy=use_fuzzy,
-            fuzzy_threshold=fuzzy_threshold
+            fuzzy_threshold=fuzzy_threshold,
         )
         return cast(str, result["message"])
     except Exception as e:
@@ -425,7 +409,7 @@ def sync_history(
             source_browser=source_browser,
             target_browser=target_browser,
             merge_strategy=merge_strategy,
-            dry_run=dry_run
+            dry_run=dry_run,
         )
         return cast(str, result["message"])
     except Exception as e:
