@@ -12,8 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        browser: [chrome, firefox, edge]
-        python-version: ["3.10", "3.12"]
+        browser: [chrome, firefox, edge, brave, safari, vivaldi, opera]
+        python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
 
