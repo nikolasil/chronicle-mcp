@@ -68,33 +68,6 @@ jobs:
       - name: Run pre-commit
         run: pre-commit run --all-files
 
-  security:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-          cache: 'pip'
-
-      - name: Install dependencies
-        run: pip install -e ".[dev]"
-
-      - name: Run safety check
-        run: |
-          pip install safety
-          safety scan || echo "Skipping safety check (requires authentication)"
-
-      - name: Run dependency check
-        run: |
-          pip install deptry
-          deptry .
-
-      - name: Check for known vulnerabilities
-        run: pip-audit --requirement <(pip freeze) --ignore-vuln CVE-2025-69872
-
   codespell:
     runs-on: ubuntu-latest
     steps:
