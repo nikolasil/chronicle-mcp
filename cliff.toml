@@ -1,23 +1,12 @@
-# git-cliff ~ default configuration file
+# git-cliff configuration file
 # https://git-cliff.org/docs/configuration
 
 [changelog]
-# changelog header
-header = """# Changelog
+# Template for changelog body only (no header/footer - they're in CHANGELOG.md)
+body = """## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
 
-All notable changes to ChronicleMCP are documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
----
-
-"""
-
-# template for the changelog body
-# https://keats.github.io/tera/docs/#introduction
-body = """{% for group, commits in commits | group_by(attribute="group") %}
-## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% for group, commits in commits | group_by(attribute="group") %}
+### {{ group }}
 
 {% for commit in commits %}
 {% if commit.scope -%}
@@ -27,102 +16,22 @@ body = """{% for group, commits in commits | group_by(attribute="group") %}
 {% endif -%}
 {% endfor %}
 
----
-
 {% endfor %}
+---
+
 """
 
-# remove the leading and trailing whitespace from the template
 trim = true
-# changelog footer
-footer = """---
-
-## Version History Summary
-
-| Version | Release Date | Major Changes |
-|---------|-------------|---------------|
-| 1.3.3 | 2026-02-13 | Latest stable with architecture refactoring |
-| 1.3.0 | 2026-02-13 | Major architecture refactoring with service layer |
-| 1.2.0 | 2026-02-13 | Enhanced CI/CD and release automation |
-| 1.1.0 | 2026-02-12 | HTTP server and CLI interface added |
-| 1.0.0 | 2024-01-15 | Initial stable release |
-
----
-
-## Versioning
-
-ChronicleMCP follows [Semantic Versioning](https://semver.org):
-
-- **MAJOR**: Breaking changes
-- **MINOR**: New features (backward compatible)
-- **PATCH**: Bug fixes (backward compatible)
-
----
-
-## Upgrading
-
-### From 1.0.x to 1.1.x
-
-No breaking changes. Simply upgrade:
-
-```bash
-pip install --upgrade chronicle-mcp
-```
-
-New features are opt-in:
-- HTTP server: `chronicle-mcp serve`
-- CLI tools: `chronicle-mcp --help`
-
-### From 1.1.x to 1.2.x
-
-No breaking changes. Upgrade:
-
-```bash
-pip install --upgrade chronicle-mcp
-```
-
-### From 1.2.x to 1.3.x
-
-**Breaking Changes**:
-- CLI commands changed:
-  - `chronicle-mcp run` -> `chronicle-mcp mcp`
-  - `chronicle-mcp serve` -> `chronicle-mcp http`
-  - `--transport sse` -> `--sse`
-
-Update your scripts and automation accordingly.
-
----
-
-## Acknowledgments
-
-- [FastMCP](https://github.com/jlowin/fastmcp) - MCP framework
-- [Starlette](https://www.starlette.io/) - ASGI framework
-- [Click](https://click.palletsprojects.com/) - CLI framework
-- [SQLite](https://www.sqlite.org/) - Database
-
----
-
-## See Also
-
-- [Changelog Template](https://github.com/olivierlacan/keep-a-changelog)
-- [Semantic Versioning](https://semver.org/)
-- [Keep a Changelog](https://keepachangelog.com/)
-"""
+# No footer - preserve existing CHANGELOG.md content
+footer = ""
 
 [git]
-# parse the commits based on https://www.conventionalcommits.org
 conventional_commits = true
-# filter out the commits that are not conventional
 filter_unconventional = true
-# process each line of a commit as an individual commit
 split_commits = false
-# regex for preprocessing the commit messages
 commit_preprocessors = [
-  # { pattern = "\\((\\w+\\s)?#([0-9]+)\\)", replace = "([#${2}](https://github.com/nikolasil/chronicle-mcp/issues/${2}))"},
-  # remove issue numbers from commit messages
   { pattern = "\\s*\\(#[0-9]+\\)", replace = "" },
 ]
-# regex for parsing and grouping commits
 commit_parsers = [
   { message = "^feat", group = "Added" },
   { message = "^fix", group = "Fixed" },
@@ -138,22 +47,11 @@ commit_parsers = [
   { message = "^chore", group = "Miscellaneous Tasks" },
   { body = "^.+", group = "Changed" },
 ]
-# protect breaking changes from being skipped due to matching a skipping commit_parser
 protect_breaking_commits = false
-# filter out the commits that are not matched by commit parsers
 filter_commits = false
-# glob pattern for matching git tags
 tag_pattern = "v[0-9]*"
-# regex for skipping tags
-# skip_tags = "v0.1.0-beta.1"
-# regex for ignoring tags
-# ignore_tags = ""
-# sort the tags topologically
 topo_order = false
-# sort the commits inside sections by oldest/newest order
 sort_commits = "oldest"
-# limit the number of commits included in the changelog
-# limit_commits = 42
 
 [bump]
 features_always_bump_minor = true
