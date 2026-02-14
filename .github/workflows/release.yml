@@ -23,7 +23,7 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  prepare-release:
+  prepare:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
@@ -72,26 +72,8 @@ jobs:
         env:
           GITHUB_REPO: ${{ github.repository }}
 
-      - name: Configure Git
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-
-      - name: Commit version bump
-        run: |
-          VERSION="${{ steps.validate.outputs.VERSION }}"
-          git add pyproject.toml CHANGELOG.md cliff.toml
-          git commit -m "chore(release): prepare for v$VERSION"
-          git push origin HEAD:main
-
-      - name: Create and push tag
-        run: |
-          VERSION="${{ steps.validate.outputs.VERSION }}"
-          git tag -a "v$VERSION" -m "Release v$VERSION"
-          git push origin "v$VERSION"
-
   test:
-    needs: prepare-release
+    needs: prepare
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -232,7 +214,7 @@ jobs:
       - name: Extract version
         id: version
         run: |
-          VERSION="${{ needs.prepare-release.outputs.version }}"
+          VERSION="${{ needs.prepare.outputs.version }}"
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
 
       - name: Docker meta
@@ -263,8 +245,35 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  create-tag:
+    needs: [prepare, build-package, build-binaries, smoke-test-binaries, build-container]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Commit version bump
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          git add pyproject.toml CHANGELOG.md cliff.toml
+          git commit -m "chore(release): prepare for v$VERSION"
+          git push origin HEAD:main
+
+      - name: Create and push tag
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          git tag -a "v$VERSION" -m "Release v$VERSION"
+          git push origin "v$VERSION"
+
   publish:
-    needs: [prepare-release, build-package, build-binaries, smoke-test-binaries, build-container]
+    needs: [prepare, create-tag, build-package, build-binaries, smoke-test-binaries, build-container]
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -314,7 +323,7 @@ jobs:
       - name: Calculate SHA256
         id: sha
         run: |
-          VERSION="${{ needs.prepare-release.outputs.version }}"
+          VERSION="${{ needs.prepare.outputs.version }}"
           URL="https://github.com/${{ github.repository }}/archive/refs/tags/v${VERSION}.tar.gz"
           max_retries=5
           count=0
@@ -331,13 +340,13 @@ jobs:
 
       - name: Update formula
         run: |
-          VERSION="${{ needs.prepare-release.outputs.version }}"
+          VERSION="${{ needs.prepare.outputs.version }}"
           SHA256="${{ steps.sha.outputs.sha256 }}"
           sed -i "s|^  sha256 \".*\"|  sha256 \"$SHA256\"|" Formula/chronicle-mcp.rb
 
       - name: Commit and push
         run: |
-          VERSION="${{ needs.prepare-release.outputs.version }}"
+          VERSION="${{ needs.prepare.outputs.version }}"
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add Formula/chronicle-mcp.rb
@@ -345,12 +354,12 @@ jobs:
           git push origin HEAD:main
 
   summary:
-    needs: [prepare-release, publish, update-homebrew]
+    needs: [prepare, publish, update-homebrew]
     runs-on: ubuntu-latest
     steps:
       - name: Summary
         run: |
-          VERSION="${{ needs.prepare-release.outputs.version }}"
+          VERSION="${{ needs.prepare.outputs.version }}"
           echo "## Release v$VERSION Complete"
           echo "- PyPI: Published"
           echo "- GitHub Release: Created"
