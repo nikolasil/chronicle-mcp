@@ -10,54 +10,7 @@ permissions:
   id-token: write
 
 jobs:
-  bump-version:
-    runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.get_version.outputs.VERSION }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
-
-      - name: Extract version from tag
-        id: get_version
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
-      - name: Validate version format
-        run: |
-          VERSION="${{ steps.get_version.outputs.VERSION }}"
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
-            echo "Invalid version format: $VERSION"
-            exit 1
-          fi
-
-      - name: Update version in pyproject.toml
-        run: |
-          VERSION="${{ steps.get_version.outputs.VERSION }}"
-          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
-
-      - name: Verify version update
-        run: |
-          grep "^version = \"${{ steps.get_version.outputs.VERSION }}\"" pyproject.toml
-
-      - name: Commit version bump
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add pyproject.toml
-          if ! git diff --staged --quiet; then
-            git commit -m "chore: bump version to v${{ steps.get_version.outputs.VERSION }}"
-            git pull --rebase origin main
-            git push origin HEAD:main
-          fi
-
   test-before-release:
-    needs: bump-version
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -79,7 +32,7 @@ jobs:
         run: pytest tests/ -v --tb=short
 
   build:
-    needs: [bump-version, test-before-release]
+    needs: test-before-release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -111,7 +64,7 @@ jobs:
           retention-days: 30
 
   build-binaries:
-    needs: [bump-version, test-before-release]
+    needs: test-before-release
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -210,7 +163,7 @@ jobs:
           & "./binary/${{ matrix.release_name }}" version
 
   publish:
-    needs: [bump-version, build, build-binaries, smoke-test-binaries]
+    needs: [build, build-binaries, smoke-test-binaries]
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -261,7 +214,7 @@ jobs:
           echo "::error::Release failed! Check the logs for details."
 
   update-homebrew-formula:
-    needs: [bump-version, publish]
+    needs: publish
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -273,7 +226,7 @@ jobs:
       - name: Calculate SHA256
         id: sha
         run: |
-          VERSION=${{ needs.bump-version.outputs.version }}
+          VERSION=${GITHUB_REF#refs/tags/v}
           URL="https://github.com/${{ github.repository }}/archive/refs/tags/v${VERSION}.tar.gz"
           max_retries=5
           count=0
@@ -293,7 +246,7 @@ jobs:
 
       - name: Update formula
         run: |
-          VERSION="${{ needs.bump-version.outputs.version }}"
+          VERSION=${GITHUB_REF#refs/tags/v}
           SHA256="${{ steps.sha.outputs.sha256 }}"
           URL="${{ steps.sha.outputs.url }}"
           sed -i "s|^  url \".*\"|  url \"$URL\"|" Formula/chronicle-mcp.rb
@@ -305,11 +258,12 @@ jobs:
 
       - name: Commit and push changes
         run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add Formula/chronicle-mcp.rb
           if ! git diff --staged --quiet; then
-            git commit -m "chore: update Homebrew formula to v${{ needs.bump-version.outputs.version }}"
+            git commit -m "chore: update Homebrew formula to v$VERSION"
             git pull --rebase origin main
             git push origin HEAD:main
           fi
