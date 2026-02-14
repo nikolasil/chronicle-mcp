@@ -58,60 +58,14 @@ jobs:
             exit 1
           }
 
-      - name: Update CHANGELOG.md
-        run: |
-          VERSION="${{ github.event.inputs.version }}"
-          DATE=$(date +%Y-%m-%d)
-
-          # Create a Python script to update the changelog
-          cat > /tmp/update_changelog.py << 'EOF'
-          import re
-          import sys
-
-          version = sys.argv[1]
-          date = sys.argv[2]
-
-          with open('CHANGELOG.md', 'r') as f:
-              content = f.read()
-
-          # Find the Unreleased section
-          unreleased_pattern = r'## \[Unreleased\]\n\n(.*?)(?=\n## \[|$)'
-          match = re.search(unreleased_pattern, content, re.DOTALL)
-
-          if match:
-              unreleased_content = match.group(1).strip()
-
-              # Check if there's actual content (not just headers)
-              has_content = False
-              for line in unreleased_content.split('\n'):
-                  stripped = line.strip()
-                  if stripped and not stripped.startswith('#') and not stripped.startswith('---'):
-                      has_content = True
-                      break
-
-              if not has_content:
-                  unreleased_content = "### Added\n\n- Release v" + version
-
-              # Create new version entry
-              new_version_entry = "## [" + version + "] - " + date + "\n\n" + unreleased_content + "\n"
-
-              # Create new unreleased section
-              new_unreleased = "## [Unreleased]\n\n### Added\n\n### Changed\n\n### Fixed\n\n### Removed\n\n### Security\n\n---\n\n"
-
-              # Replace the Unreleased section
-              new_content = re.sub(unreleased_pattern, new_unreleased + new_version_entry, content, flags=re.DOTALL)
-
-              with open('CHANGELOG.md', 'w') as f:
-                  f.write(new_content)
-
-              print("Updated CHANGELOG.md with version " + version)
-          else:
-              print("Could not find Unreleased section")
-              sys.exit(1)
-          EOF
-
-          # Run the Python script
-          python3 /tmp/update_changelog.py "$VERSION" "$DATE"
+      - name: Generate changelog with git-cliff
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --verbose --tag "v${{ github.event.inputs.version }}"
+        env:
+          OUTPUT: CHANGELOG.md
+          GITHUB_REPO: ${{ github.repository }}
 
       - name: Verify CHANGELOG update
         run: |
@@ -132,7 +86,7 @@ jobs:
         run: |
           VERSION="${{ github.event.inputs.version }}"
           git add pyproject.toml CHANGELOG.md
-          git commit -m "chore: bump version to v$VERSION"
+          git commit -m "chore(release): prepare for v$VERSION"
           git push origin HEAD:main
 
       - name: Create and push tag
