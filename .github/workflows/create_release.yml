@@ -80,7 +80,6 @@ jobs:
           config: cliff.toml
           args: --verbose -u --tag "v${{ github.event.inputs.version }}" --prepend CHANGELOG.md
         env:
-          OUTPUT: CHANGELOG.md
           GITHUB_REPO: ${{ github.repository }}
 
       - name: Verify CHANGELOG update
