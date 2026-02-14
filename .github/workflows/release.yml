@@ -1,63 +1,89 @@
 name: Release
 
 on:
-  push:
-    tags:
-      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version number (e.g., 1.4.0 or 1.4.0-beta.1)'
+        required: true
+        type: string
+      pre_release:
+        description: 'Mark as pre-release (beta/alpha)'
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: write
   id-token: write
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  bump-version:
+  prepare:
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.get_version.outputs.VERSION }}
+      version: ${{ steps.version.outputs.VERSION }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
 
-      - name: Extract version from tag
-        id: get_version
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-
       - name: Validate version format
+        id: validate
         run: |
-          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          VERSION="${{ github.event.inputs.version }}"
           if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
             echo "Invalid version format: $VERSION"
             exit 1
           fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Check if version already exists
+        run: |
+          VERSION="${{ steps.validate.outputs.VERSION }}"
+          if git tag -l "v$VERSION" | grep -q "v$VERSION"; then
+            echo "Error: Tag v$VERSION already exists"
+            exit 1
+          fi
+
+      - name: Check for changes since last release
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$LAST_TAG" ]; then
+            echo "Changes since $LAST_TAG:"
+            git log "$LAST_TAG..HEAD" --oneline | head -20
+          fi
 
       - name: Update version in pyproject.toml
         run: |
-          VERSION="${{ steps.get_version.outputs.VERSION }}"
+          VERSION="${{ steps.validate.outputs.VERSION }}"
           sed -i "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
 
-      - name: Verify version update
-        run: |
-          grep "^version = \"${{ steps.get_version.outputs.VERSION }}\"" pyproject.toml
+      - name: Generate changelog with git-cliff
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --verbose -u --tag "v${{ steps.validate.outputs.VERSION }}" --prepend CHANGELOG.md
+        env:
+          GITHUB_REPO: ${{ github.repository }}
 
-      - name: Commit version bump
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add pyproject.toml
-          if ! git diff --staged --quiet; then
-            git commit -m "chore: bump version to v${{ steps.get_version.outputs.VERSION }}"
-            git pull --rebase origin main
-            git push origin HEAD:main
-          fi
+      - name: Upload release files
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-files
+          path: |
+            pyproject.toml
+            CHANGELOG.md
+            cliff.toml
+          retention-days: 7
 
-  test-before-release:
-    needs: bump-version
+  test:
+    needs: prepare
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -71,15 +97,13 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+        run: pip install -e ".[dev]"
 
-      - name: Run full test suite
+      - name: Run test suite
         run: pytest tests/ -v --tb=short
 
-  build:
-    needs: [bump-version, test-before-release]
+  build-package:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -97,21 +121,15 @@ jobs:
           pip install build
           python -m build
 
-      - name: Verify build artifacts
-        run: |
-          ls -la dist/
-          test -f dist/*.whl || exit 1
-          test -f dist/*.tar.gz || exit 1
-
-      - name: Upload python-dist
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: python-dist
           path: dist/
-          retention-days: 30
+          retention-days: 7
 
   build-binaries:
-    needs: [bump-version, test-before-release]
+    needs: test
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -126,7 +144,6 @@ jobs:
           - os: windows-latest
             artifact_name: chronicle-mcp-windows
             release_name: chronicle-mcp-windows.exe
-
     steps:
       - uses: actions/checkout@v4
         with:
@@ -139,38 +156,27 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
-        shell: bash
         run: |
-          python -m pip install --upgrade pip
           pip install pyinstaller
-          pip install -e "."
+          pip install -e .
 
       - name: Build binary
-        shell: bash
         run: |
           pip install --no-deps --no-build-isolation -e .
           pyinstaller --onefile --collect-all fastmcp --collect-all rich --collect-all chronicle_mcp --collect-all docket --collect-all fakeredis --collect-all lupa --name chronicle-mcp chronicle_mcp/__main__.py
           mv dist/chronicle-mcp* dist/${{ matrix.release_name }}
 
-      - name: Test binary (Unix)
-        if: matrix.os != 'windows-latest'
-        shell: bash
+      - name: Test binary
         run: |
           chmod +x dist/${{ matrix.release_name }}
-          ./dist/${{ matrix.release_name }} --help || echo "Binary test completed"
-
-      - name: Test binary (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          & "dist/${{ matrix.release_name }}" --help || echo "Binary test completed"
+          ./dist/${{ matrix.release_name }} --help
 
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
           path: dist/${{ matrix.release_name }}
-          retention-days: 30
+          retention-days: 7
 
   smoke-test-binaries:
     needs: build-binaries
@@ -195,48 +201,114 @@ jobs:
           name: ${{ matrix.artifact_name }}
           path: ./binary/
 
-      - name: Smoke test binary (Unix)
-        if: matrix.os != 'windows-latest'
+      - name: Test binary
         run: |
           chmod +x ./binary/${{ matrix.release_name }}
           ./binary/${{ matrix.release_name }} --help
           ./binary/${{ matrix.release_name }} version
 
-      - name: Smoke test binary (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
+  build-container:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract version
+        id: version
         run: |
-          & "./binary/${{ matrix.release_name }}" --help
-          & "./binary/${{ matrix.release_name }}" version
+          VERSION="${{ needs.prepare.outputs.version }}"
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  create-tag:
+    needs: [prepare, build-package, build-binaries, smoke-test-binaries, build-container]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download release files
+        uses: actions/download-artifact@v4
+        with:
+          name: release-files
+          path: ./
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Commit version bump
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          git add pyproject.toml CHANGELOG.md cliff.toml
+          git commit -m "chore(release): prepare for v$VERSION"
+          git push origin HEAD:main
+
+      - name: Create and push tag
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          git tag -a "v$VERSION" -m "Release v$VERSION"
+          git push origin "v$VERSION"
 
   publish:
-    needs: [bump-version, build, build-binaries, smoke-test-binaries]
+    needs: [prepare, create-tag, build-package, build-binaries, smoke-test-binaries, build-container]
     runs-on: ubuntu-latest
     environment:
       name: pypi
       url: https://pypi.org/p/chronicle-mcp
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.version }}
+          fetch-depth: 0
 
-      - name: Download python-dist
+      - name: Download package
         uses: actions/download-artifact@v4
         with:
           name: python-dist
           path: dist/
 
-      - name: Download all binaries
+      - name: Download binaries
         uses: actions/download-artifact@v4
         with:
           path: release-artifacts/
           pattern: 'chronicle-mcp-*'
           merge-multiple: true
-
-      - name: List artifacts
-        run: |
-          echo "Python distributions:"
-          ls -la dist/
-          echo "Binary artifacts:"
-          ls -la release-artifacts/
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
@@ -251,29 +323,23 @@ jobs:
             dist/*.whl
             dist/*.tar.gz
           draft: false
-          prerelease: false
+          prerelease: ${{ github.event.inputs.pre_release }}
           generate_release_notes: true
-          fail_on_unmatched_files: true
 
-      - name: Notify on failure
-        if: failure()
-        run: |
-          echo "::error::Release failed! Check the logs for details."
-
-  update-homebrew-formula:
-    needs: [bump-version, publish]
+  update-homebrew:
+    needs: publish
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ needs.prepare.outputs.version }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Calculate SHA256
         id: sha
         run: |
-          VERSION=${{ needs.bump-version.outputs.version }}
+          VERSION="${{ needs.prepare.outputs.version }}"
           URL="https://github.com/${{ github.repository }}/archive/refs/tags/v${VERSION}.tar.gz"
           max_retries=5
           count=0
@@ -281,35 +347,37 @@ jobs:
             SHA256=$(curl -sL "$URL" | sha256sum | cut -d' ' -f1)
             if [ ${#SHA256} -eq 64 ]; then
               echo "sha256=$SHA256" >> $GITHUB_OUTPUT
-              echo "url=$URL" >> $GITHUB_OUTPUT
               exit 0
             fi
-            echo "Waiting for archive... (attempt $((count+1))/$max_retries)"
             sleep 10
             count=$((count+1))
           done
-          echo "Failed to calculate SHA256 after $max_retries attempts"
           exit 1
 
       - name: Update formula
         run: |
-          VERSION="${{ needs.bump-version.outputs.version }}"
+          VERSION="${{ needs.prepare.outputs.version }}"
           SHA256="${{ steps.sha.outputs.sha256 }}"
-          URL="${{ steps.sha.outputs.url }}"
-          sed -i "s|^  url \".*\"|  url \"$URL\"|" Formula/chronicle-mcp.rb
           sed -i "s|^  sha256 \".*\"|  sha256 \"$SHA256\"|" Formula/chronicle-mcp.rb
 
-      - name: Verify formula changes
+      - name: Commit and push
         run: |
-          cat Formula/chronicle-mcp.rb
-
-      - name: Commit and push changes
-        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add Formula/chronicle-mcp.rb
-          if ! git diff --staged --quiet; then
-            git commit -m "chore: update Homebrew formula to v${{ needs.bump-version.outputs.version }}"
-            git pull --rebase origin main
-            git push origin HEAD:main
-          fi
+          git commit -m "chore: update Homebrew formula to v$VERSION"
+          git push origin HEAD:main
+
+  summary:
+    needs: [prepare, publish, update-homebrew]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          echo "## Release v$VERSION Complete"
+          echo "- PyPI: Published"
+          echo "- GitHub Release: Created"
+          echo "- Docker: Published to ghcr.io"
+          echo "- Homebrew: Updated"
