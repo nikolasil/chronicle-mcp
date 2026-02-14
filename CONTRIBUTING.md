@@ -208,6 +208,45 @@ def test_search_history_with_results(sample_chrome_db):
    - Any alternatives you've considered
    - Use cases or examples
 
+## Release Process
+
+Releases are automated using GitHub Actions. The changelog is generated automatically from conventional commit messages using [git-cliff](https://git-cliff.org).
+
+### Making a Release
+
+1. Go to **Actions** → **Create Release** → **Run workflow**
+2. Enter the version number (e.g., `1.4.0`)
+3. Click **Run workflow**
+
+This will automatically:
+- Update version in `pyproject.toml`
+- Generate changelog from commit history
+- Commit and push changes
+- Create a Git tag (e.g., `v1.4.0`)
+- Trigger the full release workflow (builds, tests, PyPI publish, GitHub release)
+
+### Commit Message Format
+
+Since changelogs are auto-generated, use conventional commits:
+
+| Type | Changelog Section |
+|------|-------------------|
+| `feat:` | Added |
+| `fix:` | Fixed |
+| `docs:` | Documentation |
+| `refactor:` | Changed |
+| `perf:` | Performance |
+| `test:` | Testing |
+| `chore:` | Miscellaneous |
+
+Examples:
+```
+feat: add browser sync functionality
+fix: resolve Firefox path detection on macOS
+refactor: simplify CLI command structure
+docs: update API documentation
+```
+
 ## Questions?
 
 - Open a [discussion](https://github.com/nikolasil/chronicle-mcp/discussions)
