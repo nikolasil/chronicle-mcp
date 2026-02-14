@@ -1,3 +1,51 @@
+## [1.3.4] - 2026-02-14
+
+
+### Added
+
+
+- add workflow to automate release creation
+
+- add changelog automation to release workflow
+
+- automate changelog generation with git-cliff
+
+
+
+### Documentation
+
+
+- update changelog with v1.3.x releases
+
+- add release process documentation
+
+
+
+### Fixed
+
+
+- improve release workflow with pre-release support and changelog fixes
+
+- resolve benchmark CI issues - permissions and summary size
+
+- add -u flag to git-cliff for unreleased changelog
+
+- remove conflicting OUTPUT env from git-cliff action
+
+
+
+### Miscellaneous Tasks
+
+
+- bump version to v1.3.3
+
+- update Homebrew formula to v1.3.3
+
+- remove Unreleased section since changelog is now git-driven
+
+
+
+---
 # Changelog
 
 All notable changes to ChronicleMCP are documented in this file.
