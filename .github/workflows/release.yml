@@ -212,6 +212,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -291,6 +293,9 @@ jobs:
       url: https://pypi.org/p/chronicle-mcp
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.version }}
+          fetch-depth: 0
 
       - name: Download package
         uses: actions/download-artifact@v4
@@ -328,7 +333,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ needs.prepare.outputs.version }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Calculate SHA256
