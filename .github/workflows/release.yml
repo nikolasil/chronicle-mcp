@@ -80,6 +80,7 @@ jobs:
             pyproject.toml
             CHANGELOG.md
             cliff.toml
+            Formula/chronicle-mcp.rb
           retention-days: 7
 
   test:
@@ -292,10 +293,35 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
+      - name: Calculate SHA256 for Homebrew
+        id: sha
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          URL="https://github.com/${{ github.repository }}/archive/refs/tags/v${VERSION}.tar.gz"
+          max_retries=5
+          count=0
+          while [ $count -lt $max_retries ]; do
+            SHA256=$(curl -sL "$URL" | sha256sum | cut -d' ' -f1)
+            if [ ${#SHA256} -eq 64 ]; then
+              echo "sha256=$SHA256" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            sleep 10
+            count=$((count+1))
+          done
+          exit 1
+
+      - name: Update Homebrew formula
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          SHA256="${{ steps.sha.outputs.sha256 }}"
+          sed -i "s|archive/refs/tags/v.*\.tar.gz|archive/refs/tags/v${VERSION}.tar.gz|" Formula/chronicle-mcp.rb
+          sed -i "s|^  sha256 \".*\"|  sha256 \"$SHA256\"|" Formula/chronicle-mcp.rb
+
       - name: Commit version bump
         run: |
           VERSION="${{ needs.prepare.outputs.version }}"
-          git add pyproject.toml CHANGELOG.md cliff.toml
+          git add pyproject.toml CHANGELOG.md cliff.toml Formula/chronicle-mcp.rb
           git commit -m "chore(release): prepare for v$VERSION"
           git push origin main
 
@@ -347,59 +373,8 @@ jobs:
           prerelease: ${{ github.event.inputs.pre_release }}
           generate_release_notes: true
 
-  update-homebrew:
-    needs: publish
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          ref: main
-          fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Get latest tag
-        id: tag
-        run: echo "TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
-
-      - name: Calculate SHA256
-        id: sha
-        run: |
-          TAG="${{ steps.tag.outputs.TAG }}"
-          URL="https://github.com/${{ github.repository }}/archive/refs/tags/${TAG}.tar.gz"
-          max_retries=5
-          count=0
-          while [ $count -lt $max_retries ]; do
-            SHA256=$(curl -sL "$URL" | sha256sum | cut -d' ' -f1)
-            if [ ${#SHA256} -eq 64 ]; then
-              echo "sha256=$SHA256" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-            sleep 10
-            count=$((count+1))
-          done
-          exit 1
-
-      - name: Update formula
-        run: |
-          TAG="${{ steps.tag.outputs.TAG }}"
-          VERSION="${TAG#v}"
-          SHA256="${{ steps.sha.outputs.sha256 }}"
-          sed -i "s|archive/refs/tags/v.*\.tar.gz|archive/refs/tags/v${VERSION}.tar.gz|" Formula/chronicle-mcp.rb
-          sed -i "s|^  sha256 \".*\"|  sha256 \"$SHA256\"|" Formula/chronicle-mcp.rb
-
-      - name: Commit and push
-        run: |
-          TAG="${{ steps.tag.outputs.TAG }}"
-          VERSION="${TAG#v}"
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add Formula/chronicle-mcp.rb
-          git commit -m "chore: update Homebrew formula to v$VERSION"
-          git push origin HEAD:main
-
   summary:
-    needs: [prepare, publish, update-homebrew]
+    needs: [prepare, publish]
     runs-on: ubuntu-latest
     steps:
       - name: Summary
