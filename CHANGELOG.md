@@ -1,3 +1,21 @@
+## [1.3.14] - 2026-02-15
+
+
+### Fixed
+
+
+- update homebrew formula URL version and fix summary step
+
+
+
+### Miscellaneous Tasks
+
+
+- update Homebrew formula to v1.3.13
+
+
+
+---
 ## [1.3.13] - 2026-02-15
 
 
