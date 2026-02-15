@@ -279,6 +279,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           ref: main
+          fetch-depth: 0
 
       - name: Download release files
         uses: actions/download-artifact@v4
@@ -295,14 +296,16 @@ jobs:
         run: |
           VERSION="${{ needs.prepare.outputs.version }}"
           git add pyproject.toml CHANGELOG.md cliff.toml
-          git commit -m "chore(release): prepare for v$VERSION"
-          git push origin HEAD:main
+          git commit -m "chore(release): prepare for v$VERSION" || echo "No changes to commit"
+          git push origin main
 
       - name: Create and push tag
         run: |
           VERSION="${{ needs.prepare.outputs.version }}"
-          git tag -a "v$VERSION" -m "Release v$VERSION"
-          git push origin "v$VERSION"
+          git fetch --tags
+          git tag -d "v$VERSION" 2>/dev/null || true
+          git tag -a "v$VERSION" -m "Release v$VERSION" -f
+          git push origin "v$VERSION" -f
 
   publish:
     needs: [prepare, create-tag, build-package, build-binaries, smoke-test-binaries, build-container]
@@ -337,6 +340,7 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ needs.prepare.outputs.version }}
           files: |
             release-artifacts/*
             dist/*.whl
