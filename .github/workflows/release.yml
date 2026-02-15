@@ -292,6 +292,13 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
+      - name: Commit version bump
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          git add pyproject.toml CHANGELOG.md cliff.toml
+          git commit -m "chore(release): prepare for v$VERSION"
+          git push origin main
+
       - name: Create and push tag
         run: |
           VERSION="${{ needs.prepare.outputs.version }}"
