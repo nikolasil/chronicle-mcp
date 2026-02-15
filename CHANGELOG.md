@@ -1,3 +1,18 @@
+## [1.3.12] - 2026-02-15
+
+
+### Fixed
+
+
+- improve tag creation and explicitly set tag_name
+
+- remove commit step to avoid permission issues
+
+- restore commit step with fetch-depth: 0
+
+
+
+---
 ## [1.3.10] - 2026-02-15
 
 
