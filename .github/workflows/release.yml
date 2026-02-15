@@ -86,11 +86,16 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
       - name: Download release files
         uses: actions/download-artifact@v4
         with:
           name: release-files
           path: ./
+          merge-multiple: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -108,11 +113,16 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
       - name: Download release files
         uses: actions/download-artifact@v4
         with:
           name: release-files
           path: ./
+          merge-multiple: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -149,11 +159,16 @@ jobs:
             artifact_name: chronicle-mcp-windows
             release_name: chronicle-mcp-windows.exe
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
       - name: Download release files
         uses: actions/download-artifact@v4
         with:
           name: release-files
           path: ./
+          merge-multiple: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -216,11 +231,16 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
       - name: Download release files
         uses: actions/download-artifact@v4
         with:
           name: release-files
           path: ./
+          merge-multiple: true
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -263,11 +283,17 @@ jobs:
     outputs:
       has_changes: ${{ steps.commit_step.outputs.has_changes }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
+
       - name: Download release files
         uses: actions/download-artifact@v4
         with:
           name: release-files
           path: ./
+          merge-multiple: true
 
       - name: Configure Git
         run: |
