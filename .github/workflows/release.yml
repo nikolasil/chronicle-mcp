@@ -383,7 +383,9 @@ jobs:
       - name: Update formula
         run: |
           TAG="${{ steps.tag.outputs.TAG }}"
+          VERSION="${TAG#v}"
           SHA256="${{ steps.sha.outputs.sha256 }}"
+          sed -i "s|archive/refs/tags/v.*\.tar.gz|archive/refs/tags/v${VERSION}.tar.gz|" Formula/chronicle-mcp.rb
           sed -i "s|^  sha256 \".*\"|  sha256 \"$SHA256\"|" Formula/chronicle-mcp.rb
 
       - name: Commit and push
@@ -402,8 +404,7 @@ jobs:
     steps:
       - name: Summary
         run: |
-          TAG=$(git describe --tags --abbrev=0)
-          VERSION="${TAG#v}"
+          VERSION="${{ needs.prepare.outputs.version }}"
           echo "## Release v$VERSION Complete"
           echo "- PyPI: Published"
           echo "- GitHub Release: Created"
