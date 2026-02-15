@@ -233,6 +233,10 @@ chronicle-mcp list-browsers
 Available browsers:
   - chrome
   - edge
+  - firefox
+  - brave
+  - vivaldi
+  - opera
 ```
 
 **No Browsers Found:**

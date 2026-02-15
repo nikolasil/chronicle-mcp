@@ -55,7 +55,7 @@ chronicle-mcp list-browsers
 | Feature | Description |
 |---------|-------------|
 | 🔒 **Privacy-First** | All data stays on your machine. No cloud sync, no data collection. |
-| 🌐 **Multi-Browser** | Chrome, Firefox, and Edge support |
+| 🌐 **Multi-Browser** | Chrome, Firefox, Edge, Brave, Safari, Vivaldi, Opera support |
 | 🔍 **Multiple Search Tools** | Search by query, date range, domain, or recent history |
 | 📊 **Output Formats** | Markdown (default) or JSON |
 | ⚡ **Fast Performance** | Built with Python and SQLite |
@@ -318,7 +318,150 @@ def list_available_browsers() -> str
 **Example:**
 ```python
 list_available_browsers()
-# Output: Available browsers: chrome, edge
+# Output: Available browsers: chrome, edge, firefox, brave
+```
+
+#### `delete_history`
+
+Delete history entries matching a query.
+
+```python
+def delete_history(
+    query: str,
+    limit: int = 100,
+    browser: str = "chrome",
+    confirm: bool = False
+) -> str
+```
+
+**Example:**
+```python
+# Preview what would be deleted (default)
+delete_history("spam.com", browser="chrome")
+# Actually delete
+delete_history("spam.com", browser="chrome", confirm=True)
+```
+
+#### `search_by_domain`
+
+Search history within specific domain(s).
+
+```python
+def search_by_domain(
+    domain: str,
+    query: str = None,
+    limit: int = 20,
+    browser: str = "chrome",
+    format_type: str = "markdown",
+    exclude_domains: list[str] = None
+) -> str
+```
+
+**Example:**
+```python
+search_by_domain("github.com", browser="chrome")
+```
+
+#### `get_browser_stats`
+
+Get browsing statistics for the browser database.
+
+```python
+def get_browser_stats(browser: str = "chrome") -> str
+```
+
+**Example:**
+```python
+get_browser_stats(browser="firefox")
+# Returns JSON with total visits, domains, date range, etc.
+```
+
+#### `get_most_visited_pages`
+
+Get the most visited individual pages.
+
+```python
+def get_most_visited_pages(
+    limit: int = 20,
+    browser: str = "chrome",
+    format_type: str = "markdown"
+) -> str
+```
+
+**Example:**
+```python
+get_most_visited_pages(limit=10, browser="chrome")
+```
+
+#### `export_history`
+
+Export history to CSV or JSON format.
+
+```python
+def export_history(
+    format_type: str = "csv",
+    limit: int = 1000,
+    query: str = None,
+    browser: str = "chrome"
+) -> str
+```
+
+**Example:**
+```python
+# Export to CSV
+export_history(format_type="csv", limit=1000, browser="chrome")
+
+# Export to JSON
+export_history(format_type="json", limit=500, browser="firefox")
+```
+
+#### `search_history_advanced`
+
+Advanced search with multiple options including regex and fuzzy matching.
+
+```python
+def search_history_advanced(
+    query: str,
+    limit: int = 20,
+    browser: str = "chrome",
+    format_type: str = "markdown",
+    exclude_domains: list[str] = None,
+    sort_by: str = "date",
+    use_regex: bool = False,
+    use_fuzzy: bool = False,
+    fuzzy_threshold: float = 0.6
+) -> str
+```
+
+**Example:**
+```python
+# Fuzzy search
+search_history_advanced("pythn tutorial", use_fuzzy=True, fuzzy_threshold=0.7)
+
+# Regex search
+search_history_advanced(r"github\.com/.*/issues/\d+", use_regex=True)
+```
+
+#### `sync_history`
+
+Sync history between browsers.
+
+```python
+def sync_history(
+    source_browser: str,
+    target_browser: str,
+    merge_strategy: str = "latest",
+    dry_run: bool = True
+) -> str
+```
+
+**Example:**
+```python
+# Preview sync
+sync_history("chrome", "firefox", dry_run=True)
+
+# Actually sync
+sync_history("chrome", "firefox", dry_run=False)
 ```
 
 ---
@@ -332,12 +475,20 @@ list_available_browsers()
 | GET | `/health` | Health check |
 | GET | `/ready` | Readiness check |
 | GET | `/metrics` | Basic metrics |
+| GET | `/metrics/prometheus` | Prometheus metrics |
 | GET | `/api/browsers` | List available browsers |
 | POST | `/api/search` | Search history |
 | POST | `/api/recent` | Recent history |
 | POST | `/api/count` | Count domain visits |
 | POST | `/api/top-domains` | Top domains |
 | POST | `/api/search-date` | Search by date |
+| POST | `/api/delete` | Delete history entries |
+| POST | `/api/domain-search` | Search by domain |
+| POST | `/api/stats` | Browser statistics |
+| POST | `/api/most-visited` | Most visited pages |
+| POST | `/api/export` | Export history |
+| POST | `/api/advanced-search` | Advanced search |
+| POST | `/api/sync` | Sync between browsers |
 
 #### Request/Response Examples
 
@@ -421,11 +572,17 @@ log_level = "INFO"
 
 ## Supported Browsers
 
-| Browser | Windows | macOS | Linux |
-|---------|---------|-------|-------|
-| Chrome | `%LocalAppData%\Google\Chrome\User Data\Default\History` | `~/Library/Application Support/Google/Chrome/Default/History` | `~/.config/google-chrome/Default/History` |
-| Edge | `%LocalAppData%\Microsoft\Edge\User Data\Default\History` | `~/Library/Application Support/Microsoft Edge/Default/History` | `~/.config/microsoft-edge/Default/History` |
-| Firefox | `%AppData%\Mozilla\Firefox\Profiles\*.default\places.sqlite` | `~/Library/Mozilla/Firefox/Profiles/*.default/places.sqlite` | `~/.mozilla/firefox/*.default/places.sqlite` |
+ChronicleMCP supports reading history from the following browsers:
+
+| Browser | Version | Windows | macOS | Linux |
+|---------|---------|---------|-------|-------|
+| Chrome | 120+ | `%LocalAppData%\Google\Chrome\User Data\Default\History` | `~/Library/Application Support/Google/Chrome/Default/History` | `~/.config/google-chrome/Default/History` |
+| Edge | 120+ | `%LocalAppData%\Microsoft\Edge\User Data\Default\History` | `~/Library/Application Support/Microsoft Edge/Default/History` | `~/.config/microsoft-edge/Default/History` |
+| Firefox | 121+ | `%AppData%\Mozilla\Firefox\Profiles\*.default\places.sqlite` | `~/Library/Mozilla/Firefox/Profiles/*.default/places.sqlite` | `~/.mozilla/firefox/*.default/places.sqlite` |
+| Brave | 1.30+ | `%LocalAppData%\BraveSoftware\Brave-Default\History` | `~/Library/Application Support/BraveSoftware/Brave-Default/History` | `~/.config/BraveSoftware/Brave-Default/History` |
+| Safari | 16+ | N/A | `~/Library/Safari/History.db` | N/A |
+| Vivaldi | 6.0+ | `%LocalAppData%\Vivaldi\Default\History` | `~/Library/Application Support/Vivaldi/Default/History` | `~/.config/vivaldi/Default/History` |
+| Opera | 105+ | `%AppData%\Opera Software\Opera Stable\History` | `~/Library/Application Support/com.operasoftware.Opera/History` | `~/.config/opera/History` |
 
 ---
 

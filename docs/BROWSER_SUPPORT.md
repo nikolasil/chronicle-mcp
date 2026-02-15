@@ -210,9 +210,6 @@ search_history("opera", browser="opera")
 ```bash
 # List available browsers
 chronicle-mcp list-browsers
-
-# Check browser paths
-chronicle-mcp doctor
 ```
 
 ### Database Locked
