@@ -1,3 +1,14 @@
+## [1.3.10] - 2026-02-15
+
+
+### Fixed
+
+
+- add back PyPI password as fallback
+
+
+
+---
 ## [1.3.9] - 2026-02-15
 
 
