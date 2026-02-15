@@ -1,3 +1,21 @@
+## [1.3.15] - 2026-02-15
+
+
+### Fixed
+
+
+- combine version bump, Homebrew update, and tag into single atomic operation
+
+
+
+### Miscellaneous Tasks
+
+
+- update Homebrew formula to v1.3.14
+
+
+
+---
 ## [1.3.14] - 2026-02-15
 
 
