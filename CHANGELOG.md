@@ -1,3 +1,18 @@
+## [1.3.13] - 2026-02-15
+
+
+### Fixed
+
+
+- skip TruffleHog when no new commits to scan
+
+- use git describe to get latest tag in update-homebrew job
+
+- fetch all tags with fetch-depth: 0 in update-homebrew
+
+
+
+---
 ## [1.3.12] - 2026-02-15
 
 
