@@ -63,6 +63,8 @@ chronicle-mcp list-browsers
 | 🐳 **Docker Support** | Run as a container |
 | 🔧 **CLI Interface** | Full command-line control |
 | 🌐 **HTTP API** | RESTful API for integrations |
+| 🔖 **Bookmarks** | Read bookmarks from all supported browsers |
+| ⬇️ **Downloads** | Track download history from all supported browsers |
 
 ---
 
@@ -464,6 +466,78 @@ sync_history("chrome", "firefox", dry_run=True)
 sync_history("chrome", "firefox", dry_run=False)
 ```
 
+#### `list_available_bookmarks`
+
+Returns a list of browsers with detected bookmarks.
+
+```python
+def list_available_bookmarks() -> str
+```
+
+**Example:**
+```python
+list_available_bookmarks()
+# Output: Available browsers with bookmarks: chrome, edge, firefox
+```
+
+#### `list_available_downloads`
+
+Returns a list of browsers with detected downloads history.
+
+```python
+def list_available_downloads() -> str
+```
+
+**Example:**
+```python
+list_available_downloads()
+# Output: Available browsers with downloads: chrome, edge, firefox
+```
+
+#### `get_bookmarks`
+
+Get bookmarks from a browser.
+
+```python
+def get_bookmarks(
+    query: str = None,
+    limit: int = 50,
+    browser: str = "chrome",
+    format_type: str = "markdown"
+) -> str
+```
+
+**Example:**
+```python
+# Get all bookmarks
+get_bookmarks(browser="chrome")
+
+# Search bookmarks
+get_bookmarks(query="python", browser="firefox")
+```
+
+#### `get_downloads`
+
+Get downloads history from a browser.
+
+```python
+def get_downloads(
+    query: str = None,
+    limit: int = 50,
+    browser: str = "chrome",
+    format_type: str = "markdown"
+) -> str
+```
+
+**Example:**
+```python
+# Get all downloads
+get_downloads(browser="chrome")
+
+# Search downloads
+get_downloads(query="pdf", browser="firefox")
+```
+
 ---
 
 ### HTTP API
@@ -489,6 +563,10 @@ sync_history("chrome", "firefox", dry_run=False)
 | POST | `/api/export` | Export history |
 | POST | `/api/advanced-search` | Advanced search |
 | POST | `/api/sync` | Sync between browsers |
+| GET | `/api/bookmarks` | List available bookmarks |
+| POST | `/api/bookmarks/query` | Query bookmarks |
+| GET | `/api/downloads` | List available downloads |
+| POST | `/api/downloads/query` | Query downloads |
 
 #### Request/Response Examples
 
