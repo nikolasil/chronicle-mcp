@@ -2,7 +2,7 @@ class ChronicleMcp < Formula
   desc "MCP server for secure local browser history access"
   homepage "https://github.com/nikolasil/chronicle-mcp"
   url "https://github.com/nikolasil/chronicle-mcp/archive/refs/tags/v1.3.4.tar.gz"
-  sha256 "64a540a6d569ac4f13ee598fb546c6c8e8f4141707805fc2b7ed85365444d2ce"
+  sha256 "a30f260ecc6ddfa48baf479d805d791878146418ee47f3a3d7abe8f60c50786a"
   license "MIT"
   head "https://github.com/nikolasil/chronicle-mcp.git", branch: "main"
 
