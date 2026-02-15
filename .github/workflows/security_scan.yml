@@ -177,8 +177,19 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check for new commits
+        id: check-commits
+        run: |
+          git fetch origin main --depth=1 2>/dev/null || git fetch --all --depth=1 2>/dev/null || true
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            COMMITS=$(git rev-list --count HEAD ^origin/main 2>/dev/null || git rev-list --count HEAD ^main 2>/dev/null || echo "0")
+          else
+            COMMITS=$(git rev-list --count HEAD ^origin/main 2>/dev/null || git rev-list --count HEAD ^main 2>/dev/null || echo "1")
+          fi
+          echo "commits=$COMMITS" >> $GITHUB_OUTPUT
+
       - name: Run TruffleHog (PR)
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && steps.check-commits.outputs.commits != '0'
         uses: trufflesecurity/trufflehog@main
         with:
           path: './'
@@ -192,6 +203,10 @@ jobs:
         with:
           path: './'
           extra_args: --only-verified
+
+      - name: No new commits to scan
+        if: github.event_name == 'pull_request' && steps.check-commits.outputs.commits == '0'
+        run: echo "No new commits to scan"
 
   security-summary:
     needs: [dependency-scan, code-security, secret-scan]
