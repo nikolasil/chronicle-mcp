@@ -1,3 +1,38 @@
+## [1.3.8] - 2026-02-15
+
+
+### Changed
+
+
+- unify create_release, release, and build_container into single workflow
+
+
+
+### Fixed
+
+
+- only create commit and tag after all tests and builds succeed
+
+- pass prepared files via artifact to create-tag job
+
+- ensure build and publish jobs checkout correct refs
+
+- add checkout step to create-tag job
+
+- use release files from prepare for building, only commit if changes exist
+
+- checkout main before downloading release files in all jobs
+
+
+
+### Miscellaneous Tasks
+
+
+- update Homebrew formula to v1.3.4
+
+
+
+---
 ## [1.3.6] - 2026-02-15
 
 
