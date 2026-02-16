@@ -7,11 +7,13 @@ import pytest
 from chronicle_mcp.core.formatters import (
     format_advanced_search_results,
     format_available_browsers,
+    format_bookmarks,
     format_browser_stats,
     format_delete_preview,
     format_delete_result,
     format_domain_search_results,
     format_domain_visits,
+    format_downloads,
     format_error_message,
     format_export,
     format_most_visited_pages,
@@ -293,3 +295,56 @@ class TestFormatErrorMessage:
     def test_format(self):
         result = format_error_message("Something went wrong")
         assert "Error: Something went wrong" == result
+
+
+class TestFormatBookmarks:
+    """Tests for format_bookmarks function."""
+
+    def test_markdown_format(self):
+        bookmarks = [
+            ("GitHub", "https://github.com"),
+            ("Python", "https://python.org"),
+        ]
+        result = format_bookmarks(bookmarks, "markdown")
+        assert "**GitHub**" in result
+        assert "https://github.com" in result
+        assert "**Python**" in result
+
+    def test_json_format(self):
+        bookmarks = [
+            ("GitHub", "https://github.com"),
+            ("Python", "https://python.org"),
+        ]
+        result = format_bookmarks(bookmarks, "json")
+        assert "github.com" in result
+        assert "python.org" in result
+        assert "bookmarks" in result
+
+    def test_empty_bookmarks(self):
+        result = format_bookmarks([], "markdown")
+        assert "No bookmarks found" == result
+
+
+class TestFormatDownloads:
+    """Tests for format_downloads function."""
+
+    def test_markdown_format(self):
+        downloads = [
+            ("document.pdf", "https://example.com/doc.pdf", "2024-01-15T10:30:00+00:00"),
+            ("image.png", "https://example.com/img.png", "2024-01-14T09:00:00+00:00"),
+        ]
+        result = format_downloads(downloads, "markdown")
+        assert "**document.pdf**" in result
+        assert "https://example.com/doc.pdf" in result
+
+    def test_json_format(self):
+        downloads = [
+            ("document.pdf", "https://example.com/doc.pdf", "2024-01-15T10:30:00+00:00"),
+        ]
+        result = format_downloads(downloads, "json")
+        assert "document.pdf" in result
+        assert "downloads" in result
+
+    def test_empty_downloads(self):
+        result = format_downloads([], "markdown")
+        assert "No downloads found" == result

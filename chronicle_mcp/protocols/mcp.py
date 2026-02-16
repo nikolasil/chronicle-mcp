@@ -416,6 +416,94 @@ def sync_history(
         return handle_service_error(e)
 
 
+@tool
+def list_available_bookmarks() -> str:
+    """Returns a list of browsers with detected bookmarks on this system.
+
+    Returns:
+        List of available browsers with bookmarks
+    """
+    try:
+        result = HistoryService.list_available_bookmarks()
+        return cast(str, result["message"])
+    except Exception as e:
+        return handle_service_error(e)
+
+
+@tool
+def list_available_downloads() -> str:
+    """Returns a list of browsers with detected downloads history on this system.
+
+    Returns:
+        List of available browsers with downloads
+    """
+    try:
+        result = HistoryService.list_available_downloads()
+        return cast(str, result["message"])
+    except Exception as e:
+        return handle_service_error(e)
+
+
+@tool
+def get_bookmarks(
+    query: str | None = None,
+    limit: int = 50,
+    browser: str = "chrome",
+    format_type: str = "markdown",
+) -> str:
+    """Gets bookmarks from a browser.
+
+    Args:
+        query: Optional search term to filter bookmarks
+        limit: Maximum number of results (1-100)
+        browser: Browser to get bookmarks from (chrome, edge, firefox, brave, vivaldi, opera)
+        format_type: Output format (markdown or json)
+
+    Returns:
+        Formatted list of bookmarks or error message
+    """
+    try:
+        result = HistoryService.get_bookmarks(
+            query=query,
+            limit=limit,
+            browser=browser,
+            format_type=format_type,
+        )
+        return cast(str, result["message"])
+    except Exception as e:
+        return handle_service_error(e)
+
+
+@tool
+def get_downloads(
+    query: str | None = None,
+    limit: int = 50,
+    browser: str = "chrome",
+    format_type: str = "markdown",
+) -> str:
+    """Gets downloads history from a browser.
+
+    Args:
+        query: Optional search term to filter downloads
+        limit: Maximum number of results (1-100)
+        browser: Browser to get downloads from (chrome, edge, firefox, brave, vivaldi, opera)
+        format_type: Output format (markdown or json)
+
+    Returns:
+        Formatted list of downloads or error message
+    """
+    try:
+        result = HistoryService.get_downloads(
+            query=query,
+            limit=limit,
+            browser=browser,
+            format_type=format_type,
+        )
+        return cast(str, result["message"])
+    except Exception as e:
+        return handle_service_error(e)
+
+
 def get_registered_tools() -> list[str]:
     """Returns the list of registered MCP tool names."""
     return MCP_TOOLS.copy()

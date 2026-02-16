@@ -33,11 +33,13 @@ from chronicle_mcp.core.exceptions import (
 from chronicle_mcp.core.formatters import (
     format_advanced_search_results,
     format_available_browsers,
+    format_bookmarks,
     format_browser_stats,
     format_delete_preview,
     format_delete_result,
     format_domain_search_results,
     format_domain_visits,
+    format_downloads,
     format_most_visited_pages,
     format_recent_results,
     format_search_results,
@@ -62,6 +64,8 @@ from chronicle_mcp.core.validation import (
 )
 from chronicle_mcp.database import (
     count_domain_visits,
+    query_bookmarks,
+    query_downloads,
     query_history,
     query_recent_history,
 )
@@ -89,7 +93,15 @@ from chronicle_mcp.database import (
 from chronicle_mcp.database import (
     search_history_advanced as db_search_history_advanced,
 )
-from chronicle_mcp.paths import get_available_browsers, get_browser_path
+from chronicle_mcp.paths import (
+    get_available_bookmarks,
+    get_available_browsers,
+    get_available_downloads,
+    get_bookmark_path,
+    get_browser_path,
+    get_browser_schema,
+    get_download_path,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -592,4 +604,98 @@ class HistoryService:
             "entries_count": entries_count,
             "merge_strategy": strategy,
             "message": format_sync_result(source, target, entries_count, strategy),
+        }
+
+    @classmethod
+    def list_available_bookmarks(cls) -> dict[str, Any]:
+        """Get list of browsers with available bookmarks.
+
+        Returns:
+            Dictionary with list of browsers and formatted message
+        """
+        browsers = get_available_bookmarks()
+        return {"browsers": browsers, "message": format_available_browsers(browsers)}
+
+    @classmethod
+    def list_available_downloads(cls) -> dict[str, Any]:
+        """Get list of browsers with available downloads history.
+
+        Returns:
+            Dictionary with list of browsers and formatted message
+        """
+        browsers = get_available_downloads()
+        return {"browsers": browsers, "message": format_available_browsers(browsers)}
+
+    @classmethod
+    def get_bookmarks(
+        cls,
+        query: str | None = None,
+        limit: int = 50,
+        browser: str = "chrome",
+        format_type: str = "markdown",
+    ) -> dict[str, Any]:
+        """Get bookmarks from a browser.
+
+        Args:
+            query: Optional search term to filter bookmarks
+            limit: Maximum results (1-100)
+            browser: Browser to get bookmarks from
+            format_type: 'markdown' or 'json'
+
+        Returns:
+            Dictionary with bookmarks and formatted message
+        """
+        browser_lower = validate_browser(browser)
+        limit_val = validate_limit(limit, 1, 100)
+        format_clean = validate_format_type(format_type)
+
+        bookmark_path = get_bookmark_path(browser_lower)
+        if not bookmark_path:
+            raise BrowserNotFoundError(f"{browser_lower} (bookmarks not found)")
+
+        schema = get_browser_schema(browser_lower)
+        bookmarks = query_bookmarks(bookmark_path, schema, query, limit_val)
+
+        return {
+            "results": bookmarks,
+            "count": len(bookmarks),
+            "browser": browser_lower,
+            "message": format_bookmarks(bookmarks, format_clean),
+        }
+
+    @classmethod
+    def get_downloads(
+        cls,
+        query: str | None = None,
+        limit: int = 50,
+        browser: str = "chrome",
+        format_type: str = "markdown",
+    ) -> dict[str, Any]:
+        """Get downloads history from a browser.
+
+        Args:
+            query: Optional search term to filter downloads
+            limit: Maximum results (1-100)
+            browser: Browser to get downloads from
+            format_type: 'markdown' or 'json'
+
+        Returns:
+            Dictionary with downloads and formatted message
+        """
+        browser_lower = validate_browser(browser)
+        limit_val = validate_limit(limit, 1, 100)
+        format_clean = validate_format_type(format_type)
+
+        download_path = get_download_path(browser_lower)
+        if not download_path:
+            raise BrowserNotFoundError(f"{browser_lower} (downloads not found)")
+
+        schema = get_browser_schema(browser_lower)
+        downloads = query_downloads(download_path, schema, query, limit_val)
+
+        return {
+            "results": downloads,
+            "count": len(downloads),
+            "browser": browser_lower,
+            "message": format_downloads(downloads, format_clean),
         }

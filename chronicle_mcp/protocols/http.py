@@ -420,6 +420,75 @@ async def sync_endpoint(request: Request) -> JSONResponse:
         return handle_service_error_http(e)
 
 
+async def list_bookmarks_endpoint(request: Request) -> JSONResponse:
+    """List available bookmarks endpoint."""
+    try:
+        result = HistoryService.list_available_bookmarks()
+        return JSONResponse({"browsers": result["browsers"]})
+    except Exception as e:
+        return handle_service_error_http(e)
+
+
+async def list_downloads_endpoint(request: Request) -> JSONResponse:
+    """List available downloads endpoint."""
+    try:
+        result = HistoryService.list_available_downloads()
+        return JSONResponse({"browsers": result["browsers"]})
+    except Exception as e:
+        return handle_service_error_http(e)
+
+
+async def bookmarks_endpoint(request: Request) -> JSONResponse:
+    """Get bookmarks endpoint."""
+    try:
+        data = await request.json() if await request.body() else {}
+        result = HistoryService.get_bookmarks(
+            query=data.get("query"),
+            limit=data.get("limit", 50),
+            browser=data.get("browser", default_browser),
+            format_type=data.get("format", "markdown"),
+        )
+
+        if data.get("format") == "json":
+            return JSONResponse(
+                {
+                    "bookmarks": [{"title": title, "url": url} for title, url in result["results"]],
+                    "count": result["count"],
+                    "browser": result["browser"],
+                }
+            )
+        return JSONResponse({"results": result["message"]})
+    except Exception as e:
+        return handle_service_error_http(e)
+
+
+async def downloads_endpoint(request: Request) -> JSONResponse:
+    """Get downloads endpoint."""
+    try:
+        data = await request.json() if await request.body() else {}
+        result = HistoryService.get_downloads(
+            query=data.get("query"),
+            limit=data.get("limit", 50),
+            browser=data.get("browser", default_browser),
+            format_type=data.get("format", "markdown"),
+        )
+
+        if data.get("format") == "json":
+            return JSONResponse(
+                {
+                    "downloads": [
+                        {"filename": fn, "url": url, "timestamp": ts}
+                        for fn, url, ts in result["results"]
+                    ],
+                    "count": result["count"],
+                    "browser": result["browser"],
+                }
+            )
+        return JSONResponse({"results": result["message"]})
+    except Exception as e:
+        return handle_service_error_http(e)
+
+
 routes = [
     Route("/health", health_check),
     Route("/ready", ready_check),
@@ -438,6 +507,10 @@ routes = [
     Route("/api/export", export_endpoint, methods=["POST"]),
     Route("/api/advanced-search", advanced_search_endpoint, methods=["POST"]),
     Route("/api/sync", sync_endpoint, methods=["POST"]),
+    Route("/api/bookmarks", list_bookmarks_endpoint),
+    Route("/api/bookmarks/query", bookmarks_endpoint, methods=["POST"]),
+    Route("/api/downloads", list_downloads_endpoint),
+    Route("/api/downloads/query", downloads_endpoint, methods=["POST"]),
 ]
 
 middleware = [

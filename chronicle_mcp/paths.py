@@ -48,6 +48,78 @@ BROWSER_SCHEMAS: dict[str, str] = {
     "safari": "safari",
 }
 
+BOOKMARK_PATHS: dict[str, dict[str, str]] = {
+    "chrome": {
+        "Windows": r"%LocalAppData%\Google\Chrome\User Data\Default\Bookmarks",
+        "Darwin": "~/Library/Application Support/Google/Chrome/Default/Bookmarks",
+        "Linux": "~/.config/google-chrome/Default/Bookmarks",
+    },
+    "edge": {
+        "Windows": r"%LocalAppData%\Microsoft\Edge\User Data\Default\Bookmarks",
+        "Darwin": "~/Library/Application Support/Microsoft Edge/Default/Bookmarks",
+        "Linux": "~/.config/microsoft-edge/Default/Bookmarks",
+    },
+    "firefox": {
+        "Windows": r"%AppData%\Mozilla\Firefox\Profiles\*.default\places.sqlite",
+        "Darwin": "~/Library/Mozilla/Firefox/Profiles/*.default/places.sqlite",
+        "Linux": "~/.mozilla/firefox/*.default/places.sqlite",
+    },
+    "brave": {
+        "Windows": r"%LocalAppData%\BraveSoftware\Brave-Default\Bookmarks",
+        "Darwin": "~/Library/Application Support/BraveSoftware/Brave-Default/Bookmarks",
+        "Linux": "~/.config/BraveSoftware/Brave-Default/Bookmarks",
+    },
+    "safari": {
+        "Darwin": "~/Library/Safari/Bookmarks.plist",
+    },
+    "vivaldi": {
+        "Windows": r"%LocalAppData%\Vivaldi\Default\Bookmarks",
+        "Darwin": "~/Library/Application Support/Vivaldi/Default/Bookmarks",
+        "Linux": "~/.config/vivaldi/Default/Bookmarks",
+    },
+    "opera": {
+        "Windows": r"%AppData%\Opera Software\Opera Stable\Bookmarks",
+        "Darwin": "~/Library/Application Support/com.operasoftware.Opera/Bookmarks",
+        "Linux": "~/.config/opera/Bookmarks",
+    },
+}
+
+DOWNLOAD_PATHS: dict[str, dict[str, str]] = {
+    "chrome": {
+        "Windows": r"%LocalAppData%\Google\Chrome\User Data\Default\History",
+        "Darwin": "~/Library/Application Support/Google/Chrome/Default/History",
+        "Linux": "~/.config/google-chrome/Default/History",
+    },
+    "edge": {
+        "Windows": r"%LocalAppData%\Microsoft\Edge\User Data\Default\History",
+        "Darwin": "~/Library/Application Support/Microsoft Edge/Default/History",
+        "Linux": "~/.config/microsoft-edge/Default/History",
+    },
+    "firefox": {
+        "Windows": r"%AppData%\Mozilla\Firefox\Profiles\*.default\places.sqlite",
+        "Darwin": "~/Library/Mozilla/Firefox/Profiles/*.default/places.sqlite",
+        "Linux": "~/.mozilla/firefox/*.default/places.sqlite",
+    },
+    "brave": {
+        "Windows": r"%LocalAppData%\BraveSoftware\Brave-Default\History",
+        "Darwin": "~/Library/Application Support/BraveSoftware/Brave-Default/History",
+        "Linux": "~/.config/BraveSoftware/Brave-Default/History",
+    },
+    "safari": {
+        "Darwin": "~/Library/Safari/History.db",
+    },
+    "vivaldi": {
+        "Windows": r"%LocalAppData%\Vivaldi\Default\History",
+        "Darwin": "~/Library/Application Support/Vivaldi/Default/History",
+        "Linux": "~/.config/vivaldi/Default/History",
+    },
+    "opera": {
+        "Windows": r"%AppData%\Opera Software\Opera Stable\History",
+        "Darwin": "~/Library/Application Support/com.operasoftware.Opera/History",
+        "Linux": "~/.config/opera/History",
+    },
+}
+
 
 def get_browser_schema(browser: str) -> str:
     """
@@ -127,3 +199,81 @@ def get_all_browser_paths() -> dict[str, str | None]:
         path = get_browser_path(browser)
         result[browser] = path
     return result
+
+
+def get_bookmark_path(browser: str) -> str | None:
+    """
+    Gets the bookmarks file path for the specified browser.
+
+    Args:
+        browser: Browser name (case insensitive)
+
+    Returns:
+        Path to bookmarks file or None if not found
+    """
+    browser_lower = browser.lower()
+
+    if browser_lower not in BOOKMARK_PATHS:
+        return None
+
+    os_name = get_os_name()
+    path_pattern = BOOKMARK_PATHS[browser_lower].get(os_name)
+
+    if not path_pattern:
+        return None
+
+    if "*" in path_pattern:
+        return find_glob_path(path_pattern)
+    else:
+        expanded = expand_path(path_pattern)
+        return expanded if os.path.exists(expanded) else None
+
+
+def get_available_bookmarks() -> list[str]:
+    """
+    Returns a list of browsers with detected bookmarks.
+    """
+    available = []
+    for browser in BOOKMARK_PATHS:
+        if get_bookmark_path(browser):
+            available.append(browser)
+    return available
+
+
+def get_download_path(browser: str) -> str | None:
+    """
+    Gets the downloads database path for the specified browser.
+
+    Args:
+        browser: Browser name (case insensitive)
+
+    Returns:
+        Path to downloads database or None if not found
+    """
+    browser_lower = browser.lower()
+
+    if browser_lower not in DOWNLOAD_PATHS:
+        return None
+
+    os_name = get_os_name()
+    path_pattern = DOWNLOAD_PATHS[browser_lower].get(os_name)
+
+    if not path_pattern:
+        return None
+
+    if "*" in path_pattern:
+        return find_glob_path(path_pattern)
+    else:
+        expanded = expand_path(path_pattern)
+        return expanded if os.path.exists(expanded) else None
+
+
+def get_available_downloads() -> list[str]:
+    """
+    Returns a list of browsers with detected downloads history.
+    """
+    available = []
+    for browser in DOWNLOAD_PATHS:
+        if get_download_path(browser):
+            available.append(browser)
+    return available

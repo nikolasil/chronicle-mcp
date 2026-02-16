@@ -45,7 +45,7 @@ Check if the service is ready and browsers are available.
 {
   "status": "ready",
   "service": "chronicle-mcp",
-  "browsers": ["chrome", "edge"],
+  "browsers": ["chrome", "edge", "firefox", "brave", "vivaldi", "opera"],
   "timestamp": "2024-01-15T10:30:00+00:00"
 }
 ```
@@ -91,7 +91,7 @@ Get a list of available browsers.
 
 ```json
 {
-  "browsers": ["chrome", "edge", "firefox"]
+  "browsers": ["chrome", "edge", "firefox", "brave", "safari", "vivaldi", "opera"]
 }
 ```
 
@@ -328,6 +328,318 @@ Search history within a date range.
 {
   "error": "query, start_date, and end_date are required"
 }
+```
+
+---
+
+### Delete History
+
+**POST** `/api/delete`
+
+Delete history entries matching a query.
+
+**Request Body:**
+
+```json
+{
+  "query": "spam.com",
+  "limit": 100,
+  "browser": "chrome",
+  "confirm": false
+}
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `query` | String | Yes | - | Search term to match for deletion |
+| `limit` | Integer | No | 100 | Maximum entries to delete (1-500) |
+| `browser` | String | No | chrome | Browser to delete from |
+| `confirm` | Boolean | No | false | If false, returns preview only |
+
+**Response (200 OK - Preview):**
+
+```json
+{
+  "preview": true,
+  "query": "spam.com",
+  "count": 5,
+  "message": "Would delete 5 entries. Set confirm=true to actually delete."
+}
+```
+
+**Response (200 OK - Deleted):**
+
+```json
+{
+  "deleted": 5,
+  "query": "spam.com",
+  "browser": "chrome",
+  "message": "Successfully deleted 5 entries"
+}
+```
+
+---
+
+### Search by Domain
+
+**POST** `/api/domain-search`
+
+Search history within specific domain(s).
+
+**Request Body:**
+
+```json
+{
+  "domain": "github.com",
+  "query": "issues",
+  "limit": 20,
+  "browser": "chrome",
+  "format": "markdown"
+}
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `domain` | String | Yes | - | Domain to search within |
+| `query` | String | No | - | Optional search term within domain |
+| `limit` | Integer | No | 20 | Maximum results (1-100) |
+| `browser` | String | No | chrome | Browser to search |
+| `format` | String | No | markdown | Output format (markdown/json) |
+| `exclude_domains` | Array | No | - | Domains to exclude |
+
+**Response (200 OK):**
+
+```json
+{
+  "domain": "github.com",
+  "results": [
+    {"title": "Issue #123", "url": "https://github.com/user/repo/issues/123", "timestamp": "2024-01-15T10:30:00+00:00"}
+  ],
+  "count": 1
+}
+```
+
+---
+
+### Browser Statistics
+
+**POST** `/api/stats`
+
+Get browsing statistics for the browser database.
+
+**Request Body:**
+
+```json
+{
+  "browser": "chrome"
+}
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `browser` | String | No | chrome | Browser to get stats for |
+
+**Response (200 OK):**
+
+```json
+{
+  "total_visits": 15000,
+  "unique_domains": 500,
+  "total_urls": 8000,
+  "date_range": {
+    "oldest": "2023-01-01T00:00:00+00:00",
+    "newest": "2024-01-15T10:30:00+00:00"
+  },
+  "browser": "chrome"
+}
+```
+
+---
+
+### Most Visited Pages
+
+**POST** `/api/most-visited`
+
+Get the most visited individual pages.
+
+**Request Body:**
+
+```json
+{
+  "limit": 20,
+  "browser": "chrome"
+}
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `limit` | Integer | No | 20 | Maximum pages (1-100) |
+| `browser` | String | No | chrome | Browser to query |
+
+**Response (200 OK):**
+
+```json
+{
+  "pages": [
+    {"title": "Home", "url": "https://example.com/", "visits": 150},
+    {"title": "About", "url": "https://example.com/about", "visits": 75}
+  ]
+}
+```
+
+---
+
+### Export History
+
+**POST** `/api/export`
+
+Export history to CSV or JSON format.
+
+**Request Body:**
+
+```json
+{
+  "format_type": "csv",
+  "limit": 1000,
+  "query": "python",
+  "browser": "chrome"
+}
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `format_type` | String | No | csv | Export format (csv/json) |
+| `limit` | Integer | No | 1000 | Maximum entries (1-10000) |
+| `query` | String | No | - | Optional search filter |
+| `browser` | String | No | chrome | Browser to export from |
+
+**Response (200 OK):**
+
+Returns raw CSV or JSON content with appropriate Content-Type header.
+
+---
+
+### Advanced Search
+
+**POST** `/api/advanced-search`
+
+Advanced search with multiple options.
+
+**Request Body:**
+
+```json
+{
+  "query": "python",
+  "limit": 20,
+  "browser": "chrome",
+  "format": "markdown",
+  "exclude_domains": ["ads.example.com"],
+  "sort_by": "date",
+  "use_regex": false,
+  "use_fuzzy": false,
+  "fuzzy_threshold": 0.6
+}
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `query` | String | Yes | - | Search term |
+| `limit` | Integer | No | 20 | Maximum results |
+| `browser` | String | No | chrome | Browser to search |
+| `format` | String | No | markdown | Output format |
+| `exclude_domains` | Array | No | - | Domains to exclude |
+| `sort_by` | String | No | date | Sort order (date/visit_count/title) |
+| `use_regex` | Boolean | No | false | Use regex matching |
+| `use_fuzzy` | Boolean | No | false | Use fuzzy matching |
+| `fuzzy_threshold` | Float | No | 0.6 | Min similarity (0.0-1.0) |
+
+**Response (200 OK):**
+
+```json
+{
+  "query": "python",
+  "results": [...],
+  "count": 10,
+  "options": {
+    "sort_by": "date",
+    "use_regex": false,
+    "use_fuzzy": false
+  }
+}
+```
+
+---
+
+### Sync History
+
+**POST** `/api/sync`
+
+Sync history between browsers.
+
+**Request Body:**
+
+```json
+{
+  "source_browser": "chrome",
+  "target_browser": "firefox",
+  "merge_strategy": "latest",
+  "dry_run": true
+}
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `source_browser` | String | Yes | - | Browser to copy from |
+| `target_browser` | String | Yes | - | Browser to copy to |
+| `merge_strategy` | String | No | latest | How to handle duplicates (latest/combine/dedupe) |
+| `dry_run` | Boolean | No | true | If true, show preview only |
+
+**Response (200 OK):**
+
+```json
+{
+  "dry_run": false,
+  "source": "chrome",
+  "target": "firefox",
+  "entries_count": 150,
+  "merge_strategy": "latest",
+  "message": "Successfully synced 150 entries from chrome to firefox"
+}
+```
+
+---
+
+### Prometheus Metrics
+
+**GET** `/metrics/prometheus`
+
+Get metrics in Prometheus format.
+
+**Response (200 OK):**
+
+```
+# HELP chronicle_uptime_seconds Server uptime in seconds
+# TYPE chronicle_uptime_seconds gauge
+chronicle_uptime_seconds 3600
+
+# HELP chronicle_requests_total Total number of requests
+# TYPE chronicle_requests_total counter
+chronicle_requests_total 1500
+...
 ```
 
 ---

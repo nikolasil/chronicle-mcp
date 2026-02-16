@@ -323,3 +323,49 @@ def format_error_message(message: str) -> str:
         Formatted error string
     """
     return f"Error: {message}"
+
+
+def format_bookmarks(bookmarks: list[tuple[str, str]], format_type: str = "markdown") -> str:
+    """Format bookmarks for output.
+
+    Args:
+        bookmarks: List of (title, url) tuples
+        format_type: 'markdown' or 'json'
+
+    Returns:
+        Formatted string output
+    """
+    if not bookmarks:
+        return "No bookmarks found"
+
+    if format_type == "json":
+        items = [{"title": title, "url": url} for title, url in bookmarks]
+        return json.dumps({"bookmarks": items, "count": len(items)})
+
+    results = [f"- **{title}**\n  URL: {url}" for title, url in bookmarks]
+    return "\n\n".join(results)
+
+
+def format_downloads(downloads: list[tuple[str, str, str]], format_type: str = "markdown") -> str:
+    """Format downloads for output.
+
+    Args:
+        downloads: List of (filename, url, timestamp) tuples
+        format_type: 'markdown' or 'json'
+
+    Returns:
+        Formatted string output
+    """
+    if not downloads:
+        return "No downloads found"
+
+    if format_type == "json":
+        items = [
+            {"filename": filename, "url": url, "timestamp": ts} for filename, url, ts in downloads
+        ]
+        return json.dumps({"downloads": items, "count": len(items)})
+
+    results = [
+        f"- **{filename}**\n  URL: {url}\n  Timestamp: {ts}" for filename, url, ts in downloads
+    ]
+    return "\n\n".join(results)

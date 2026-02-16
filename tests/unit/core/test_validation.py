@@ -346,3 +346,26 @@ class TestValidateExcludeDomains:
     def test_filters_empty_strings(self):
         result = validate_exclude_domains(["example.com", "", "test.com"])
         assert result == ["example.com", "test.com"]
+
+
+class TestValidateFormatTypeExport:
+    """Tests for validate_format_type with export parameter."""
+
+    def test_valid_csv_export(self):
+        from chronicle_mcp.core.validation import validate_format_type
+
+        result = validate_format_type("csv", export=True)
+        assert result == "csv"
+
+    def test_valid_json_export(self):
+        from chronicle_mcp.core.validation import validate_format_type
+
+        result = validate_format_type("json", export=True)
+        assert result == "json"
+
+    def test_invalid_export_format(self):
+        from chronicle_mcp.core.validation import ValidationError, validate_format_type
+
+        with pytest.raises(ValidationError) as exc_info:
+            validate_format_type("xml", export=True)
+        assert "Invalid format_type" in str(exc_info.value)
