@@ -3,8 +3,6 @@
 These tests verify the MCP tool functions for bookmarks and downloads.
 """
 
-import pytest
-
 from chronicle_mcp.core.exceptions import BrowserNotFoundError
 from chronicle_mcp.protocols.mcp import (
     get_bookmarks,
@@ -78,7 +76,7 @@ class TestGetBookmarksMCP:
 
     def test_get_bookmarks_validation_error(self, monkeypatch):
         """Test get_bookmarks with validation error."""
-        from chronicle_mcp.core import services, validation
+        from chronicle_mcp.core import validation
 
         def mock_validate_browser(browser):
             raise validation.ValidationError(f"Invalid browser: {browser}")
@@ -135,7 +133,7 @@ class TestGetDownloadsMCP:
 
     def test_get_downloads_validation_error(self, monkeypatch):
         """Test get_downloads with validation error."""
-        from chronicle_mcp.core import services, validation
+        from chronicle_mcp.core import validation
 
         def mock_validate_browser(browser):
             raise validation.ValidationError(f"Invalid browser: {browser}")

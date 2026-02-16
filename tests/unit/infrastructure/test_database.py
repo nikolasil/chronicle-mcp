@@ -497,7 +497,6 @@ class TestQueryBookmarksFirefoxWithGlob:
 
     def test_query_bookmarks_firefox_glob_pattern(self, temp_dir):
         """Test querying Firefox bookmarks with glob pattern path."""
-        import json
 
         from chronicle_mcp.database import query_bookmarks
 
