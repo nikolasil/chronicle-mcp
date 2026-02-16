@@ -1,3 +1,40 @@
+## [1.4.0] - 2026-02-16
+
+
+### Documentation
+
+
+- update documentation to match current codebase
+
+- update README with bookmarks and downloads features
+
+
+
+### Fixed
+
+
+- type annotation for bookmarks extraction
+
+- ruff format
+
+- ruff
+
+
+
+### Testing
+
+
+- add comprehensive tests for bookmarks and downloads
+
+- add service layer tests for bookmarks and downloads
+
+- fix monkeypatch targets in bookmark/download tests
+
+- add comprehensive tests for bookmarks and downloads coverage
+
+
+
+---
 ## [1.3.15] - 2026-02-15
 
 
