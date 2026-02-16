@@ -170,7 +170,7 @@ class TestQueryBookmarksChrome:
                     "children": [
                         {"type": "url", "name": "GitHub", "url": "https://github.com"},
                         {"type": "url", "name": "Python", "url": "https://python.org"},
-                    ]
+                    ],
                 }
             }
         }
@@ -194,7 +194,7 @@ class TestQueryBookmarksChrome:
                     "children": [
                         {"type": "url", "name": "GitHub", "url": "https://github.com"},
                         {"type": "url", "name": "Python", "url": "https://python.org"},
-                    ]
+                    ],
                 }
             }
         }

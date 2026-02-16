@@ -752,7 +752,8 @@ def query_bookmarks_chrome(
     if query:
         query_lower = query.lower()
         bookmarks = [
-            (title, url) for title, url in bookmarks
+            (title, url)
+            for title, url in bookmarks
             if query_lower in (title or "").lower() or query_lower in (url or "").lower()
         ]
 

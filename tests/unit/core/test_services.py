@@ -38,6 +38,7 @@ class TestGetBookmarks:
                 return None
             # Return real path for other browsers to not break the test
             import platform
+
             if platform.system() != "Darwin":
                 return None
             return None
@@ -49,6 +50,7 @@ class TestGetBookmarks:
 
     def test_returns_dict_with_results(self, temp_dir, monkeypatch):
         import json
+
         from chronicle_mcp import paths
 
         bookmark_file = temp_dir / "Bookmarks"
@@ -58,7 +60,7 @@ class TestGetBookmarks:
                     "type": "folder",
                     "children": [
                         {"type": "url", "name": "GitHub", "url": "https://github.com"},
-                    ]
+                    ],
                 }
             }
         }
@@ -78,6 +80,7 @@ class TestGetBookmarks:
 
     def test_with_query_filter(self, temp_dir, monkeypatch):
         import json
+
         from chronicle_mcp import paths
 
         bookmark_file = temp_dir / "Bookmarks"
@@ -88,7 +91,7 @@ class TestGetBookmarks:
                     "children": [
                         {"type": "url", "name": "GitHub", "url": "https://github.com"},
                         {"type": "url", "name": "Python", "url": "https://python.org"},
-                    ]
+                    ],
                 }
             }
         }
@@ -123,6 +126,7 @@ class TestGetDownloads:
 
     def test_returns_dict_with_results(self, temp_dir, monkeypatch):
         import sqlite3
+
         from chronicle_mcp import paths
 
         db_path = temp_dir / "History"

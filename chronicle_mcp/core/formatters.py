@@ -360,8 +360,12 @@ def format_downloads(downloads: list[tuple[str, str, str]], format_type: str = "
         return "No downloads found"
 
     if format_type == "json":
-        items = [{"filename": filename, "url": url, "timestamp": ts} for filename, url, ts in downloads]
+        items = [
+            {"filename": filename, "url": url, "timestamp": ts} for filename, url, ts in downloads
+        ]
         return json.dumps({"downloads": items, "count": len(items)})
 
-    results = [f"- **{filename}**\n  URL: {url}\n  Timestamp: {ts}" for filename, url, ts in downloads]
+    results = [
+        f"- **{filename}**\n  URL: {url}\n  Timestamp: {ts}" for filename, url, ts in downloads
+    ]
     return "\n\n".join(results)

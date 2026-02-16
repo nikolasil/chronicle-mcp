@@ -452,9 +452,7 @@ async def bookmarks_endpoint(request: Request) -> JSONResponse:
         if data.get("format") == "json":
             return JSONResponse(
                 {
-                    "bookmarks": [
-                        {"title": title, "url": url} for title, url in result["results"]
-                    ],
+                    "bookmarks": [{"title": title, "url": url} for title, url in result["results"]],
                     "count": result["count"],
                     "browser": result["browser"],
                 }
