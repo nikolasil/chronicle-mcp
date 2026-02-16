@@ -51,7 +51,7 @@ class TestGetBookmarks:
     def test_returns_dict_with_results(self, temp_dir, monkeypatch):
         import json
 
-        from chronicle_mcp import paths
+        from chronicle_mcp.core import services
 
         bookmark_file = temp_dir / "Bookmarks"
         bookmark_data = {
@@ -69,7 +69,7 @@ class TestGetBookmarks:
         def mock_get_bookmark_path(browser):
             return str(bookmark_file)
 
-        monkeypatch.setattr(paths, "get_bookmark_path", mock_get_bookmark_path)
+        monkeypatch.setattr(services, "get_bookmark_path", mock_get_bookmark_path)
 
         result = HistoryService.get_bookmarks(browser="chrome")
         assert isinstance(result, dict)
@@ -81,7 +81,7 @@ class TestGetBookmarks:
     def test_with_query_filter(self, temp_dir, monkeypatch):
         import json
 
-        from chronicle_mcp import paths
+        from chronicle_mcp.core import services
 
         bookmark_file = temp_dir / "Bookmarks"
         bookmark_data = {
@@ -100,7 +100,7 @@ class TestGetBookmarks:
         def mock_get_bookmark_path(browser):
             return str(bookmark_file)
 
-        monkeypatch.setattr(paths, "get_bookmark_path", mock_get_bookmark_path)
+        monkeypatch.setattr(services, "get_bookmark_path", mock_get_bookmark_path)
 
         result_with_filter = HistoryService.get_bookmarks(query="github", browser="chrome")
         result_all = HistoryService.get_bookmarks(browser="chrome")
@@ -127,7 +127,7 @@ class TestGetDownloads:
     def test_returns_dict_with_results(self, temp_dir, monkeypatch):
         import sqlite3
 
-        from chronicle_mcp import paths
+        from chronicle_mcp.core import services
 
         db_path = temp_dir / "History"
         conn = sqlite3.connect(str(db_path))
@@ -159,7 +159,7 @@ class TestGetDownloads:
         def mock_get_download_path(browser):
             return str(db_path)
 
-        monkeypatch.setattr(paths, "get_download_path", mock_get_download_path)
+        monkeypatch.setattr(services, "get_download_path", mock_get_download_path)
 
         result = HistoryService.get_downloads(browser="chrome")
         assert isinstance(result, dict)
