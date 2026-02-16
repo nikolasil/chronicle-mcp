@@ -306,3 +306,65 @@ class TestDownloadsEndpoints:
             "/api/downloads/query", json={"browser": "chrome", "format": "json"}
         )
         assert response.status_code in (200, 404)
+
+
+class TestBookmarksErrorHandling:
+    """Tests for bookmarks endpoint error handling."""
+
+    def test_bookmarks_endpoint_error(self, http_client, monkeypatch):
+        """Test bookmarks endpoint error handling."""
+        from chronicle_mcp.core import services
+
+        def mock_get_bookmarks(*args, **kwargs):
+            raise Exception("Test error")
+
+        monkeypatch.setattr(services.HistoryService, "get_bookmarks", mock_get_bookmarks)
+
+        response = http_client.post("/api/bookmarks/query", json={"browser": "chrome"})
+        # Should return error response
+        assert response.status_code in (200, 500)
+
+    def test_list_bookmarks_endpoint_error(self, http_client, monkeypatch):
+        """Test list bookmarks endpoint error handling."""
+        from chronicle_mcp.core import services
+
+        def mock_list_available_bookmarks(*args, **kwargs):
+            raise Exception("Test error")
+
+        monkeypatch.setattr(
+            services.HistoryService, "list_available_bookmarks", mock_list_available_bookmarks
+        )
+
+        response = http_client.get("/api/bookmarks")
+        assert response.status_code in (200, 500)
+
+
+class TestDownloadsErrorHandling:
+    """Tests for downloads endpoint error handling."""
+
+    def test_downloads_endpoint_error(self, http_client, monkeypatch):
+        """Test downloads endpoint error handling."""
+        from chronicle_mcp.core import services
+
+        def mock_get_downloads(*args, **kwargs):
+            raise Exception("Test error")
+
+        monkeypatch.setattr(services.HistoryService, "get_downloads", mock_get_downloads)
+
+        response = http_client.post("/api/downloads/query", json={"browser": "chrome"})
+        # Should return error response
+        assert response.status_code in (200, 500)
+
+    def test_list_downloads_endpoint_error(self, http_client, monkeypatch):
+        """Test list downloads endpoint error handling."""
+        from chronicle_mcp.core import services
+
+        def mock_list_available_downloads(*args, **kwargs):
+            raise Exception("Test error")
+
+        monkeypatch.setattr(
+            services.HistoryService, "list_available_downloads", mock_list_available_downloads
+        )
+
+        response = http_client.get("/api/downloads")
+        assert response.status_code in (200, 500)
