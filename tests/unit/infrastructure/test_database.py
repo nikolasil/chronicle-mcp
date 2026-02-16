@@ -153,3 +153,198 @@ class TestGetTopDomains:
             assert len(domains) <= 2
         finally:
             conn.close()
+
+
+class TestQueryBookmarksChrome:
+    """Tests for Chrome bookmarks query function."""
+
+    def test_query_bookmarks_chrome_with_file(self, temp_dir):
+        """Test querying Chrome bookmarks from JSON file."""
+        import json
+
+        bookmark_file = temp_dir / "Bookmarks"
+        bookmark_data = {
+            "roots": {
+                "bookmark_bar": {
+                    "type": "folder",
+                    "children": [
+                        {"type": "url", "name": "GitHub", "url": "https://github.com"},
+                        {"type": "url", "name": "Python", "url": "https://python.org"},
+                    ]
+                }
+            }
+        }
+        bookmark_file.write_text(json.dumps(bookmark_data))
+
+        from chronicle_mcp.database import query_bookmarks_chrome
+
+        result = query_bookmarks_chrome(str(bookmark_file), None, 10)
+        assert len(result) == 2
+        assert ("GitHub", "https://github.com") in result
+
+    def test_query_bookmarks_chrome_with_query(self, temp_dir):
+        """Test querying Chrome bookmarks with filter."""
+        import json
+
+        bookmark_file = temp_dir / "Bookmarks"
+        bookmark_data = {
+            "roots": {
+                "bookmark_bar": {
+                    "type": "folder",
+                    "children": [
+                        {"type": "url", "name": "GitHub", "url": "https://github.com"},
+                        {"type": "url", "name": "Python", "url": "https://python.org"},
+                    ]
+                }
+            }
+        }
+        bookmark_file.write_text(json.dumps(bookmark_data))
+
+        from chronicle_mcp.database import query_bookmarks_chrome
+
+        result = query_bookmarks_chrome(str(bookmark_file), "github", 10)
+        assert len(result) == 1
+        assert "github" in result[0][0].lower()
+
+    def test_query_bookmarks_chrome_empty_file(self, temp_dir):
+        """Test querying empty bookmarks file."""
+        import json
+
+        bookmark_file = temp_dir / "Bookmarks"
+        bookmark_file.write_text(json.dumps({"roots": {}}))
+
+        from chronicle_mcp.database import query_bookmarks_chrome
+
+        result = query_bookmarks_chrome(str(bookmark_file), None, 10)
+        assert result == []
+
+    def test_query_bookmarks_chrome_invalid_file(self, temp_dir):
+        """Test querying invalid bookmarks file."""
+        from chronicle_mcp.database import query_bookmarks_chrome
+
+        result = query_bookmarks_chrome(str(temp_dir / "nonexistent"), None, 10)
+        assert result == []
+
+
+class TestQueryBookmarksFirefox:
+    """Tests for Firefox bookmarks query function."""
+
+    def test_query_bookmarks_firefox(self, sample_firefox_db):
+        """Test querying Firefox bookmarks."""
+        from chronicle_mcp.database import query_bookmarks_firefox
+
+        conn = sqlite3.connect(sample_firefox_db)
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                CREATE TABLE moz_bookmarks (
+                    id INTEGER PRIMARY KEY,
+                    fk INTEGER,
+                    type INTEGER,
+                    parent INTEGER,
+                    position INTEGER
+                )
+            """)
+            cursor.execute("""
+                INSERT INTO moz_bookmarks (fk, type, parent, position) VALUES
+                (1, 1, 0, 0), (2, 1, 0, 1)
+            """)
+            conn.commit()
+
+            result = query_bookmarks_firefox(conn, None, 10)
+            assert isinstance(result, list)
+        finally:
+            conn.close()
+
+
+class TestQueryDownloadsChrome:
+    """Tests for Chrome downloads query function."""
+
+    def test_query_downloads_chrome(self, sample_chrome_db):
+        """Test querying Chrome downloads."""
+        from chronicle_mcp.database import query_downloads_chrome
+
+        conn = sqlite3.connect(sample_chrome_db)
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS downloads (
+                    id INTEGER PRIMARY KEY,
+                    filename TEXT,
+                    url TEXT,
+                    start_time INTEGER
+                )
+            """)
+            cursor.execute("""
+                INSERT INTO downloads (filename, url, start_time) VALUES
+                ('test.pdf', 'https://example.com/test.pdf', 13316000000000000),
+                ('doc.pdf', 'https://example.com/doc.pdf', 13315000000000000)
+            """)
+            conn.commit()
+
+            result = query_downloads_chrome(conn, None, 10)
+            assert isinstance(result, list)
+        finally:
+            conn.close()
+
+    def test_query_downloads_chrome_with_query(self, sample_chrome_db):
+        """Test querying Chrome downloads with filter."""
+        from chronicle_mcp.database import query_downloads_chrome
+
+        conn = sqlite3.connect(sample_chrome_db)
+        try:
+            cursor = conn.cursor()
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS downloads (
+                    id INTEGER PRIMARY KEY,
+                    filename TEXT,
+                    url TEXT,
+                    start_time INTEGER
+                )
+            """)
+            cursor.execute("""
+                INSERT INTO downloads (filename, url, start_time) VALUES
+                ('test.pdf', 'https://example.com/test.pdf', 13316000000000000)
+            """)
+            conn.commit()
+
+            result = query_downloads_chrome(conn, "test", 10)
+            assert isinstance(result, list)
+        finally:
+            conn.close()
+
+
+class TestQueryBookmarksUniversal:
+    """Tests for universal bookmark query function."""
+
+    def test_query_bookmarks_none_path(self):
+        """Test query_bookmarks with None path."""
+        from chronicle_mcp.database import query_bookmarks
+
+        result = query_bookmarks(None, "chrome", None, 10)
+        assert result == []
+
+    def test_query_bookmarks_invalid_path(self):
+        """Test query_bookmarks with invalid path."""
+        from chronicle_mcp.database import query_bookmarks
+
+        result = query_bookmarks("/nonexistent/path", "chrome", None, 10)
+        assert result == []
+
+
+class TestQueryDownloadsUniversal:
+    """Tests for universal downloads query function."""
+
+    def test_query_downloads_none_path(self):
+        """Test query_downloads with None path."""
+        from chronicle_mcp.database import query_downloads
+
+        result = query_downloads(None, "chrome", None, 10)
+        assert result == []
+
+    def test_query_downloads_invalid_path(self):
+        """Test query_downloads with invalid path."""
+        from chronicle_mcp.database import query_downloads
+
+        result = query_downloads("/nonexistent/path", "chrome", None, 10)
+        assert result == []

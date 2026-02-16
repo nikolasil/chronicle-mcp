@@ -210,3 +210,99 @@ class TestErrorHandling:
             "/api/search", json={"query": "test", "browser": "invalid_browser_xyz"}
         )
         assert response.status_code in (200, 400, 404)
+
+
+class TestBookmarksEndpoints:
+    """Tests for bookmarks endpoints."""
+
+    def test_list_bookmarks_endpoint(self, http_client, monkeypatch):
+        """Test list bookmarks endpoint."""
+        from chronicle_mcp import paths
+
+        def mock_get_bookmark_path(browser):
+            return None
+
+        def mock_get_available_bookmarks():
+            return ["chrome", "firefox"]
+
+        monkeypatch.setattr(paths, "get_bookmark_path", mock_get_bookmark_path)
+        monkeypatch.setattr(paths, "get_available_bookmarks", mock_get_available_bookmarks)
+
+        response = http_client.get("/api/bookmarks")
+        assert response.status_code == 200
+        data = response.json()
+        assert "browsers" in data
+
+    def test_bookmarks_query_endpoint(self, http_client, monkeypatch):
+        """Test bookmarks query endpoint."""
+        from chronicle_mcp import paths
+
+        def mock_get_bookmark_path(browser):
+            return None
+
+        monkeypatch.setattr(paths, "get_bookmark_path", mock_get_bookmark_path)
+
+        response = http_client.post("/api/bookmarks/query", json={"browser": "chrome"})
+        assert response.status_code in (200, 404)
+
+    def test_bookmarks_with_format_json(self, http_client, monkeypatch):
+        """Test bookmarks query with JSON format."""
+        from chronicle_mcp import paths
+
+        def mock_get_bookmark_path(browser):
+            return None
+
+        monkeypatch.setattr(paths, "get_bookmark_path", mock_get_bookmark_path)
+
+        response = http_client.post(
+            "/api/bookmarks/query", json={"browser": "chrome", "format": "json"}
+        )
+        assert response.status_code in (200, 404)
+
+
+class TestDownloadsEndpoints:
+    """Tests for downloads endpoints."""
+
+    def test_list_downloads_endpoint(self, http_client, monkeypatch):
+        """Test list downloads endpoint."""
+        from chronicle_mcp import paths
+
+        def mock_get_download_path(browser):
+            return None
+
+        def mock_get_available_downloads():
+            return ["chrome", "firefox"]
+
+        monkeypatch.setattr(paths, "get_download_path", mock_get_download_path)
+        monkeypatch.setattr(paths, "get_available_downloads", mock_get_available_downloads)
+
+        response = http_client.get("/api/downloads")
+        assert response.status_code == 200
+        data = response.json()
+        assert "browsers" in data
+
+    def test_downloads_query_endpoint(self, http_client, monkeypatch):
+        """Test downloads query endpoint."""
+        from chronicle_mcp import paths
+
+        def mock_get_download_path(browser):
+            return None
+
+        monkeypatch.setattr(paths, "get_download_path", mock_get_download_path)
+
+        response = http_client.post("/api/downloads/query", json={"browser": "chrome"})
+        assert response.status_code in (200, 404)
+
+    def test_downloads_with_format_json(self, http_client, monkeypatch):
+        """Test downloads query with JSON format."""
+        from chronicle_mcp import paths
+
+        def mock_get_download_path(browser):
+            return None
+
+        monkeypatch.setattr(paths, "get_download_path", mock_get_download_path)
+
+        response = http_client.post(
+            "/api/downloads/query", json={"browser": "chrome", "format": "json"}
+        )
+        assert response.status_code in (200, 404)

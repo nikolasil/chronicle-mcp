@@ -932,12 +932,15 @@ def query_downloads(
             return []
         download_path = matches[0]
 
-    conn = sqlite3.connect(download_path)
     try:
-        detected_schema = detect_schema(conn)
-        if detected_schema == "firefox" or schema == "firefox":
-            return query_downloads_firefox(conn, query, limit)
-        else:
-            return query_downloads_chrome(conn, query, limit)
-    finally:
-        conn.close()
+        conn = sqlite3.connect(download_path)
+        try:
+            detected_schema = detect_schema(conn)
+            if detected_schema == "firefox" or schema == "firefox":
+                return query_downloads_firefox(conn, query, limit)
+            else:
+                return query_downloads_chrome(conn, query, limit)
+        finally:
+            conn.close()
+    except sqlite3.OperationalError:
+        return []

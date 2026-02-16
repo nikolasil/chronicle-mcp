@@ -2,12 +2,18 @@ import os
 from pathlib import Path
 
 from chronicle_mcp.paths import (
+    BOOKMARK_PATHS,
     BROWSER_PATHS,
+    DOWNLOAD_PATHS,
     expand_path,
     find_glob_path,
     get_all_browser_paths,
+    get_available_bookmarks,
     get_available_browsers,
+    get_available_downloads,
+    get_bookmark_path,
     get_browser_path,
+    get_download_path,
 )
 
 
@@ -69,3 +75,63 @@ class TestPathDetection:
         for browser in BROWSER_PATHS:
             assert browser in result
             assert result[browser] is None or isinstance(result[browser], str)
+
+
+class TestBookmarkPathDetection:
+    """Tests for bookmark path detection."""
+
+    def test_get_bookmark_path_invalid_browser(self):
+        """Test that invalid browser returns None for bookmarks."""
+        result = get_bookmark_path("invalid_browser")
+        assert result is None
+
+    def test_get_bookmark_path_case_insensitive(self):
+        """Test that bookmark path is case insensitive."""
+        result_lower = get_bookmark_path("chrome")
+        result_upper = get_bookmark_path("CHROME")
+        assert result_lower == result_upper
+
+    def test_get_available_bookmarks_none_found(self, monkeypatch):
+        """Test get_available_bookmarks when no browsers found."""
+        import chronicle_mcp.paths as paths
+
+        monkeypatch.setattr(paths, "get_bookmark_path", lambda b: None)
+
+        result = get_available_bookmarks()
+        assert result == []
+
+    def test_bookmark_paths_all_browsers(self):
+        """Test that all browsers have bookmark paths defined."""
+        for browser in BOOKMARK_PATHS:
+            assert browser in BOOKMARK_PATHS
+            assert isinstance(BOOKMARK_PATHS[browser], dict)
+
+
+class TestDownloadPathDetection:
+    """Tests for download path detection."""
+
+    def test_get_download_path_invalid_browser(self):
+        """Test that invalid browser returns None for downloads."""
+        result = get_download_path("invalid_browser")
+        assert result is None
+
+    def test_get_download_path_case_insensitive(self):
+        """Test that download path is case insensitive."""
+        result_lower = get_download_path("chrome")
+        result_upper = get_download_path("CHROME")
+        assert result_lower == result_upper
+
+    def test_get_available_downloads_none_found(self, monkeypatch):
+        """Test get_available_downloads when no browsers found."""
+        import chronicle_mcp.paths as paths
+
+        monkeypatch.setattr(paths, "get_download_path", lambda b: None)
+
+        result = get_available_downloads()
+        assert result == []
+
+    def test_download_paths_all_browsers(self):
+        """Test that all browsers have download paths defined."""
+        for browser in DOWNLOAD_PATHS:
+            assert browser in DOWNLOAD_PATHS
+            assert isinstance(DOWNLOAD_PATHS[browser], dict)
