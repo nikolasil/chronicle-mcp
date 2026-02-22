@@ -28,7 +28,7 @@ pip install -e ".[dev]"
 chronicle-mcp mcp
 
 # MCP server (SSE mode)
-chronicle-mcp mcp --sse --port 8080
+chronicle-mcp mcp --sse --host 127.0.0.1 --port 8080
 
 # HTTP REST API server
 chronicle-mcp http --port 8080
@@ -186,30 +186,103 @@ except ServiceError as e:
 
 ## MCP Tool Functions
 
+All MCP tools delegate to `HistoryService` methods. Here's the complete list of available tools:
+
+### 1. Browser Management
+
+#### `list_available_browsers()`
+
+Returns a list of browsers with detected history databases on this system.
+
+#### `list_available_bookmarks()`
+
+Returns a list of browsers with detected bookmarks on this system.
+
+#### `list_available_downloads()`
+
+Returns a list of browsers with detected downloads history on this system.
+
+---
+
+### 2. Basic Search Operations
+
+#### `search_history(query, limit, browser, format_type)`
+
+Search browser history for keywords in titles or URLs.
+
 ```python
-@mcp.tool()
-def search_history(
-    query: str,
-    limit: int = 5,
-    browser: str = "chrome",
-    format_type: str = "markdown"
-) -> str:
-    """
-    Searches browser history for keywords in titles or URLs.
-
-    Args:
-        query: Search term to look for
-        limit: Maximum number of results (1-100)
-        browser: Browser to search
-        format_type: Output format (markdown or json)
-
-    Returns:
-        Formatted list of matching history entries
-    """
-    # Delegate to service layer
-    result = HistoryService.search_history(...)
-    return result["message"]
+result = HistoryService.search_history(
+    query="python",
+    limit=10,
+    browser="chrome",
+    format_type="markdown"
+)
+return result["message"]
 ```
+
+#### `get_recent_history(hours, limit, browser, format_type)`
+
+Gets recent browsing history from the last N hours.
+
+#### `count_visits(domain, browser)`
+
+Counts total visits to a specific domain.
+
+#### `list_top_domains(limit, browser, format_type)`
+
+Gets the most visited domains from browser history.
+
+#### `get_most_visited_pages(limit, browser, format_type)`
+
+Gets the most visited individual pages.
+
+---
+
+### 3. Advanced Search Operations
+
+#### `search_history_by_date(query, start_date, end_date, limit, browser, format_type)`
+
+Searches browser history within a date range.
+
+#### `search_by_domain(domain, query, limit, browser, format_type, exclude_domains)`
+
+Searches history within specific domain(s).
+
+#### `search_history_advanced(query, limit, browser, format_type, exclude_domains, sort_by, use_regex, use_fuzzy, fuzzy_threshold)`
+
+Advanced search with multiple options.
+
+#### `get_browser_stats(browser)`
+
+Gets browsing statistics for the browser database.
+
+---
+
+### 4. History Management
+
+#### `delete_history(query, limit, browser, confirm)`
+
+Deletes history entries matching a query.
+
+#### `sync_history(source_browser, target_browser, merge_strategy, dry_run)`
+
+Syncs history between browsers.
+
+#### `export_history(format_type, limit, query, browser)`
+
+Exports history to CSV or JSON format.
+
+---
+
+### 5. Bookmarks and Downloads
+
+#### `get_bookmarks(query, limit, browser, format_type)`
+
+Gets bookmarks from a browser.
+
+#### `get_downloads(query, limit, browser, format_type)`
+
+Gets downloads history from a browser.
 
 ---
 
@@ -230,8 +303,12 @@ tests/
 │   └── infrastructure/ # Infrastructure tests
 │       ├── test_database.py
 │       ├── test_connection.py
-│       └── test_paths.py
-└── integration/        # Integration tests
+│       ├── test_paths.py
+│       └── test_cli.py
+├── integration/        # Integration tests
+│   └── test_browser.py
+└── benchmark/          # Performance tests
+    └── test_performance.py
 ```
 
 ### Writing Tests
@@ -267,23 +344,6 @@ def test_invalid_browser():
 | `database.py` | Query operations |
 | `paths.py` | Browser path detection |
 | `config.py` | Configuration loading |
-
----
-
-## Migration from Old Structure
-
-### Old imports:
-```python
-from server import mcp, search_history
-from chronicle_mcp.server_http import run_http_server
-```
-
-### New imports:
-```python
-from chronicle_mcp.protocols import mcp
-from chronicle_mcp.protocols.http import run_http_server
-from chronicle_mcp.core import HistoryService
-```
 
 ---
 

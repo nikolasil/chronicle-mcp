@@ -9,6 +9,7 @@
 5. [HTTP API](#http-api)
 6. [Configuration](#configuration)
 7. [Troubleshooting](#troubleshooting)
+8. [Getting Help](#getting-help)
 
 ---
 
@@ -19,10 +20,10 @@
 pip install chronicle-mcp
 
 # Run in stdio mode (for AI agents)
-chronicle-mcp run
+chronicle-mcp mcp
 
 # Or start an HTTP server
-chronicle-mcp serve --port 8080
+chronicle-mcp http --port 8080
 
 # Check available browsers
 chronicle-mcp list-browsers
@@ -212,6 +213,70 @@ sync_history(
     target_browser: str,
     merge_strategy: str = "latest",  # latest, combine, dedupe
     dry_run: bool = True
+)
+```
+
+### list_available_browsers
+
+List browsers with detected history databases.
+
+```python
+list_available_browsers()
+```
+
+### count_visits
+
+Count total visits to a specific domain.
+
+```python
+count_visits(
+    domain: str,           # Domain to count (e.g., 'github.com')
+    browser: str = "chrome"
+)
+```
+
+### search_history_by_date
+
+Search history within a date range.
+
+```python
+search_history_by_date(
+    query: str,            # Search term
+    start_date: str,       # Start date (YYYY-MM-DD)
+    end_date: str,         # End date (YYYY-MM-DD)
+    limit: int = 10,
+    browser: str = "chrome",
+    format_type: str = "markdown"
+)
+```
+
+### list_available_bookmarks / get_bookmarks
+
+List available browsers with bookmarks and retrieve bookmarks.
+
+```python
+list_available_bookmarks()
+
+get_bookmarks(
+    query: str = None,     # Optional search filter
+    limit: int = 50,
+    browser: str = "chrome",
+    format_type: str = "markdown"
+)
+```
+
+### list_available_downloads / get_downloads
+
+List available browsers with downloads and retrieve download history.
+
+```python
+list_available_downloads()
+
+get_downloads(
+    query: str = None,     # Optional search filter
+    limit: int = 50,
+    browser: str = "chrome",
+    format_type: str = "markdown"
 )
 ```
 
