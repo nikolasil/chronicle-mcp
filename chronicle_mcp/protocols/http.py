@@ -6,6 +6,7 @@ All business logic is delegated to the HistoryService in the core layer.
 
 import contextlib
 import contextvars
+import json
 import logging
 import time
 from datetime import datetime, timezone
@@ -91,6 +92,8 @@ def error_response(message: str, status_code: int = 400) -> JSONResponse:
 def handle_service_error_http(error: Exception) -> JSONResponse:
     if isinstance(error, ValidationError):
         return error_response(error.message, 400)
+    elif isinstance(error, json.JSONDecodeError):
+        return error_response("Invalid JSON in request body", 422)
     elif isinstance(error, BrowserNotFoundError):
         return error_response(error.message, 404)
     elif isinstance(error, DatabaseLockedError):
