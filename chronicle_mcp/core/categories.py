@@ -170,7 +170,9 @@ def categorize_url(url: str) -> str | None:
                 before = url_lower[:start_idx]
                 after = url_lower[end_idx:]
 
-                if (before == "https://" or before == "http://" or before == "//") and (end_idx == len(url_lower) or after[0] in "/."):
+                if (before == "https://" or before == "http://" or before == "//") and (
+                    end_idx == len(url_lower) or after[0] in "/."
+                ):
                     return category
 
     return None

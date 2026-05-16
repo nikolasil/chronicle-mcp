@@ -1,0 +1,85 @@
+site_name: ChronicleMCP
+repo_url: https://github.com/nikolasil/chronicle-mcp
+edit_uri: edit/main/docs/
+canonical_url: https://nikolasil.github.io/chronicle-mcp/
+
+theme:
+  name: material
+  palette:
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.trimming
+    - navigation.sections
+    - navigation.expand
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+
+plugins:
+  - search:
+      lang:
+        - en
+  - gen_ref_pages:
+      - member_order: groupwise
+      - show_source: false
+  - mdxinclude:
+      enabled: !ENV [ENABLE_MDX_INCLUDE, False]
+  - social:
+      enabled: true
+      cards: true
+
+nav:
+  - Home: index.md
+  - Installation:
+      - Install: install.md
+      - Browser Support: browser_support.md
+  - User Guide: user_guide.md
+  - CLI Reference: cli.md
+  - HTTP API: api.md
+  - Advanced Search: advanced_search.md
+  - Architecture: architecture.md
+  - Reference:
+      - Services: reference/services.md
+      - Validation: reference/validation.md
+      - Protocols: reference/protocols.md
+  - Security: security.md
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.superfences
+  - admonition
+  - pymdownx.details
+  - pymdownx.mark
+  - attr_list
+  - md_in_html
+  - tables
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/nikolasil/chronicle-mcp
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/chronicle-mcp
+
+extra_css:
+  - stylesheets/extra.css
+
+watch:
+  - chronicle_mcp
+  - docs

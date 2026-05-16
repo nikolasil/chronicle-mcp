@@ -84,7 +84,7 @@ markers = [
 ]
 
 [tool.pytest-cov]
-fail_under = 85
+fail_under = 90
 show_missing = true
 coverage = ["chronicle_mcp"]
 

@@ -26,6 +26,7 @@ def cleanup_default_cache():
     yield
     try:
         from chronicle_mcp.cache import default_cache
+
         default_cache.invalidate()
         default_cache._cache.clear()
     except Exception:
@@ -38,6 +39,7 @@ def cleanup_webhook_manager():
     yield
     try:
         from chronicle_mcp.webhooks import webhook_manager
+
         webhook_manager.webhooks.clear()
     except Exception:
         pass

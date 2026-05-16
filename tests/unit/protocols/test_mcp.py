@@ -788,4 +788,3 @@ class TestSyncHistoryMCP:
             dry_run=True,
         )
         assert "could not find" in result.lower()
-

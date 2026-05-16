@@ -99,6 +99,70 @@ class TestOperaIntegration:
             HistoryService.search_history(query="test", limit=10, browser="opera")
 
 
+@pytest.mark.edge
+class TestEdgeIntegration:
+    """Integration tests for Microsoft Edge browser."""
+
+    def test_list_browsers_includes_edge(self, mock_all_browsers):
+        """Test that Edge is detected as available when db exists."""
+        result = HistoryService.list_available_browsers()
+        assert "edge" in result["browsers"]
+
+    def test_search_edge_history(self, mock_all_browsers):
+        """Test searching Edge history."""
+        result = HistoryService.search_history(query="github", limit=10, browser="edge")
+        assert "results" in result
+        assert result["count"] >= 0
+
+    def test_recent_edge_history(self, mock_all_browsers):
+        """Test getting recent Edge history."""
+        result = HistoryService.get_recent_history(hours=24, limit=10, browser="edge")
+        assert "results" in result
+        assert "message" in result
+
+    def test_edge_count_visits(self, mock_all_browsers):
+        """Test counting visits for a domain in Edge."""
+        result = HistoryService.count_visits(domain="github.com", browser="edge")
+        assert "count" in result
+        assert result["browser"] == "edge"
+
+    def test_edge_top_domains(self, mock_all_browsers):
+        """Test listing top domains from Edge."""
+        result = HistoryService.list_top_domains(limit=10, browser="edge")
+        assert "domains" in result
+
+    def test_edge_export(self, mock_all_browsers):
+        """Test exporting Edge history."""
+        result = HistoryService.export_history(format_type="csv", limit=10, browser="edge")
+        assert "content" in result
+        assert result["format"] == "csv"
+
+    def test_edge_bookmarks(self, mock_all_browsers):
+        """Test getting Edge bookmarks."""
+        result = HistoryService.get_bookmarks(limit=10, browser="edge")
+        assert "results" in result
+
+    def test_edge_downloads(self, mock_all_browsers):
+        """Test getting Edge downloads."""
+        result = HistoryService.get_downloads(limit=10, browser="edge")
+        assert "results" in result
+
+    def test_edge_most_visited_pages(self, mock_all_browsers):
+        """Test getting most visited pages from Edge."""
+        result = HistoryService.get_most_visited_pages(limit=10, browser="edge")
+        assert "results" in result
+
+    def test_edge_domain_search(self, mock_all_browsers):
+        """Test domain-specific search in Edge."""
+        result = HistoryService.search_by_domain(domain="github.com", limit=10, browser="edge")
+        assert "results" in result
+
+    def test_edge_stats(self, mock_all_browsers):
+        """Test getting Edge browser stats."""
+        result = HistoryService.get_browser_stats(browser="edge")
+        assert "total_visits" in result or "message" in result
+
+
 @pytest.mark.integration
 class TestBrowserIntegration:
     """General browser integration tests that run for any browser."""

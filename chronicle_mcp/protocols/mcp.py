@@ -4,6 +4,7 @@ This module provides the MCP server interface using FastMCP.
 All business logic is delegated to the HistoryService in the core layer.
 """
 
+import json
 import logging
 from typing import Any, cast
 
@@ -537,8 +538,6 @@ def compare_time_periods(
             end_date2=end_date2,
             browser=browser,
         )
-        import json
-
         return json.dumps(result, indent=2)
     except Exception as e:
         return handle_service_error(e)
@@ -566,8 +565,6 @@ def analyze_productivity(
             end_date=end_date,
             browser=browser,
         )
-        import json
-
         return json.dumps(result, indent=2)
     except Exception as e:
         return handle_service_error(e)
@@ -592,8 +589,6 @@ def suggest_categories(
             browser=browser,
             limit=limit,
         )
-        import json
-
         return json.dumps(result, indent=2)
     except Exception as e:
         return handle_service_error(e)
@@ -621,8 +616,6 @@ def export_visualization(
             period=period,
             browser=browser,
         )
-        import json
-
         return json.dumps(result, indent=2)
     except Exception as e:
         return handle_service_error(e)
@@ -652,9 +645,128 @@ def generate_insights_report(
             format_type=format_type,
         )
         if format_type == "json":
-            import json
-
             return json.dumps(result, indent=2)
         return cast(str, result["summary_markdown"])
+    except Exception as e:
+        return handle_service_error(e)
+
+
+@tool
+def subscribe_to_history(
+    browser: str = "chrome",
+    event_types: list[str] | None = None,
+) -> str:
+    """Subscribe to real-time history changes for a browser.
+
+    Args:
+        browser: Browser to subscribe to (chrome, edge, firefox, etc.)
+        event_types: List of event types to receive. Options: history_added,
+            history_deleted, history_updated, bookmark_added, bookmark_deleted,
+            download_added, download_deleted. If None, receives all events.
+
+    Returns:
+        Subscription ID and status information
+    """
+    if event_types is None:
+        event_types = ["history_added", "history_deleted"]
+
+    try:
+        result = HistoryService.subscribe_history_changes(
+            browser=browser,
+            event_types=event_types,
+            callback=lambda event: None,
+        )
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        return handle_service_error(e)
+
+
+@tool
+def unsubscribe_from_history(subscription_id: str) -> str:
+    """Unsubscribe from history change notifications.
+
+    Args:
+        subscription_id: Subscription ID to remove
+
+    Returns:
+        Success status
+    """
+    try:
+        result = HistoryService.unsubscribe_history_changes(subscription_id)
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        return handle_service_error(e)
+
+
+@tool
+def get_subscription_status(subscription_id: str | None = None) -> str:
+    """Get subscription status or global event statistics.
+
+    Args:
+        subscription_id: Optional specific subscription ID. If None, returns global stats.
+
+    Returns:
+        Subscription information or global statistics
+    """
+    try:
+        result = HistoryService.get_subscription_status(subscription_id)
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        return handle_service_error(e)
+
+
+@tool
+def find_duplicate_history(
+    browser: str = "chrome",
+    similarity_threshold: float = 0.9,
+    limit: int = 100,
+) -> str:
+    """Find potential duplicate history entries based on URL similarity.
+
+    Args:
+        browser: Browser to analyze (chrome, edge, firefox, etc.)
+        similarity_threshold: URL similarity threshold (0.0-1.0), default 0.9
+        limit: Maximum number of duplicate groups to return (1-1000)
+
+    Returns:
+        JSON with duplicate groups and statistics
+    """
+    try:
+        result = HistoryService.find_duplicate_entries(
+            browser=browser,
+            similarity_threshold=similarity_threshold,
+            limit=limit,
+        )
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        return handle_service_error(e)
+
+
+@tool
+def delete_duplicate_history(
+    browser: str = "chrome",
+    similarity_threshold: float = 0.9,
+    keep_strategy: str = "most_visits",
+    confirm: bool = False,
+) -> str:
+    """Delete duplicate history entries.
+
+    Args:
+        browser: Browser to clean
+        similarity_threshold: URL similarity threshold for duplicates (0.0-1.0)
+        keep_strategy: Which entry to keep ('most_visits', 'most_recent', 'first')
+        confirm: Must be True to actually delete; False returns preview
+
+    Returns:
+        Deletion results or preview
+    """
+    try:
+        result = HistoryService.delete_duplicates(
+            browser=browser,
+            similarity_threshold=similarity_threshold,
+            keep_strategy=keep_strategy,
+            confirm=confirm,
+        )
+        return json.dumps(result, indent=2)
     except Exception as e:
         return handle_service_error(e)

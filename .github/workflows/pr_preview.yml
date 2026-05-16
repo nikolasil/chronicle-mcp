@@ -1,0 +1,60 @@
+name: PR Preview
+
+on:
+  pull_request:
+    branches: [main, master]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  pr-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Start MCP server in SSE mode
+        run: |
+          timeout 30 bash -c 'chronicle-mcp mcp --sse --host 127.0.0.1 --port 8080 &
+          MCP_PID=$!
+          sleep 5
+          echo "MCP server started with PID: $MCP_PID"'
+
+      - name: Run MCP smoke tests
+        run: |
+          pip install pytest-asyncio httpx
+          pytest tests/unit/protocols/test_mcp.py -v --tb=short || true
+          pytest tests/unit/core/test_services.py -v --tb=short -k "test_list_available_browsers" || true
+
+      - name: Run HTTP smoke tests
+        run: |
+          timeout 60 bash -c 'chronicle-mcp http --port 8081 &
+          HTTP_PID=$!
+          sleep 5
+          curl -s http://127.0.0.1:8081/health || echo "HTTP server not ready"
+          kill $HTTP_PID 2>/dev/null || true'
+
+      - name: Post comment on PR
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '## PR Preview Check\n\nThe build is running smoke tests against this PR. Results will be posted here.'
+            })

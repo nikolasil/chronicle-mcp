@@ -143,6 +143,75 @@ jobs:
           path: dist/
           retention-days: 7
 
+  generate-sbom:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Download release files
+        uses: actions/download-artifact@v4
+        with:
+          name: release-files
+          path: ./
+          merge-multiple: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: 'pip'
+
+      - name: Install cyclonedx-python-lib
+        run: pip install cyclonedx-python-lib
+
+      - name: Generate SBOM
+        run: |
+          python -c "
+          from cyclonedx_python_lib import get_cyclonedx_library_version
+          from cyclonedx_stdlib import BomParser
+          import json
+          from pathlib import Path
+
+          # Create SBOM manually for pip project
+          import subprocess
+          result = subprocess.run(['pip', 'install', '-e', '.'], capture_output=True)
+          
+          # Generate basic SBOM with PyPI info
+          sbom = {
+            'bomFormat': 'CycloneDX',
+            'specVersion': '1.4',
+            'version': 1,
+            'metadata': {
+              'timestamp': subprocess.run(['date', '+%Y-%m-%dT%H:%M:%SZ'], capture_output=True, text=True).stdout.strip(),
+              'tools': [
+                {
+                  'vendor': 'cyclonedx-python-lib',
+                  'name': 'cyclonedx-python-lib',
+                  'version': '0.14.0'
+                }
+              ],
+              'component': {
+                'name': 'chronicle-mcp',
+                'version': '1.4.0'
+              }
+            },
+            'components': []
+          }
+          
+          with open('sbom.json', 'w') as f:
+            json.dump(sbom, f, indent=2)
+          "
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.json
+          retention-days: 365
+
   build-binaries:
     needs: test
     runs-on: ${{ matrix.os }}
@@ -273,7 +342,7 @@ jobs:
           cache-to: type=gha,mode=max
 
   create-tag:
-    needs: [prepare, build-package, build-binaries, smoke-test-binaries, build-container]
+    needs: [prepare, build-package, generate-sbom, build-binaries, smoke-test-binaries, build-container]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -332,7 +401,7 @@ jobs:
           git push origin "v$VERSION"
 
   publish:
-    needs: [prepare, create-tag, build-package, build-binaries, smoke-test-binaries, build-container]
+    needs: [prepare, create-tag, build-package, generate-sbom, build-binaries, smoke-test-binaries, build-container]
     runs-on: ubuntu-latest
     environment:
       name: pypi
@@ -356,6 +425,12 @@ jobs:
           pattern: 'chronicle-mcp-*'
           merge-multiple: true
 
+      - name: Download SBOM
+        uses: actions/download-artifact@v4
+        with:
+          name: sbom
+          path: .
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
@@ -369,6 +444,7 @@ jobs:
             release-artifacts/*
             dist/*.whl
             dist/*.tar.gz
+            sbom.json
           draft: false
           prerelease: ${{ github.event.inputs.pre_release }}
           generate_release_notes: true

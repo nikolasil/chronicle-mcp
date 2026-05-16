@@ -1,0 +1,17 @@
+# Security-sensitive areas
+.github/workflows/release.yml @nikolasil
+.github/workflows/security_scan.yml @nikolasil
+.github/dependabot.yml @nikolasil
+chronicle_mcp/core/exceptions.py @nikolasil
+chronicle_mcp/connection.py @nikolasil
+SECURITY.md @nikolasil
+SECURITY_HARDENING.md @nikolasil
+
+# Documentation
+docs/ @nikolasil
+*.md @nikolasil
+
+# Configuration
+pyproject.toml @nikolasil
+Makefile @nikolasil
+.pre-commit-config.yaml @nikolasil

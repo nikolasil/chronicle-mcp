@@ -25,6 +25,7 @@ BROWSER_PATHS: dict[str, dict[str, str]] = {
     },
     "safari": {
         "Darwin": "~/Library/Safari/History.db",
+        "Windows": r"%LocalAppData%\Apple\Safari\User Data\Default\History.db",
     },
     "vivaldi": {
         "Windows": r"%LocalAppData%\Vivaldi\Default\History",
@@ -71,6 +72,7 @@ BOOKMARK_PATHS: dict[str, dict[str, str]] = {
     },
     "safari": {
         "Darwin": "~/Library/Safari/Bookmarks.plist",
+        "Windows": r"%LocalAppData%\Apple\Safari\User Data\Default\Bookmarks.plist",
     },
     "vivaldi": {
         "Windows": r"%LocalAppData%\Vivaldi\Default\Bookmarks",
@@ -107,6 +109,7 @@ DOWNLOAD_PATHS: dict[str, dict[str, str]] = {
     },
     "safari": {
         "Darwin": "~/Library/Safari/History.db",
+        "Windows": r"%LocalAppData%\Apple\Safari\User Data\Default\History.db",
     },
     "vivaldi": {
         "Windows": r"%LocalAppData%\Vivaldi\Default\History",

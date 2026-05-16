@@ -64,6 +64,7 @@ from chronicle_mcp.core.validation import (
 )
 from chronicle_mcp.database import (
     count_domain_visits,
+    detect_schema,
     get_category_stats,
     get_history_entries,
     get_hourly_stats_for_period,
@@ -1068,4 +1069,277 @@ class HistoryService:
             "summary_markdown": summary_markdown,
             "browser": browser_lower,
             "period": period,
+        }
+
+    @classmethod
+    def subscribe_history_changes(
+        cls,
+        browser: str,
+        event_types: list[str],
+        callback: Callable[[Any], None],
+    ) -> dict[str, Any]:
+        """Subscribe to history changes for a browser.
+
+        Args:
+            browser: Browser to subscribe to
+            event_types: List of event types ('history_added', 'history_deleted', etc.)
+            callback: Callback function to receive events
+
+        Returns:
+            Dictionary with subscription_id and stats
+        """
+        from chronicle_mcp.core.events import EventType
+        from chronicle_mcp.core.realtime import get_subscription_manager
+
+        browser_lower = validate_browser(browser)
+
+        event_type_enums = []
+        for et in event_types:
+            try:
+                event_type_enums.append(EventType(et))
+            except ValueError:
+                raise ValueError(f"Invalid event type: {et}")
+
+        manager = get_subscription_manager()
+        subscription_id = manager.subscribe(browser_lower, event_type_enums, callback)
+        stats = manager.get_stats()
+
+        return {
+            "subscription_id": subscription_id,
+            "browser": browser_lower,
+            "event_types": event_types,
+            "active_subscriptions": stats.active_subscriptions,
+            "total_events": stats.total_events,
+        }
+
+    @classmethod
+    def unsubscribe_history_changes(cls, subscription_id: str) -> dict[str, Any]:
+        """Unsubscribe from history changes.
+
+        Args:
+            subscription_id: Subscription ID to remove
+
+        Returns:
+            Dictionary with success status
+        """
+        from chronicle_mcp.core.realtime import get_subscription_manager
+
+        manager = get_subscription_manager()
+        success = manager.unsubscribe(subscription_id)
+
+        return {
+            "subscription_id": subscription_id,
+            "success": success,
+            "active_subscriptions": manager.get_active_count(),
+        }
+
+    @classmethod
+    def get_subscription_status(cls, subscription_id: str | None = None) -> dict[str, Any]:
+        """Get subscription status.
+
+        Args:
+            subscription_id: Optional specific subscription ID
+
+        Returns:
+            Dictionary with subscription info or global stats
+        """
+        from chronicle_mcp.core.realtime import get_subscription_manager
+
+        manager = get_subscription_manager()
+
+        if subscription_id:
+            info = manager.get_subscription(subscription_id)
+            if info:
+                return {
+                    "subscription_id": info.id,
+                    "browser": info.browser,
+                    "event_types": info.event_types,
+                    "created_at": info.created_at,
+                    "last_event": info.last_event,
+                    "event_count": info.event_count,
+                }
+            return {"error": "Subscription not found"}
+
+        stats = manager.get_stats()
+        subscriptions = manager.get_subscriptions()
+
+        return {
+            "active_subscriptions": stats.active_subscriptions,
+            "total_events": stats.total_events,
+            "events_by_type": stats.events_by_type,
+            "events_by_browser": stats.events_by_browser,
+            "last_event_time": stats.last_event_time,
+            "subscriptions": [
+                {
+                    "id": s.id,
+                    "browser": s.browser,
+                    "event_types": s.event_types,
+                    "event_count": s.event_count,
+                }
+                for s in subscriptions
+            ],
+        }
+
+    @classmethod
+    def find_duplicate_entries(
+        cls,
+        browser: str,
+        similarity_threshold: float = 0.9,
+        limit: int = 100,
+    ) -> dict[str, Any]:
+        """Find potential duplicate history entries.
+
+        Args:
+            browser: Browser to analyze
+            similarity_threshold: URL similarity threshold (0.0-1.0)
+            limit: Maximum number of duplicate groups to return
+
+        Returns:
+            Dictionary with duplicate groups and statistics
+        """
+        from difflib import SequenceMatcher
+
+        browser_lower = validate_browser(browser)
+        validate_limit(limit, 1, 1000)
+        validate_fuzzy_threshold(similarity_threshold)
+
+        def url_similarity(url1: str, url2: str) -> float:
+            """Calculate similarity between two URLs."""
+            url1_clean = url1.strip().lower()
+            url2_clean = url2.strip().lower()
+            if url1_clean == url2_clean:
+                return 1.0
+            return SequenceMatcher(None, url1_clean, url2_clean).ratio()
+
+        duplicates: list[dict[str, Any]] = []
+        seen_urls: list[tuple[str, str, int]] = []
+
+        def get_entries(conn: Any) -> list[Any]:
+            """Get history entries for comparison."""
+            cursor = conn.cursor()
+            schema = detect_schema(conn)
+            if schema == "chrome":
+                cursor.execute(
+                    "SELECT title, url, visit_count FROM urls WHERE visit_count > 0 ORDER BY visit_count DESC LIMIT 500"
+                )
+            elif schema == "firefox":
+                cursor.execute(
+                    "SELECT COALESCE(title, ''), url, visit_count FROM moz_places WHERE visit_count > 0 ORDER BY visit_count DESC LIMIT 500"
+                )
+            elif schema == "safari":
+                cursor.execute(
+                    "SELECT title, url, visit_count FROM history_items WHERE visit_count > 0 ORDER BY visit_count DESC LIMIT 500"
+                )
+            return cursor.fetchall()  # type: ignore[no-any-return]
+
+        entries: list[tuple[str, str, int]] = cls._with_connection(browser_lower, get_entries)
+
+        for url, title, visit_count in entries:
+            if not url:
+                continue
+            url_duplicates: list[dict[str, Any]] = []
+            for existing_url, existing_title, existing_count in seen_urls:
+                sim = url_similarity(url, existing_url)
+                if sim >= similarity_threshold:
+                    url_duplicates.append(
+                        {
+                            "url": existing_url,
+                            "title": existing_title,
+                            "visit_count": existing_count,
+                            "similarity": round(sim, 3),
+                        }
+                    )
+            if url_duplicates:
+                duplicates.append(
+                    {
+                        "url": url,
+                        "title": title,
+                        "visit_count": visit_count,
+                        "similar_to": url_duplicates[:5],
+                    }
+                )
+            seen_urls.append((url, title, visit_count))
+            if len(duplicates) >= limit:
+                break
+
+        return {
+            "browser": browser_lower,
+            "similarity_threshold": similarity_threshold,
+            "duplicate_groups": duplicates,
+            "total_duplicates": len(duplicates),
+            "total_entries_analyzed": len(entries),
+        }
+
+    @classmethod
+    def delete_duplicates(
+        cls,
+        browser: str,
+        similarity_threshold: float = 0.9,
+        keep_strategy: str = "most_visits",
+        confirm: bool = False,
+    ) -> dict[str, Any]:
+        """Delete duplicate history entries.
+
+        Args:
+            browser: Browser to clean
+            similarity_threshold: URL similarity threshold for duplicates
+            keep_strategy: Which entry to keep ('most_visits', 'most_recent', 'first')
+            confirm: Must be True to actually delete; False returns preview
+
+        Returns:
+            Dictionary with deletion results or preview
+        """
+        browser_lower = validate_browser(browser)
+        valid_strategies = ["most_visits", "most_recent", "first"]
+        if keep_strategy not in valid_strategies:
+            raise ValueError(f"Invalid keep_strategy. Must be one of: {valid_strategies}")
+
+        if not confirm:
+            preview_result = cls.find_duplicate_entries(
+                browser=browser_lower,
+                similarity_threshold=similarity_threshold,
+                limit=100,
+            )
+            return {
+                "preview": True,
+                "message": f"Found {preview_result['total_duplicates']} duplicate groups",
+                "duplicate_groups": preview_result["duplicate_groups"][:10],
+                "total_duplicates": preview_result["total_duplicates"],
+            }
+
+        def get_duplicates_for_deletion(conn: Any) -> list[tuple[str, str]]:
+            """Get pairs of duplicate URLs to delete."""
+            duplicates = cls.find_duplicate_entries(
+                browser=browser_lower,
+                similarity_threshold=similarity_threshold,
+                limit=100,
+            )
+            to_delete: list[tuple[str, str]] = []
+            for group in duplicates["duplicate_groups"]:
+                original_url = group["url"]
+                for similar in group.get("similar_to", []):
+                    to_delete.append((similar["url"], original_url))
+            return to_delete
+
+        pairs_to_delete = cls._with_connection(browser_lower, get_duplicates_for_deletion)
+
+        deleted_count = 0
+        for duplicate_url, original_url in pairs_to_delete:
+            try:
+                result = cls.delete_history(
+                    query=duplicate_url,
+                    limit=1,
+                    browser=browser_lower,
+                    confirm=True,
+                )
+                if result.get("count", 0) > 0:
+                    deleted_count += 1
+            except Exception:
+                continue
+
+        return {
+            "preview": False,
+            "deleted_count": deleted_count,
+            "total_pairs_checked": len(pairs_to_delete),
+            "message": f"Deleted {deleted_count} duplicate entries",
         }

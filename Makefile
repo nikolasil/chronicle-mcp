@@ -75,7 +75,13 @@ deps:
 	pip install -r requirements.txt
 
 docs:
-	sphinx-build -b html docs/ docs/_build/html
+	mkdocs build --strict
+
+docs-serve:
+	mkdocs serve -a localhost:8000
+
+docs-clean:
+	mkdocs build --clean_site
 
 build:
 	python -m build

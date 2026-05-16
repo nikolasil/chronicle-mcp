@@ -1,0 +1,38 @@
+/* Custom styles for ChronicleMCP documentation */
+
+:root {
+  --md-primary-fg-color: #3f51b5;
+  --md-primary-fg-color--light: #7986cb;
+  --md-primary-fg-color--dark: #303f9f;
+}
+
+.md-typeset code {
+  padding: 0.15em 0.4em;
+  border-radius: 0.2em;
+}
+
+.md-typeset pre code {
+  padding: 0.8em 1em;
+}
+
+.highlight {
+  border-radius: 0.3em;
+}
+
+.tip {
+  border-left-width: 4px;
+  border-left-color: #4caf50;
+  background-color: #f1f8f1;
+}
+
+.warning {
+  border-left-width: 4px;
+  border-left-color: #ff9800;
+  background-color: #fff8f1;
+}
+
+.danger {
+  border-left-width: 4px;
+  border-left-color: #f44336;
+  background-color: #fff5f5;
+}
