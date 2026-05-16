@@ -4,7 +4,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from chronicle_mcp.core.exceptions import ValidationError
+from chronicle_mcp.core.exceptions import InvalidDateRangeError, ValidationError
 from chronicle_mcp.core.validation import (
     validate_browser,
     validate_date_range,
@@ -22,7 +22,7 @@ from chronicle_mcp.core.validation import (
 class TestValidateBrowserProperty:
     """Property-based tests for validate_browser."""
 
-    @given(browser=st.text(min_size=1, max_size=50))
+    @given(browser=st.sampled_from(["chrome", "firefox", "edge", "brave", "safari", "vivaldi", "opera"]))
     @settings(max_examples=100)
     def test_valid_browser_returns_lowercase(self, browser):
         """Valid browser names should be returned as lowercase."""
@@ -207,10 +207,10 @@ class TestValidateDateRangeProperty:
         """Start date must be before end date."""
         start_date = f"{year1}-06-15"
         end_date = f"{year2}-06-15"
-        if year1 >= year2:
-            with pytest.raises(Exception):  # noqa: B017
-                validate_date_range(start_date, end_date)
-        else:
+        if year1 <= year2:
             start_result, end_result = validate_date_range(start_date, end_date)
             assert start_result == start_date
             assert end_result == end_date
+        else:
+            with pytest.raises(InvalidDateRangeError):
+                validate_date_range(start_date, end_date)

@@ -5,6 +5,7 @@ All business logic is delegated to the HistoryService in the core layer.
 """
 
 import contextlib
+import contextvars
 import logging
 import time
 from datetime import datetime, timezone
@@ -31,33 +32,69 @@ from chronicle_mcp.core import (
 setup_logging()
 logger = logging.getLogger(__name__)
 
-default_browser: str = "chrome"
+DEFAULT_BROWSER = "chrome"
 
-REQUEST_COUNT = 0
-REQUEST_LATENCY_TOTAL = 0.0
-START_TIME = time.time()
+
+class RequestMetrics:
+    """Thread-safe, async-safe request metrics using ContextVars."""
+
+    def __init__(self, default_browser: str = DEFAULT_BROWSER):
+        self._count_token = _request_count.set(0)
+        self._latency_token = _request_latency_total.set(0.0)
+        self._start_token = _start_time.set(time.time())
+        self._default_browser_token = _default_browser.set(default_browser)
+
+    def increment(self, latency: float) -> None:
+        _request_count.set(_request_count.get() + 1)
+        _request_latency_total.set(_request_latency_total.get() + latency)
+
+    @property
+    def request_count(self) -> int:
+        return _request_count.get()
+
+    @property
+    def total_latency(self) -> float:
+        return _request_latency_total.get()
+
+    @property
+    def uptime(self) -> float:
+        return time.time() - _start_time.get()
+
+    @property
+    def default_browser(self) -> str:
+        return _default_browser.get()
+
+
+_request_count: contextvars.ContextVar[int] = contextvars.ContextVar("request_count", default=0)
+_request_latency_total: contextvars.ContextVar[float] = contextvars.ContextVar("request_latency_total", default=0.0)
+_start_time: contextvars.ContextVar[float] = contextvars.ContextVar("start_time")
+_default_browser: contextvars.ContextVar[str] = contextvars.ContextVar("default_browser", default=DEFAULT_BROWSER)
+
+
+_metrics: contextvars.ContextVar[RequestMetrics] = contextvars.ContextVar(
+    "_metrics", default=RequestMetrics()
+)
+
+
+def get_metrics() -> RequestMetrics:
+    return _metrics.get()
+
+
+def get_default_browser() -> str:
+    return _default_browser.get()
 
 
 def error_response(message: str, status_code: int = 400) -> JSONResponse:
-    """Create a standardized error response."""
     return JSONResponse({"error": message}, status_code=status_code)
 
 
 def handle_service_error_http(error: Exception) -> JSONResponse:
-    """Convert service exceptions to HTTP error responses.
-
-    Args:
-        error: Exception from service layer
-
-    Returns:
-        JSONResponse with appropriate status code
-    """
     if isinstance(error, ValidationError):
         return error_response(error.message, 400)
     elif isinstance(error, BrowserNotFoundError):
         return error_response(error.message, 404)
     elif isinstance(error, DatabaseLockedError):
-        return error_response(error.message, 423)  # Locked
+        return error_response(error.message, 423)
     elif isinstance(error, PermissionDeniedError):
         return error_response(error.message, 403)
     elif isinstance(error, DatabaseError):
@@ -70,7 +107,6 @@ def handle_service_error_http(error: Exception) -> JSONResponse:
 
 
 async def health_check(request: Request) -> JSONResponse:
-    """Health check endpoint."""
     return JSONResponse(
         {
             "status": "healthy",
@@ -82,7 +118,6 @@ async def health_check(request: Request) -> JSONResponse:
 
 
 async def ready_check(request: Request) -> JSONResponse:
-    """Readiness check endpoint."""
     try:
         result = HistoryService.list_available_browsers()
         browsers = result["browsers"]
@@ -107,17 +142,17 @@ async def ready_check(request: Request) -> JSONResponse:
 
 
 async def metrics_check(request: Request) -> JSONResponse:
-    """Basic metrics endpoint."""
-    global REQUEST_COUNT, REQUEST_LATENCY_TOTAL, START_TIME
-
-    uptime = time.time() - START_TIME
-    avg_latency = REQUEST_LATENCY_TOTAL / REQUEST_COUNT if REQUEST_COUNT > 0 else 0
+    metrics = get_metrics()
+    count = metrics.request_count
+    total_latency = metrics.total_latency
+    uptime = metrics.uptime
+    avg_latency = total_latency / count if count > 0 else 0
 
     return JSONResponse(
         {
             "uptime_seconds": uptime,
-            "requests_total": REQUEST_COUNT,
-            "requests_per_second": REQUEST_COUNT / uptime if uptime > 0 else 0,
+            "requests_total": count,
+            "requests_per_second": count / uptime if uptime > 0 else 0,
             "average_latency_seconds": avg_latency,
             "browsers_available": len(HistoryService.list_available_browsers()["browsers"]),
         }
@@ -125,28 +160,28 @@ async def metrics_check(request: Request) -> JSONResponse:
 
 
 async def prometheus_metrics(request: Request) -> Response:
-    """Prometheus metrics endpoint."""
-    global REQUEST_COUNT, REQUEST_LATENCY_TOTAL, START_TIME
-
-    uptime = time.time() - START_TIME
-    avg_latency = REQUEST_LATENCY_TOTAL / REQUEST_COUNT if REQUEST_COUNT > 0 else 0
+    metrics = get_metrics()
+    count = metrics.request_count
+    total_latency = metrics.total_latency
+    uptime = metrics.uptime
+    avg_latency = total_latency / count if count > 0 else 0
 
     try:
         browsers_count = len(HistoryService.list_available_browsers()["browsers"])
     except Exception:
         browsers_count = 0
 
-    metrics = f"""# HELP chronicle_uptime_seconds Server uptime in seconds
+    metrics_output = f"""# HELP chronicle_uptime_seconds Server uptime in seconds
 # TYPE chronicle_uptime_seconds gauge
 chronicle_uptime_seconds {uptime}
 
 # HELP chronicle_requests_total Total number of requests
 # TYPE chronicle_requests_total counter
-chronicle_requests_total {REQUEST_COUNT}
+chronicle_requests_total {count}
 
 # HELP chronicle_requests_per_second Requests per second
 # TYPE chronicle_requests_per_second gauge
-chronicle_requests_per_second {REQUEST_COUNT / uptime if uptime > 0 else 0}
+chronicle_requests_per_second {count / uptime if uptime > 0 else 0}
 
 # HELP chronicle_average_latency_seconds Average request latency
 # TYPE chronicle_average_latency_seconds gauge
@@ -156,11 +191,27 @@ chronicle_average_latency_seconds {avg_latency}
 # TYPE chronicle_browsers_available gauge
 chronicle_browsers_available {browsers_count}
 """
-    return Response(content=metrics, media_type="text/plain")
+    return Response(content=metrics_output, media_type="text/plain")
+
+
+class MetricsMiddleware:
+    """Starlette middleware for tracking request metrics."""
+
+    def __init__(self, app: Any):
+        self.app = app
+
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+        start = time.time()
+
+        async def send_wrapper(message: Any) -> None:
+            if message["type"] == "http.response.body":
+                get_metrics().increment(time.time() - start)
+            await send(message)
+
+        await self.app(scope, receive, send_wrapper)
 
 
 async def list_browsers_endpoint(request: Request) -> JSONResponse:
-    """List available browsers endpoint."""
     try:
         result = HistoryService.list_available_browsers()
         return JSONResponse({"browsers": result["browsers"]})
@@ -169,13 +220,12 @@ async def list_browsers_endpoint(request: Request) -> JSONResponse:
 
 
 async def search_endpoint(request: Request) -> JSONResponse:
-    """Search history endpoint."""
     try:
         data = await request.json()
         result = HistoryService.search_history(
             query=data.get("query", ""),
             limit=data.get("limit", 5),
-            browser=data.get("browser", default_browser),
+            browser=data.get("browser", get_default_browser()),
             format_type=data.get("format", "markdown"),
         )
 
@@ -187,13 +237,12 @@ async def search_endpoint(request: Request) -> JSONResponse:
 
 
 async def recent_endpoint(request: Request) -> JSONResponse:
-    """Recent history endpoint."""
     try:
         data = await request.json()
         result = HistoryService.get_recent_history(
             hours=data.get("hours", 24),
             limit=data.get("limit", 20),
-            browser=data.get("browser", default_browser),
+            browser=data.get("browser", get_default_browser()),
             format_type=data.get("format", "markdown"),
         )
 
@@ -205,11 +254,10 @@ async def recent_endpoint(request: Request) -> JSONResponse:
 
 
 async def count_endpoint(request: Request) -> JSONResponse:
-    """Count visits endpoint."""
     try:
         data = await request.json()
         result = HistoryService.count_visits(
-            domain=data.get("domain", ""), browser=data.get("browser", default_browser)
+            domain=data.get("domain", ""), browser=data.get("browser", get_default_browser())
         )
         return JSONResponse(
             {"domain": result["domain"], "browser": result["browser"], "count": result["count"]}
@@ -219,13 +267,12 @@ async def count_endpoint(request: Request) -> JSONResponse:
 
 
 async def top_domains_endpoint(request: Request) -> JSONResponse:
-    """Top domains endpoint."""
     try:
         data = await request.json()
         result = HistoryService.list_top_domains(
             limit=data.get("limit", 10),
-            browser=data.get("browser", default_browser),
-            format_type="json",  # Always return structured data
+            browser=data.get("browser", get_default_browser()),
+            format_type="json",
         )
         return JSONResponse({"domains": [{"domain": d, "visits": v} for d, v in result["domains"]]})
     except Exception as e:
@@ -233,7 +280,6 @@ async def top_domains_endpoint(request: Request) -> JSONResponse:
 
 
 async def search_date_endpoint(request: Request) -> JSONResponse:
-    """Search by date endpoint."""
     try:
         data = await request.json()
         result = HistoryService.search_history_by_date(
@@ -241,7 +287,7 @@ async def search_date_endpoint(request: Request) -> JSONResponse:
             start_date=data.get("start_date", ""),
             end_date=data.get("end_date", ""),
             limit=data.get("limit", 10),
-            browser=data.get("browser", default_browser),
+            browser=data.get("browser", get_default_browser()),
             format_type=data.get("format", "markdown"),
         )
 
@@ -253,13 +299,12 @@ async def search_date_endpoint(request: Request) -> JSONResponse:
 
 
 async def delete_endpoint(request: Request) -> JSONResponse:
-    """Delete history endpoint."""
     try:
         data = await request.json()
         result = HistoryService.delete_history(
             query=data.get("query", ""),
             limit=data.get("limit", 100),
-            browser=data.get("browser", default_browser),
+            browser=data.get("browser", get_default_browser()),
             confirm=data.get("confirm", False),
         )
 
@@ -285,14 +330,13 @@ async def delete_endpoint(request: Request) -> JSONResponse:
 
 
 async def domain_search_endpoint(request: Request) -> JSONResponse:
-    """Search by domain endpoint."""
     try:
         data = await request.json()
         result = HistoryService.search_by_domain(
             domain=data.get("domain", ""),
             query=data.get("query"),
             limit=data.get("limit", 20),
-            browser=data.get("browser", default_browser),
+            browser=data.get("browser", get_default_browser()),
             format_type=data.get("format", "markdown"),
             exclude_domains=data.get("exclude_domains"),
         )
@@ -314,23 +358,21 @@ async def domain_search_endpoint(request: Request) -> JSONResponse:
 
 
 async def browser_stats_endpoint(request: Request) -> JSONResponse:
-    """Browser stats endpoint."""
     try:
         data = await request.json() if await request.body() else {}
-        result = HistoryService.get_browser_stats(browser=data.get("browser", default_browser))
+        result = HistoryService.get_browser_stats(browser=data.get("browser", get_default_browser()))
         return JSONResponse(result["stats"])
     except Exception as e:
         return handle_service_error_http(e)
 
 
 async def most_visited_endpoint(request: Request) -> JSONResponse:
-    """Most visited pages endpoint."""
     try:
         data = await request.json()
         result = HistoryService.get_most_visited_pages(
             limit=data.get("limit", 20),
-            browser=data.get("browser", default_browser),
-            format_type="json",  # Always return structured data
+            browser=data.get("browser", get_default_browser()),
+            format_type="json",
         )
         return JSONResponse(
             {
@@ -345,31 +387,28 @@ async def most_visited_endpoint(request: Request) -> JSONResponse:
 
 
 async def export_endpoint(request: Request) -> Response:
-    """Export history endpoint."""
     try:
         data = await request.json()
         result = HistoryService.export_history(
             format_type=data.get("format_type", "csv"),
             limit=data.get("limit", 1000),
             query=data.get("query"),
-            browser=data.get("browser", default_browser),
+            browser=data.get("browser", get_default_browser()),
         )
 
         content_type = "text/csv" if result["format"] == "csv" else "application/json"
         return Response(content=result["content"], media_type=content_type)
     except Exception as e:
-        error = handle_service_error_http(e)
-        return error
+        return handle_service_error_http(e)
 
 
 async def advanced_search_endpoint(request: Request) -> JSONResponse:
-    """Advanced search endpoint."""
     try:
         data = await request.json()
         result = HistoryService.search_history_advanced(
             query=data.get("query", ""),
             limit=data.get("limit", 20),
-            browser=data.get("browser", default_browser),
+            browser=data.get("browser", get_default_browser()),
             format_type=data.get("format", "markdown"),
             exclude_domains=data.get("exclude_domains"),
             sort_by=data.get("sort_by", "date"),
@@ -396,7 +435,6 @@ async def advanced_search_endpoint(request: Request) -> JSONResponse:
 
 
 async def sync_endpoint(request: Request) -> JSONResponse:
-    """Sync history endpoint."""
     try:
         data = await request.json()
         result = HistoryService.sync_history(
@@ -421,7 +459,6 @@ async def sync_endpoint(request: Request) -> JSONResponse:
 
 
 async def list_bookmarks_endpoint(request: Request) -> JSONResponse:
-    """List available bookmarks endpoint."""
     try:
         result = HistoryService.list_available_bookmarks()
         return JSONResponse({"browsers": result["browsers"]})
@@ -430,7 +467,6 @@ async def list_bookmarks_endpoint(request: Request) -> JSONResponse:
 
 
 async def list_downloads_endpoint(request: Request) -> JSONResponse:
-    """List available downloads endpoint."""
     try:
         result = HistoryService.list_available_downloads()
         return JSONResponse({"browsers": result["browsers"]})
@@ -439,13 +475,12 @@ async def list_downloads_endpoint(request: Request) -> JSONResponse:
 
 
 async def bookmarks_endpoint(request: Request) -> JSONResponse:
-    """Get bookmarks endpoint."""
     try:
         data = await request.json() if await request.body() else {}
         result = HistoryService.get_bookmarks(
             query=data.get("query"),
             limit=data.get("limit", 50),
-            browser=data.get("browser", default_browser),
+            browser=data.get("browser", get_default_browser()),
             format_type=data.get("format", "markdown"),
         )
 
@@ -463,13 +498,12 @@ async def bookmarks_endpoint(request: Request) -> JSONResponse:
 
 
 async def downloads_endpoint(request: Request) -> JSONResponse:
-    """Get downloads endpoint."""
     try:
         data = await request.json() if await request.body() else {}
         result = HistoryService.get_downloads(
             query=data.get("query"),
             limit=data.get("limit", 50),
-            browser=data.get("browser", default_browser),
+            browser=data.get("browser", get_default_browser()),
             format_type=data.get("format", "markdown"),
         )
 
@@ -490,7 +524,6 @@ async def downloads_endpoint(request: Request) -> JSONResponse:
 
 
 async def compare_periods_endpoint(request: Request) -> JSONResponse:
-    """Compare two time periods endpoint."""
     try:
         data = await request.json() if await request.body() else {}
         result = HistoryService.compare_time_periods(
@@ -498,7 +531,7 @@ async def compare_periods_endpoint(request: Request) -> JSONResponse:
             end_date1=data.get("end_date1", ""),
             start_date2=data.get("start_date2", ""),
             end_date2=data.get("end_date2", ""),
-            browser=data.get("browser", default_browser),
+            browser=data.get("browser", get_default_browser()),
         )
         return JSONResponse(result)
     except Exception as e:
@@ -506,13 +539,12 @@ async def compare_periods_endpoint(request: Request) -> JSONResponse:
 
 
 async def productivity_endpoint(request: Request) -> JSONResponse:
-    """Productivity analysis endpoint."""
     try:
         data = await request.json() if await request.body() else {}
         result = HistoryService.analyze_productivity(
             start_date=data.get("start_date"),
             end_date=data.get("end_date"),
-            browser=data.get("browser", default_browser),
+            browser=data.get("browser", get_default_browser()),
         )
         return JSONResponse(result)
     except Exception as e:
@@ -520,11 +552,10 @@ async def productivity_endpoint(request: Request) -> JSONResponse:
 
 
 async def suggest_categories_endpoint(request: Request) -> JSONResponse:
-    """Suggest categories for uncategorized URLs endpoint."""
     try:
         data = await request.json() if await request.body() else {}
         result = HistoryService.suggest_categories(
-            browser=data.get("browser", default_browser),
+            browser=data.get("browser", get_default_browser()),
             limit=data.get("limit", 20),
         )
         return JSONResponse(result)
@@ -533,13 +564,12 @@ async def suggest_categories_endpoint(request: Request) -> JSONResponse:
 
 
 async def visualization_endpoint(request: Request) -> JSONResponse:
-    """Export visualization data endpoint."""
     try:
         data = await request.json() if await request.body() else {}
         result = HistoryService.export_visualization(
             format_type=data.get("format_type", "chart_json"),
             period=data.get("period", "month"),
-            browser=data.get("browser", default_browser),
+            browser=data.get("browser", get_default_browser()),
         )
         return JSONResponse(result)
     except Exception as e:
@@ -547,12 +577,11 @@ async def visualization_endpoint(request: Request) -> JSONResponse:
 
 
 async def insights_endpoint(request: Request) -> JSONResponse:
-    """Generate insights report endpoint."""
     try:
         data = await request.json() if await request.body() else {}
         result = HistoryService.generate_insights_report(
             period=data.get("period", "week"),
-            browser=data.get("browser", default_browser),
+            browser=data.get("browser", get_default_browser()),
             format_type=data.get("format_type", "markdown"),
         )
         if data.get("format_type") == "json":
@@ -591,47 +620,64 @@ routes = [
     Route("/api/insights", insights_endpoint, methods=["POST"]),
 ]
 
-middleware = [
-    Middleware(
-        CORSMiddleware,
-        allow_origins=load_config().security.allowed_origins,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    ),
-]
+
+def create_middleware(default_browser: str = DEFAULT_BROWSER) -> list[Middleware]:
+    config = load_config()
+    return [
+        Middleware(
+            CORSMiddleware,
+            allow_origins=config.security.allowed_origins,
+            allow_methods=["*"],
+            allow_headers=["*"],
+        ),
+        Middleware(MetricsMiddleware),
+    ]
+
+
+def create_app(default_browser: str = DEFAULT_BROWSER) -> Starlette:
+    app = Starlette(
+        routes=routes,
+        middleware=create_middleware(default_browser),
+    )
+    return app
+
+
+app = create_app()
 
 
 @contextlib.asynccontextmanager
 async def lifespan(app: Starlette) -> Any:
-    """Lifespan context manager for startup and shutdown events."""
-    global START_TIME
-    START_TIME = time.time()
+    _metrics.set(RequestMetrics(default_browser=getattr(app.state, 'default_browser', DEFAULT_BROWSER)))
     logger.info("ChronicleMCP HTTP server starting...")
     yield
     logger.info("ChronicleMCP HTTP server shutting down...")
 
 
-app = Starlette(routes=routes, middleware=middleware, lifespan=lifespan)
-
-
 def run_http_server(
     host: str = "127.0.0.1",
     port: int = 8080,
-    default_browser_: str = "chrome",
+    default_browser_: str = DEFAULT_BROWSER,
 ) -> None:
-    """Run the HTTP/SSE server.
-
-    Args:
-        host: Host to bind to
-        port: Port to listen on
-        default_browser_: Default browser to use
-    """
-    global default_browser
-    default_browser = default_browser_
+    import signal
+    import sys
 
     import uvicorn
 
-    config = uvicorn.Config(app, host=host, port=port, log_level="info")
+    def signal_handler(sig: int, frame: object) -> None:
+        logger.info(f"Received signal {sig}, shutting down...")
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    application = Starlette(
+        routes=routes,
+        middleware=create_middleware(default_browser_),
+        lifespan=lifespan,
+    )
+    application.state.default_browser = default_browser_
+
+    config = uvicorn.Config(application, host=host, port=port, log_level="info")
     server = uvicorn.Server(config)
     server.run()
 

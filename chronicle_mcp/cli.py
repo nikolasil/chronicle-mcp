@@ -2,7 +2,6 @@
 
 import logging
 import os
-import signal
 import sys
 import tempfile
 from pathlib import Path
@@ -130,14 +129,6 @@ def http_command(
         click.echo(f"Server started in background (PID file: {pid_file})")
         pid_file.write_text(str(os.getpid()))
         return
-
-    def signal_handler(sig: int, frame: object) -> None:
-        if pid_file.exists():
-            pid_file.unlink()
-        sys.exit(0)
-
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
 
     click.echo(f"Starting ChronicleMCP HTTP server on {host}:{port}")
     run_http_server(host=host, port=port, default_browser_=browser)
