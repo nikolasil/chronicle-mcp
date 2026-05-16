@@ -17,7 +17,7 @@ from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
 from starlette.routing import Route
 
-from chronicle_mcp.config import get_version, setup_logging
+from chronicle_mcp.config import get_version, load_config, setup_logging
 from chronicle_mcp.core import (
     BrowserNotFoundError,
     DatabaseError,
@@ -516,7 +516,7 @@ routes = [
 middleware = [
     Middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=load_config().security.allowed_origins,
         allow_methods=["*"],
         allow_headers=["*"],
     ),

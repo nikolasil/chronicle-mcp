@@ -64,6 +64,7 @@ from chronicle_mcp.core.validation import (
 )
 from chronicle_mcp.database import (
     count_domain_visits,
+    get_history_entries,
     query_bookmarks,
     query_downloads,
     query_history,
@@ -596,14 +597,21 @@ class HistoryService:
                 "message": format_sync_preview(source, target, entries_count, strategy),
             }
 
-        # TODO: Implement actual sync logic
+        from chronicle_mcp.database import sync_to_browser
+
+        with get_history_connection(source) as conn_source:
+            entries = get_history_entries(conn_source, 10000)
+
+        target_path = get_browser_path(target)
+        synced_count = sync_to_browser(target_path, entries, strategy)
+
         return {
             "dry_run": False,
             "source": source,
             "target": target,
-            "entries_count": entries_count,
+            "entries_count": synced_count,
             "merge_strategy": strategy,
-            "message": format_sync_result(source, target, entries_count, strategy),
+            "message": format_sync_result(source, target, synced_count, strategy),
         }
 
     @classmethod

@@ -432,6 +432,165 @@ def export_history(
         raise ValueError(f"Unsupported export format: {format_type}")
 
 
+def get_history_entries(conn: sqlite3.Connection, limit: int = 10000) -> list[dict[str, Any]]:
+    """
+    Gets all history entries from a browser database.
+
+    Args:
+        conn: SQLite connection
+        limit: Maximum entries to retrieve
+
+    Returns:
+        List of dicts with 'title', 'url', 'last_visit_time' keys
+    """
+    schema = detect_schema(conn)
+    cursor = conn.cursor()
+
+    if schema == "firefox":
+        cursor.execute(
+            "SELECT title, url, last_visit_date FROM moz_places WHERE url IS NOT NULL ORDER BY last_visit_date DESC LIMIT ?",
+            (limit,),
+        )
+        return [
+            {"title": title or "", "url": url, "last_visit_time": last_visit_date or 0}
+            for title, url, last_visit_date in cursor.fetchall()
+        ]
+    elif schema == "safari":
+        cursor.execute(
+            "SELECT title, url, visit_time FROM history_items ORDER BY visit_time DESC LIMIT ?",
+            (limit,),
+        )
+        return [
+            {"title": title or "", "url": url, "last_visit_time": int(visit_time * 1000000)}
+            for title, url, visit_time in cursor.fetchall()
+        ]
+    else:
+        cursor.execute(
+            "SELECT title, url, last_visit_time FROM urls ORDER BY last_visit_time DESC LIMIT ?",
+            (limit,),
+        )
+        return [
+            {"title": title, "url": url, "last_visit_time": last_visit_time}
+            for title, url, last_visit_time in cursor.fetchall()
+        ]
+
+
+def insert_history_entries(
+    conn: sqlite3.Connection,
+    entries: list[dict[str, Any]],
+    merge_strategy: str = "latest",
+) -> int:
+    """
+    Inserts history entries into a browser database.
+
+    Args:
+        conn: SQLite connection
+        entries: List of dicts with 'title', 'url', 'last_visit_time' keys
+        merge_strategy: 'latest' (replace duplicates with newer) or 'merge' (keep all)
+
+    Returns:
+        Number of entries inserted
+    """
+    if not entries:
+        return 0
+
+    schema = detect_schema(conn)
+    cursor = conn.cursor()
+    inserted = 0
+
+    for entry in entries:
+        title = entry.get("title", "")
+        url = entry.get("url", "")
+        last_visit_time = entry.get("last_visit_time", 0)
+
+        if schema == "firefox":
+            if merge_strategy == "latest":
+                cursor.execute(
+                    """
+                    INSERT OR REPLACE INTO moz_places (url, title, visit_count, last_visit_date)
+                    VALUES (?, ?, COALESCE((SELECT visit_count FROM moz_places WHERE url = ?), 0) + 1, ?)
+                    """,
+                    (url, title, url, last_visit_time),
+                )
+            else:
+                cursor.execute(
+                    """
+                    INSERT INTO moz_places (url, title, visit_count, last_visit_date)
+                    VALUES (?, ?, 1, ?)
+                    """,
+                    (url, title, last_visit_time),
+                )
+        elif schema == "safari":
+            safari_timestamp = last_visit_time / 1000000.0
+            if merge_strategy == "latest":
+                cursor.execute(
+                    """
+                    INSERT OR REPLACE INTO history_items (title, url, visit_time)
+                    VALUES (?, ?, ?)
+                    """,
+                    (title, url, safari_timestamp),
+                )
+            else:
+                cursor.execute(
+                    """
+                    INSERT INTO history_items (title, url, visit_time)
+                    VALUES (?, ?, ?)
+                    """,
+                    (title, url, safari_timestamp),
+                )
+        else:
+            if merge_strategy == "latest":
+                cursor.execute(
+                    """
+                    INSERT OR REPLACE INTO urls (title, url, last_visit_time, visit_count)
+                    VALUES (?, ?, ?, COALESCE((SELECT visit_count FROM urls WHERE url = ?), 0) + 1)
+                    """,
+                    (title, url, last_visit_time, url),
+                )
+            else:
+                cursor.execute(
+                    """
+                    INSERT INTO urls (title, url, last_visit_time, visit_count)
+                    VALUES (?, ?, ?, 1)
+                    """,
+                    (title, url, last_visit_time),
+                )
+        inserted += 1
+
+    conn.commit()
+    return inserted
+
+
+def sync_to_browser(
+    target_db_path: str,
+    entries: list[dict[str, Any]],
+    merge_strategy: str = "latest",
+) -> int:
+    """
+    Syncs history entries directly to a browser database file.
+
+    This function writes entries directly to the browser database without using
+    temporary files, which is the appropriate approach for sync operations.
+
+    Args:
+        target_db_path: Path to the target browser database
+        entries: List of dicts with 'title', 'url', 'last_visit_time' keys
+        merge_strategy: 'latest' (replace duplicates with newer) or 'merge' (keep all)
+
+    Returns:
+        Number of entries inserted
+    """
+    if not entries:
+        return 0
+
+    conn = sqlite3.connect(target_db_path)
+    try:
+        result = insert_history_entries(conn, entries, merge_strategy)
+        return result
+    finally:
+        conn.close()
+
+
 def search_with_regex(
     conn: sqlite3.Connection, pattern: str, limit: int = 20
 ) -> list[tuple[str, str, str]]:

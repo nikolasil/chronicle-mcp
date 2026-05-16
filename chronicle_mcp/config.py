@@ -72,6 +72,7 @@ class SecurityConfig:
             "hash",
         ]
     )
+    allowed_origins: list[str] = field(default_factory=lambda: ["localhost", "127.0.0.1"])
 
 
 @dataclass
