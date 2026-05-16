@@ -507,3 +507,154 @@ def get_downloads(
 def get_registered_tools() -> list[str]:
     """Returns the list of registered MCP tool names."""
     return MCP_TOOLS.copy()
+
+
+@tool
+def compare_time_periods(
+    start_date1: str,
+    end_date1: str,
+    start_date2: str,
+    end_date2: str,
+    browser: str = "chrome",
+) -> str:
+    """Compare browsing statistics between two time periods.
+
+    Args:
+        start_date1: Start date of first period (ISO format, e.g., '2024-01-01')
+        end_date1: End date of first period (ISO format)
+        start_date2: Start date of second period (ISO format)
+        end_date2: End date of second period (ISO format)
+        browser: Browser to analyze (chrome, edge, firefox, etc.)
+
+    Returns:
+        Comparison data showing changes between periods
+    """
+    try:
+        result = HistoryService.compare_time_periods(
+            start_date1=start_date1,
+            end_date1=end_date1,
+            start_date2=start_date2,
+            end_date2=end_date2,
+            browser=browser,
+        )
+        import json
+
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        return handle_service_error(e)
+
+
+@tool
+def analyze_productivity(
+    start_date: str | None = None,
+    end_date: str | None = None,
+    browser: str = "chrome",
+) -> str:
+    """Analyze browsing productivity and generate recommendations.
+
+    Args:
+        start_date: Optional start date (ISO format)
+        end_date: Optional end date (ISO format)
+        browser: Browser to analyze
+
+    Returns:
+        Productivity score, category breakdown, and recommendations
+    """
+    try:
+        result = HistoryService.analyze_productivity(
+            start_date=start_date,
+            end_date=end_date,
+            browser=browser,
+        )
+        import json
+
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        return handle_service_error(e)
+
+
+@tool
+def suggest_categories(
+    browser: str = "chrome",
+    limit: int = 20,
+) -> str:
+    """Suggest categories for uncategorized URLs.
+
+    Args:
+        browser: Browser to analyze
+        limit: Maximum number of suggestions (1-100)
+
+    Returns:
+        List of URLs that could be categorized with suggested categories
+    """
+    try:
+        result = HistoryService.suggest_categories(
+            browser=browser,
+            limit=limit,
+        )
+        import json
+
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        return handle_service_error(e)
+
+
+@tool
+def export_visualization(
+    format_type: str = "chart_json",
+    period: str = "month",
+    browser: str = "chrome",
+) -> str:
+    """Export data formatted for visualization (Chart.js compatible).
+
+    Args:
+        format_type: 'chart_json' for visualization data or 'csv'
+        period: Time period - 'day', 'week', or 'month'
+        browser: Browser to export from
+
+    Returns:
+        Chart-ready JSON data with category breakdown and activity patterns
+    """
+    try:
+        result = HistoryService.export_visualization(
+            format_type=format_type,
+            period=period,
+            browser=browser,
+        )
+        import json
+
+        return json.dumps(result, indent=2)
+    except Exception as e:
+        return handle_service_error(e)
+
+
+@tool
+def generate_insights_report(
+    period: str = "week",
+    browser: str = "chrome",
+    format_type: str = "markdown",
+) -> str:
+    """Generate comprehensive browsing insights report.
+
+    Args:
+        period: Time period - 'day', 'week', or 'month'
+        browser: Browser to analyze
+        format_type: 'markdown' for text or 'json' for data
+
+    Returns:
+        Comprehensive insights with productivity score, category breakdown,
+        top domains, and recommendations
+    """
+    try:
+        result = HistoryService.generate_insights_report(
+            period=period,
+            browser=browser,
+            format_type=format_type,
+        )
+        if format_type == "json":
+            import json
+
+            return json.dumps(result, indent=2)
+        return cast(str, result["summary_markdown"])
+    except Exception as e:
+        return handle_service_error(e)

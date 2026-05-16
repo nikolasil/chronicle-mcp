@@ -489,6 +489,79 @@ async def downloads_endpoint(request: Request) -> JSONResponse:
         return handle_service_error_http(e)
 
 
+async def compare_periods_endpoint(request: Request) -> JSONResponse:
+    """Compare two time periods endpoint."""
+    try:
+        data = await request.json() if await request.body() else {}
+        result = HistoryService.compare_time_periods(
+            start_date1=data.get("start_date1", ""),
+            end_date1=data.get("end_date1", ""),
+            start_date2=data.get("start_date2", ""),
+            end_date2=data.get("end_date2", ""),
+            browser=data.get("browser", default_browser),
+        )
+        return JSONResponse(result)
+    except Exception as e:
+        return handle_service_error_http(e)
+
+
+async def productivity_endpoint(request: Request) -> JSONResponse:
+    """Productivity analysis endpoint."""
+    try:
+        data = await request.json() if await request.body() else {}
+        result = HistoryService.analyze_productivity(
+            start_date=data.get("start_date"),
+            end_date=data.get("end_date"),
+            browser=data.get("browser", default_browser),
+        )
+        return JSONResponse(result)
+    except Exception as e:
+        return handle_service_error_http(e)
+
+
+async def suggest_categories_endpoint(request: Request) -> JSONResponse:
+    """Suggest categories for uncategorized URLs endpoint."""
+    try:
+        data = await request.json() if await request.body() else {}
+        result = HistoryService.suggest_categories(
+            browser=data.get("browser", default_browser),
+            limit=data.get("limit", 20),
+        )
+        return JSONResponse(result)
+    except Exception as e:
+        return handle_service_error_http(e)
+
+
+async def visualization_endpoint(request: Request) -> JSONResponse:
+    """Export visualization data endpoint."""
+    try:
+        data = await request.json() if await request.body() else {}
+        result = HistoryService.export_visualization(
+            format_type=data.get("format_type", "chart_json"),
+            period=data.get("period", "month"),
+            browser=data.get("browser", default_browser),
+        )
+        return JSONResponse(result)
+    except Exception as e:
+        return handle_service_error_http(e)
+
+
+async def insights_endpoint(request: Request) -> JSONResponse:
+    """Generate insights report endpoint."""
+    try:
+        data = await request.json() if await request.body() else {}
+        result = HistoryService.generate_insights_report(
+            period=data.get("period", "week"),
+            browser=data.get("browser", default_browser),
+            format_type=data.get("format_type", "markdown"),
+        )
+        if data.get("format_type") == "json":
+            return JSONResponse(result)
+        return JSONResponse({"report": result["summary_markdown"]})
+    except Exception as e:
+        return handle_service_error_http(e)
+
+
 routes = [
     Route("/health", health_check),
     Route("/ready", ready_check),
@@ -511,6 +584,11 @@ routes = [
     Route("/api/bookmarks/query", bookmarks_endpoint, methods=["POST"]),
     Route("/api/downloads", list_downloads_endpoint),
     Route("/api/downloads/query", downloads_endpoint, methods=["POST"]),
+    Route("/api/compare-periods", compare_periods_endpoint, methods=["POST"]),
+    Route("/api/productivity", productivity_endpoint, methods=["POST"]),
+    Route("/api/suggest-categories", suggest_categories_endpoint, methods=["POST"]),
+    Route("/api/visualization", visualization_endpoint, methods=["POST"]),
+    Route("/api/insights", insights_endpoint, methods=["POST"]),
 ]
 
 middleware = [
