@@ -603,7 +603,7 @@ curl http://localhost:8080/health
 {
   "status": "healthy",
   "service": "chronicle-mcp",
-  "version": "1.1.0",
+  "version": "1.4.0",
   "timestamp": "2024-01-15T10:30:00+00:00"
 }
 ```
@@ -702,7 +702,7 @@ pytest
 pytest -v
 
 # Specific test file
-pytest tests/test_database.py
+pytest tests/unit/
 
 # Single test
 pytest -k test_name

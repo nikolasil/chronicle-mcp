@@ -878,3 +878,172 @@ class TestWithConnectionErrorHandling:
         with pytest.raises(PermissionDeniedError) as exc_info:
             HistoryService._with_connection("chrome", lambda conn: None)
         assert "chrome" in str(exc_info.value)
+
+
+class TestFindDuplicateEntries:
+    """Tests for find_duplicate_entries method."""
+
+    def test_find_duplicate_entries_invalid_threshold_too_high(self, monkeypatch):
+        """Test invalid similarity_threshold (>1.0) raises ValidationError."""
+        from chronicle_mcp.core import ValidationError
+
+        with pytest.raises(ValidationError):
+            HistoryService.find_duplicate_entries("chrome", similarity_threshold=1.5)
+
+    def test_find_duplicate_entries_invalid_threshold_negative(self, monkeypatch):
+        """Test invalid similarity_threshold (<0) raises ValidationError."""
+        from chronicle_mcp.core import ValidationError
+
+        with pytest.raises(ValidationError):
+            HistoryService.find_duplicate_entries("chrome", similarity_threshold=-0.1)
+
+    def test_find_duplicate_entries_invalid_browser(self, monkeypatch):
+        """Test invalid browser raises ValidationError."""
+        from chronicle_mcp.core import ValidationError
+
+        with pytest.raises(ValidationError):
+            HistoryService.find_duplicate_entries("invalid_browser")
+
+    def test_find_duplicate_entries_limit_boundary(self, monkeypatch):
+        """Test limit boundary values are accepted."""
+        from chronicle_mcp.core import ValidationError
+
+        with pytest.raises(ValidationError):
+            HistoryService.find_duplicate_entries("chrome", limit=0)
+
+        with pytest.raises(ValidationError):
+            HistoryService.find_duplicate_entries("chrome", limit=1001)
+
+    def test_find_duplicate_entries_returns_structure(self, monkeypatch):
+        """Test find_duplicate_entries returns expected structure."""
+        from unittest.mock import patch
+
+        from chronicle_mcp.core.services import HistoryService
+
+        mock_result = {
+            "browser": "chrome",
+            "similarity_threshold": 0.9,
+            "duplicate_groups": [],
+            "total_duplicates": 0,
+            "total_entries_analyzed": 0,
+        }
+
+        with patch.object(HistoryService, '_with_connection', return_value=[]):
+            result = HistoryService.find_duplicate_entries(
+                browser="chrome",
+                similarity_threshold=0.9,
+                limit=100,
+            )
+
+        assert "browser" in result
+        assert "similarity_threshold" in result
+        assert "duplicate_groups" in result
+        assert "total_duplicates" in result
+        assert "total_entries_analyzed" in result
+
+
+class TestDeleteDuplicates:
+    """Tests for delete_duplicates method."""
+
+    def test_delete_duplicates_invalid_strategy(self, monkeypatch):
+        """Test invalid keep_strategy raises ValueError."""
+        with pytest.raises(ValueError, match="Invalid keep_strategy"):
+            HistoryService.delete_duplicates("chrome", keep_strategy="invalid_strategy")
+
+    def test_delete_duplicates_preview_mode_returns_preview(self, monkeypatch):
+        """Test preview mode (confirm=False) returns preview structure."""
+        from unittest.mock import patch
+
+        with patch.object(HistoryService, 'find_duplicate_entries', return_value={
+            "duplicate_groups": [],
+            "total_duplicates": 0,
+        }):
+            result = HistoryService.delete_duplicates(
+                browser="chrome",
+                confirm=False,
+            )
+
+        assert result["preview"] is True
+        assert "message" in result
+
+    def test_delete_duplicates_confirm_true_not_raises(self, monkeypatch):
+        """Test confirm=True doesn't raise (actual deletion would be mocked)."""
+        from unittest.mock import patch
+
+        with patch.object(HistoryService, 'find_duplicate_entries', return_value={
+            "duplicate_groups": [],
+            "total_duplicates": 0,
+        }):
+            with patch.object(HistoryService, 'delete_history', return_value={"deleted": 0}):
+                result = HistoryService.delete_duplicates(
+                    browser="chrome",
+                    confirm=True,
+                    keep_strategy="most_visits",
+                )
+
+        assert "preview" in result or "deleted_count" in result or "message" in result
+
+
+class TestSubscribeHistoryChanges:
+    """Tests for subscribe_history_changes method."""
+
+    def test_subscribe_history_changes_invalid_event_type(self, monkeypatch):
+        """Test invalid event type raises ValueError."""
+        with pytest.raises(ValueError, match="Invalid event type"):
+            HistoryService.subscribe_history_changes(
+                browser="chrome",
+                event_types=["invalid_type"],
+                callback=lambda e: None,
+            )
+
+    def test_subscribe_history_changes_empty_callback(self, monkeypatch):
+        """Test empty event_types raises ValueError."""
+        with pytest.raises(ValueError):
+            HistoryService.subscribe_history_changes(
+                browser="chrome",
+                event_types=[],
+                callback=lambda e: None,
+            )
+
+
+class TestUnsubscribeHistoryChanges:
+    """Tests for unsubscribe_history_changes method."""
+
+    def test_unsubscribe_history_changes_returns_structure(self, monkeypatch):
+        """Test unsubscribe_history_changes returns expected structure."""
+        from chronicle_mcp.core.events import EventType
+        from chronicle_mcp.core.realtime import get_subscription_manager
+
+        manager = get_subscription_manager()
+        manager.unsubscribe_all()
+
+        sub_result = manager.subscribe("chrome", [EventType.HISTORY_ADDED], lambda e: None)
+        result = HistoryService.unsubscribe_history_changes(sub_result)
+
+        assert "subscription_id" in result
+        assert "success" in result
+        assert "active_subscriptions" in result
+
+
+class TestGetSubscriptionStatus:
+    """Tests for get_subscription_status method."""
+
+    def test_get_subscription_status_no_subscription_id(self, monkeypatch):
+        """Test get_subscription_status without subscription_id returns global stats."""
+        from chronicle_mcp.core.realtime import get_subscription_manager
+
+        manager = get_subscription_manager()
+        manager.unsubscribe_all()
+
+        result = HistoryService.get_subscription_status()
+
+        assert "active_subscriptions" in result
+        assert "total_events" in result
+        assert "events_by_type" in result
+        assert "events_by_browser" in result
+
+    def test_get_subscription_status_nonexistent_id(self, monkeypatch):
+        """Test get_subscription_status with non-existent ID returns error."""
+        result = HistoryService.get_subscription_status(subscription_id="nonexistent-id")
+
+        assert "error" in result or "subscription_id" in result

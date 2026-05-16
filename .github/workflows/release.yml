@@ -294,6 +294,8 @@ jobs:
   build-container:
     needs: test
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -341,8 +343,23 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  sign-container:
+    needs: build-container
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install cosign
+        uses: actions/cosign-installer@v3
+        with:
+          cosign-version: v2.2.0
+
+      - name: Sign container image
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          cosign sign --yes ghcr.io/${{ github.repository }}:${{ needs.build-container.outputs.version }}
+
   create-tag:
-    needs: [prepare, build-package, generate-sbom, build-binaries, smoke-test-binaries, build-container]
+    needs: [prepare, build-package, generate-sbom, build-binaries, smoke-test-binaries, build-container, sign-container]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -401,7 +418,7 @@ jobs:
           git push origin "v$VERSION"
 
   publish:
-    needs: [prepare, create-tag, build-package, generate-sbom, build-binaries, smoke-test-binaries, build-container]
+    needs: [prepare, create-tag, build-package, generate-sbom, build-binaries, smoke-test-binaries, build-container, sign-container]
     runs-on: ubuntu-latest
     environment:
       name: pypi

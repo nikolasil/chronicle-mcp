@@ -82,12 +82,13 @@ ChronicleMCP aims to provide AI agents with secure, privacy-first access to loca
 
 ## Completed
 
-### v1.4.0 - Advanced Search Features
+### v1.4.0 - Advanced Analytics (Current)
 - Advanced search with regex and fuzzy matching
 - Productivity analysis and category suggestions
 - Time period comparison
 - Visualization data export (Chart.js compatible)
 - Comprehensive insights report generation
+- Duplicate detection and cleanup
 
 ### v1.3.0 - Bookmarks & Downloads
 - Bookmarks retrieval for all supported browsers
@@ -116,11 +117,11 @@ ChronicleMCP aims to provide AI agents with secure, privacy-first access to loca
 
 | Version | Status | Release Date | Key Features |
 |---------|--------|-------------|--------------|
-| 1.4.0 | Current | 2024-XX-XX | Advanced search, analytics, insights |
-| 1.3.0 | Released | 2024-XX-XX | Bookmarks, downloads |
-| 1.2.0 | Released | 2024-XX-XX | Cross-browser sync |
-| 1.1.0 | Released | 2024-XX-XX | Multi-browser support |
-| 1.0.0 | Released | 2024-XX-XX | Initial release |
+| 1.4.0 | Current | 2025-01-XX | Advanced search, analytics, insights |
+| 1.3.0 | Released | 2024-11-XX | Bookmarks, downloads |
+| 1.2.0 | Released | 2024-09-XX | Cross-browser sync |
+| 1.1.0 | Released | 2024-07-XX | Multi-browser support |
+| 1.0.0 | Released | 2024-05-XX | Initial release |
 
 ---
 

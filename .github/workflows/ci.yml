@@ -64,8 +64,25 @@ jobs:
           skip: ".git,*.svg,*.png,*.md"
           ignore_words_list: "and,param,be,to,the"
 
+  deadcode-detection:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: 'pip'
+
+      - name: Install deptry
+        run: pip install deptry
+
+      - name: Run deptry
+        run: deptry chronicle_mcp/
+
   test:
-    needs: [lint-and-format, type-check]
+    needs: [lint-and-format, type-check, codespell, deadcode-detection]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -93,7 +110,7 @@ jobs:
         if: matrix.python-version == '3.11'
         uses: codecov/codecov-action@v4
         with:
-          fail_ci_if_error: false
+          fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
           file: ./coverage.xml
           flags: unittests
@@ -139,10 +156,10 @@ jobs:
         run: pip install -e ".[dev]" mutmut
 
       - name: Run mutation tests
-        run: mutmut run --runner=pytest || true
+        run: mutmut run --runner=pytest
 
       - name: Show mutation results summary
-        run: mutmut show || true
+        run: mutmut show
 
       - name: Upload mutation results
         if: always()
@@ -169,8 +186,7 @@ jobs:
         run: pip install -e ".[dev]"
 
       - name: Run benchmark tests
-        run: |
-          pytest tests/ -v --benchmark-only --benchmark-json=benchmark.json || true
+        run: pytest tests/ -v --benchmark-only --benchmark-json=benchmark.json
 
       - name: Process benchmark results
         if: hashFiles('benchmark.json') != ''
@@ -193,7 +209,7 @@ jobs:
           echo "View full results at: https://nikolasil.github.io/chronicle-mcp/" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo '```json' >> $GITHUB_STEP_SUMMARY
-          python -c "import json; d=json.load(open('benchmark.json')); print(json.dumps({'testsuites': d.get('testsuites', [])[:3]}, indent=2))" >> $GITHUB_STEP_SUMMARY || true
+          python -c "import json; d=json.load(open('benchmark.json')); print(json.dumps({'testsuites': d.get('testsuites', [])[:3]}, indent=2))" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
 
       - name: Upload benchmark results

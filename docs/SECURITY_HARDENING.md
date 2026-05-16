@@ -60,7 +60,7 @@ By default, ChronicleMCP binds to `127.0.0.1` for security.
 
 ```bash
 # Only bind to localhost
-chronicle-mcp serve --host 127.0.0.1 --port 8080
+chronicle-mcp http --host 127.0.0.1 --port 8080
 ```
 
 ### TLS/HTTPS

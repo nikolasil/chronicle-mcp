@@ -26,7 +26,7 @@ Check if the service is healthy.
 {
   "status": "healthy",
   "service": "chronicle-mcp",
-  "version": "1.1.0",
+  "version": "1.4.0",
   "timestamp": "2024-01-15T10:30:00+00:00"
 }
 ```
@@ -644,6 +644,126 @@ chronicle_requests_total 1500
 
 ---
 
+### List Bookmarks
+
+**GET** `/api/bookmarks`
+
+Get list of browsers with available bookmarks.
+
+**Response (200 OK):**
+
+```json
+{
+  "browsers": ["chrome", "edge", "firefox"]
+}
+```
+
+---
+
+### Query Bookmarks
+
+**POST** `/api/bookmarks/query`
+
+Query bookmarks from a browser.
+
+**Request Body:**
+
+```json
+{
+  "query": "python",
+  "limit": 50,
+  "browser": "chrome",
+  "format": "markdown"
+}
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `query` | String | No | - | Search term |
+| `limit` | Integer | No | 50 | Maximum results |
+| `browser` | String | No | chrome | Browser to query |
+| `format` | String | No | markdown | Output format |
+
+**Response (200 OK):**
+
+```json
+{
+  "results": [
+    {
+      "title": "Python Tutorial",
+      "url": "https://docs.python.org/",
+      "timestamp": "2024-01-15T10:30:00+00:00"
+    }
+  ],
+  "count": 1
+}
+```
+
+---
+
+### List Downloads
+
+**GET** `/api/downloads`
+
+Get list of browsers with available downloads history.
+
+**Response (200 OK):**
+
+```json
+{
+  "browsers": ["chrome", "edge", "firefox"]
+}
+```
+
+---
+
+### Query Downloads
+
+**POST** `/api/downloads/query`
+
+Query downloads history from a browser.
+
+**Request Body:**
+
+```json
+{
+  "query": "pdf",
+  "limit": 50,
+  "browser": "chrome",
+  "format": "markdown"
+}
+```
+
+**Parameters:**
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `query` | String | No | - | Search term |
+| `limit` | Integer | No | 50 | Maximum results |
+| `browser` | String | No | chrome | Browser to query |
+| `format` | String | No | markdown | Output format |
+
+**Response (200 OK):**
+
+```json
+{
+  "results": [
+    {
+      "title": "document.pdf",
+      "url": "https://example.com/document.pdf",
+      "timestamp": "2024-01-15T10:30:00+00:00",
+      "state": "COMPLETE",
+      "total_bytes": 1024000
+    }
+  ],
+  "count": 1
+}
+```
+
+---
+
 ## cURL Examples
 
 ### Search History
@@ -709,13 +829,16 @@ Currently, ChronicleMCP does not implement rate limiting. Future versions may in
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.1.0 | 2024-02-12 | Initial HTTP API |
-| 1.0.0 | 2024-01-15 | Initial release |
+| 1.4.0 | 2024-XX-XX | Advanced analytics, productivity analysis |
+| 1.3.0 | 2024-XX-XX | Bookmarks and downloads |
+| 1.2.0 | 2024-XX-XX | Cross-browser sync |
+| 1.1.0 | 2024-XX-XX | Multi-browser support |
+| 1.0.0 | 2024-XX-XX | Initial release |
 
 ---
 
 ## See Also
 
-- [CLI Reference](CLI.md)
-- [Installation Guide](INSTALL.md)
-- [Architecture](ARCHITECTURE.md)
+- [CLI Reference](cli.md)
+- [Installation Guide](install.md)
+- [Architecture](architecture.md)

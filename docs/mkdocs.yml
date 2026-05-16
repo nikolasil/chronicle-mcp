@@ -50,6 +50,7 @@ nav:
   - CLI Reference: cli.md
   - HTTP API: api.md
   - Advanced Search: advanced_search.md
+  - Analytics: analytics.md
   - Architecture: architecture.md
   - Reference:
       - Services: reference/services.md
