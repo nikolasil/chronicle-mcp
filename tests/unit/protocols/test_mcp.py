@@ -38,8 +38,7 @@ class TestListAvailableBookmarksMCP:
 
     def test_list_available_bookmarks(self):
         """Test listing available bookmarks."""
-        # Access the underlying function via .fn attribute
-        result = list_available_bookmarks.fn()
+        result = list_available_bookmarks()
         assert isinstance(result, str)
 
     def test_list_available_bookmarks_error(self, monkeypatch):
@@ -53,7 +52,7 @@ class TestListAvailableBookmarksMCP:
             services.HistoryService, "list_available_bookmarks", mock_list_available_bookmarks
         )
 
-        result = list_available_bookmarks.fn()
+        result = list_available_bookmarks()
         assert "error" in result.lower() or "Error" in result
 
 
@@ -62,7 +61,7 @@ class TestListAvailableDownloadsMCP:
 
     def test_list_available_downloads(self):
         """Test listing available downloads."""
-        result = list_available_downloads.fn()
+        result = list_available_downloads()
         assert isinstance(result, str)
 
     def test_list_available_downloads_error(self, monkeypatch):
@@ -76,7 +75,7 @@ class TestListAvailableDownloadsMCP:
             services.HistoryService, "list_available_downloads", mock_list_available_downloads
         )
 
-        result = list_available_downloads.fn()
+        result = list_available_downloads()
         assert "error" in result.lower() or "Error" in result
 
 
@@ -92,7 +91,7 @@ class TestGetBookmarksMCP:
 
         monkeypatch.setattr(services.HistoryService, "get_bookmarks", mock_get_bookmarks)
 
-        result = get_bookmarks.fn(browser="chrome")
+        result = get_bookmarks(browser="chrome")
         assert "could not find" in result.lower()
 
     def test_get_bookmarks_validation_error(self, monkeypatch):
@@ -104,7 +103,7 @@ class TestGetBookmarksMCP:
 
         monkeypatch.setattr(validation, "validate_browser", mock_validate_browser)
 
-        result = get_bookmarks.fn(browser="invalid")
+        result = get_bookmarks(browser="invalid")
         assert "invalid" in result.lower() or "Invalid" in result
 
     def test_get_bookmarks_with_query(self, monkeypatch):
@@ -121,7 +120,7 @@ class TestGetBookmarksMCP:
 
         monkeypatch.setattr(services.HistoryService, "get_bookmarks", mock_get_bookmarks)
 
-        result = get_bookmarks.fn(query="github", browser="chrome")
+        result = get_bookmarks(query="github", browser="chrome")
         assert isinstance(result, str)
 
     def test_get_bookmarks_unexpected_error(self, monkeypatch):
@@ -133,7 +132,7 @@ class TestGetBookmarksMCP:
 
         monkeypatch.setattr(services.HistoryService, "get_bookmarks", mock_get_bookmarks)
 
-        result = get_bookmarks.fn(browser="chrome")
+        result = get_bookmarks(browser="chrome")
         assert "error" in result.lower() or "Error" in result
 
 
@@ -149,7 +148,7 @@ class TestGetDownloadsMCP:
 
         monkeypatch.setattr(services.HistoryService, "get_downloads", mock_get_downloads)
 
-        result = get_downloads.fn(browser="chrome")
+        result = get_downloads(browser="chrome")
         assert "could not find" in result.lower()
 
     def test_get_downloads_validation_error(self, monkeypatch):
@@ -161,7 +160,7 @@ class TestGetDownloadsMCP:
 
         monkeypatch.setattr(validation, "validate_browser", mock_validate_browser)
 
-        result = get_downloads.fn(browser="invalid")
+        result = get_downloads(browser="invalid")
         assert "invalid" in result.lower() or "Invalid" in result
 
     def test_get_downloads_with_query(self, monkeypatch):
@@ -178,7 +177,7 @@ class TestGetDownloadsMCP:
 
         monkeypatch.setattr(services.HistoryService, "get_downloads", mock_get_downloads)
 
-        result = get_downloads.fn(query="pdf", browser="chrome")
+        result = get_downloads(query="pdf", browser="chrome")
         assert isinstance(result, str)
 
     def test_get_downloads_unexpected_error(self, monkeypatch):
@@ -190,7 +189,7 @@ class TestGetDownloadsMCP:
 
         monkeypatch.setattr(services.HistoryService, "get_downloads", mock_get_downloads)
 
-        result = get_downloads.fn(browser="chrome")
+        result = get_downloads(browser="chrome")
         assert "error" in result.lower() or "Error" in result
 
 
@@ -264,7 +263,7 @@ class TestListAvailableBrowsersMCP:
             services.HistoryService, "list_available_browsers", mock_list_available_browsers
         )
 
-        result = list_available_browsers.fn()
+        result = list_available_browsers()
         assert isinstance(result, str)
         assert "chrome" in result.lower() or "firefox" in result.lower()
 
@@ -279,7 +278,7 @@ class TestListAvailableBrowsersMCP:
             services.HistoryService, "list_available_browsers", mock_list_available_browsers
         )
 
-        result = list_available_browsers.fn()
+        result = list_available_browsers()
         assert "error" in result.lower() or "Error" in result
 
 
@@ -300,7 +299,7 @@ class TestSearchHistoryMCP:
 
         monkeypatch.setattr(services.HistoryService, "search_history", mock_search_history)
 
-        result = search_history.fn(query="test", limit=5, browser="chrome")
+        result = search_history(query="test", limit=5, browser="chrome")
         assert isinstance(result, str)
         assert "test" in result.lower()
 
@@ -313,7 +312,7 @@ class TestSearchHistoryMCP:
 
         monkeypatch.setattr(services.HistoryService, "search_history", mock_search_history)
 
-        result = search_history.fn(query="test", browser="invalid")
+        result = search_history(query="test", browser="invalid")
         assert "error" in result.lower() or "Error" in result
 
     def test_search_history_browser_not_found(self, monkeypatch):
@@ -325,7 +324,7 @@ class TestSearchHistoryMCP:
 
         monkeypatch.setattr(services.HistoryService, "search_history", mock_search_history)
 
-        result = search_history.fn(query="test", browser="safari")
+        result = search_history(query="test", browser="safari")
         assert "could not find" in result.lower()
 
 
@@ -346,7 +345,7 @@ class TestGetRecentHistoryMCP:
 
         monkeypatch.setattr(services.HistoryService, "get_recent_history", mock_get_recent_history)
 
-        result = get_recent_history.fn(hours=24, limit=10, browser="chrome")
+        result = get_recent_history(hours=24, limit=10, browser="chrome")
         assert isinstance(result, str)
         assert "24" in result
 
@@ -359,7 +358,7 @@ class TestGetRecentHistoryMCP:
 
         monkeypatch.setattr(services.HistoryService, "get_recent_history", mock_get_recent_history)
 
-        result = get_recent_history.fn(hours=0, browser="chrome")
+        result = get_recent_history(hours=0, browser="chrome")
         assert "error" in result.lower() or "Error" in result
 
 
@@ -380,7 +379,7 @@ class TestCountVisitsMCP:
 
         monkeypatch.setattr(services.HistoryService, "count_visits", mock_count_visits)
 
-        result = count_visits.fn(domain="github.com", browser="chrome")
+        result = count_visits(domain="github.com", browser="chrome")
         assert isinstance(result, str)
         assert "github.com" in result
         assert "42" in result
@@ -394,7 +393,7 @@ class TestCountVisitsMCP:
 
         monkeypatch.setattr(services.HistoryService, "count_visits", mock_count_visits)
 
-        result = count_visits.fn(domain="", browser="chrome")
+        result = count_visits(domain="", browser="chrome")
         assert "error" in result.lower() or "Error" in result
 
 
@@ -414,7 +413,7 @@ class TestListTopDomainsMCP:
 
         monkeypatch.setattr(services.HistoryService, "list_top_domains", mock_list_top_domains)
 
-        result = list_top_domains.fn(limit=10, browser="chrome")
+        result = list_top_domains(limit=10, browser="chrome")
         assert isinstance(result, str)
 
     def test_list_top_domains_validation_error(self, monkeypatch):
@@ -426,7 +425,7 @@ class TestListTopDomainsMCP:
 
         monkeypatch.setattr(services.HistoryService, "list_top_domains", mock_list_top_domains)
 
-        result = list_top_domains.fn(limit=0, browser="chrome")
+        result = list_top_domains(limit=0, browser="chrome")
         assert "error" in result.lower() or "Error" in result
 
 
@@ -451,7 +450,7 @@ class TestSearchHistoryByDateMCP:
             services.HistoryService, "search_history_by_date", mock_search_history_by_date
         )
 
-        result = search_history_by_date.fn(
+        result = search_history_by_date(
             query="test",
             start_date="2024-01-01",
             end_date="2024-01-31",
@@ -471,7 +470,7 @@ class TestSearchHistoryByDateMCP:
             services.HistoryService, "search_history_by_date", mock_search_history_by_date
         )
 
-        result = search_history_by_date.fn(
+        result = search_history_by_date(
             query="test", start_date="invalid", end_date="2024-01-31", browser="chrome"
         )
         assert "error" in result.lower() or "Error" in result
@@ -494,7 +493,7 @@ class TestDeleteHistoryMCP:
 
         monkeypatch.setattr(services.HistoryService, "delete_history", mock_delete_history)
 
-        result = delete_history.fn(query="test", limit=100, browser="chrome", confirm=False)
+        result = delete_history(query="test", limit=100, browser="chrome", confirm=False)
         assert isinstance(result, str)
         assert "preview" in result.lower()
 
@@ -507,7 +506,7 @@ class TestDeleteHistoryMCP:
 
         monkeypatch.setattr(services.HistoryService, "delete_history", mock_delete_history)
 
-        result = delete_history.fn(query="", browser="chrome")
+        result = delete_history(query="", browser="chrome")
         assert "error" in result.lower() or "Error" in result
 
 
@@ -529,7 +528,7 @@ class TestSearchByDomainMCP:
 
         monkeypatch.setattr(services.HistoryService, "search_by_domain", mock_search_by_domain)
 
-        result = search_by_domain.fn(domain="github.com", browser="chrome")
+        result = search_by_domain(domain="github.com", browser="chrome")
         assert isinstance(result, str)
         assert "github.com" in result.lower()
 
@@ -548,7 +547,7 @@ class TestSearchByDomainMCP:
 
         monkeypatch.setattr(services.HistoryService, "search_by_domain", mock_search_by_domain)
 
-        result = search_by_domain.fn(domain="github.com", query="claude", browser="chrome")
+        result = search_by_domain(domain="github.com", query="claude", browser="chrome")
         assert isinstance(result, str)
 
 
@@ -571,7 +570,7 @@ class TestGetBrowserStatsMCP:
 
         monkeypatch.setattr(services.HistoryService, "get_browser_stats", mock_get_browser_stats)
 
-        result = get_browser_stats.fn(browser="chrome")
+        result = get_browser_stats(browser="chrome")
         assert isinstance(result, str)
 
     def test_get_browser_stats_validation_error(self, monkeypatch):
@@ -583,7 +582,7 @@ class TestGetBrowserStatsMCP:
 
         monkeypatch.setattr(services.HistoryService, "get_browser_stats", mock_get_browser_stats)
 
-        result = get_browser_stats.fn(browser="invalid")
+        result = get_browser_stats(browser="invalid")
         assert "error" in result.lower() or "Error" in result
 
 
@@ -605,7 +604,7 @@ class TestGetMostVisitedPagesMCP:
             services.HistoryService, "get_most_visited_pages", mock_get_most_visited_pages
         )
 
-        result = get_most_visited_pages.fn(limit=10, browser="chrome")
+        result = get_most_visited_pages(limit=10, browser="chrome")
         assert isinstance(result, str)
 
     def test_get_most_visited_validation_error(self, monkeypatch):
@@ -619,7 +618,7 @@ class TestGetMostVisitedPagesMCP:
             services.HistoryService, "get_most_visited_pages", mock_get_most_visited_pages
         )
 
-        result = get_most_visited_pages.fn(limit=0, browser="chrome")
+        result = get_most_visited_pages(limit=0, browser="chrome")
         assert "error" in result.lower() or "Error" in result
 
 
@@ -639,7 +638,7 @@ class TestExportHistoryMCP:
 
         monkeypatch.setattr(services.HistoryService, "export_history", mock_export_history)
 
-        result = export_history.fn(format_type="csv", limit=100, browser="chrome")
+        result = export_history(format_type="csv", limit=100, browser="chrome")
         assert isinstance(result, str)
         assert "title" in result or "csv" in result.lower()
 
@@ -656,7 +655,7 @@ class TestExportHistoryMCP:
 
         monkeypatch.setattr(services.HistoryService, "export_history", mock_export_history)
 
-        result = export_history.fn(format_type="json", limit=100, browser="chrome")
+        result = export_history(format_type="json", limit=100, browser="chrome")
         assert isinstance(result, str)
 
     def test_export_validation_error(self, monkeypatch):
@@ -668,7 +667,7 @@ class TestExportHistoryMCP:
 
         monkeypatch.setattr(services.HistoryService, "export_history", mock_export_history)
 
-        result = export_history.fn(format_type="xml", browser="chrome")
+        result = export_history(format_type="xml", browser="chrome")
         assert "error" in result.lower() or "Error" in result
 
 
@@ -692,7 +691,7 @@ class TestSearchHistoryAdvancedMCP:
             services.HistoryService, "search_history_advanced", mock_search_history_advanced
         )
 
-        result = search_history_advanced.fn(query="test", limit=10, browser="chrome")
+        result = search_history_advanced(query="test", limit=10, browser="chrome")
         assert isinstance(result, str)
 
     def test_advanced_search_with_regex(self, monkeypatch):
@@ -712,7 +711,7 @@ class TestSearchHistoryAdvancedMCP:
             services.HistoryService, "search_history_advanced", mock_search_history_advanced
         )
 
-        result = search_history_advanced.fn(
+        result = search_history_advanced(
             query="^https://.*github", limit=10, browser="chrome", use_regex=True
         )
         assert isinstance(result, str)
@@ -728,7 +727,7 @@ class TestSearchHistoryAdvancedMCP:
             services.HistoryService, "search_history_advanced", mock_search_history_advanced
         )
 
-        result = search_history_advanced.fn(
+        result = search_history_advanced(
             query="test", browser="chrome", use_regex=True, use_fuzzy=True
         )
         assert "error" in result.lower() or "Error" in result
@@ -753,7 +752,7 @@ class TestSyncHistoryMCP:
 
         monkeypatch.setattr(services.HistoryService, "sync_history", mock_sync_history)
 
-        result = sync_history.fn(
+        result = sync_history(
             source_browser="chrome", target_browser="firefox", merge_strategy="latest", dry_run=True
         )
         assert isinstance(result, str)
@@ -768,7 +767,7 @@ class TestSyncHistoryMCP:
 
         monkeypatch.setattr(services.HistoryService, "sync_history", mock_sync_history)
 
-        result = sync_history.fn(
+        result = sync_history(
             source_browser="chrome", target_browser="chrome", merge_strategy="latest", dry_run=True
         )
         assert "error" in result.lower() or "Error" in result
@@ -782,10 +781,11 @@ class TestSyncHistoryMCP:
 
         monkeypatch.setattr(services.HistoryService, "sync_history", mock_sync_history)
 
-        result = sync_history.fn(
+        result = sync_history(
             source_browser="safari",
             target_browser="firefox",
             merge_strategy="latest",
             dry_run=True,
         )
         assert "could not find" in result.lower()
+

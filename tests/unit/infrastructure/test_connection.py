@@ -19,7 +19,12 @@ from chronicle_mcp.connection import (
 
 
 class TestTempFileLifecycle:
-    """Tests for temp file creation and cleanup."""
+    """Tests for temp file creation and cleanup.
+
+    Note: These tests check system temp directory which can be affected by
+    other processes or concurrent test runs. They use timing-based checks
+    with retry loops to handle Windows file locking.
+    """
 
     @pytest.mark.xfail(
         platform.system() == "Windows",

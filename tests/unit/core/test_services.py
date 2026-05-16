@@ -676,7 +676,6 @@ class TestSyncHistory:
 
         from chronicle_mcp.core import services
 
-        # Create a mock firefox database
         firefox_db = temp_dir / "firefox_places.sqlite"
         conn = sqlite3.connect(str(firefox_db))
         cursor = conn.cursor()
@@ -692,7 +691,6 @@ class TestSyncHistory:
         conn.commit()
         conn.close()
 
-        # Mock get_browser_path in services module to return our firefox db
         original_get_browser_path = services.get_browser_path
 
         def mock_get_browser_path(browser):
@@ -763,10 +761,10 @@ class TestSyncHistory:
     def test_sync_actual_sync(self, temp_dir, sample_chrome_db, monkeypatch):
         """Test actual sync (not dry run) between chrome and firefox."""
         import sqlite3
-        from chronicle_mcp import paths
+
         import chronicle_mcp.connection
         import chronicle_mcp.core.services
-        from chronicle_mcp.connection import get_history_connection
+        from chronicle_mcp import paths
 
         firefox_db_path = str(temp_dir / "firefox_places.sqlite")
         conn = sqlite3.connect(firefox_db_path)

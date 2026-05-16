@@ -1,4 +1,3 @@
-import logging
 import os
 import sqlite3
 import tempfile
@@ -9,54 +8,47 @@ import pytest
 
 CHROME_EPOCH_OFFSET = 11644473600000000
 
+# Fixed reference timestamp for time-independent test data
+CREATED_TIMESTAMP = datetime(2024, 6, 15, 12, 0, 0, tzinfo=timezone.utc)
 
-@pytest.fixture
-def reset_logging():
-    """Reset logging state - for tests that need clean logging setup.
 
-    Note: This fixture is not autouse because it interferes with pytest's
-    log capture mechanism. Only use it for tests that specifically need
-    to test logging configuration.
-    """
-    # Store original state
-    root_logger = logging.getLogger()
-    original_handlers = root_logger.handlers[:]
-    original_level = root_logger.level
-
-    # Clear all loggers completely
-    for logger_name in list(logging.root.manager.loggerDict.keys()):
-        logger = logging.getLogger(logger_name)
-        for handler in logger.handlers[:]:
-            logger.removeHandler(handler)
-            handler.close()
-
-    # Clear root logger handlers
-    for handler in root_logger.handlers[:]:
-        root_logger.removeHandler(handler)
-        handler.close()
-
-    root_logger.setLevel(logging.WARNING)
-
-    # Reset logging._handlers and logging._handlerList to ensure basicConfig works
-    logging._handlers.clear()  # type: ignore
-    logging._handlerList.clear()  # type: ignore
-
-    # Reset the manager's logger dict to clear any cached state
-    logging.root.manager.loggerDict.clear()
-
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_session_temp_dir():
+    """Clean up session temp directory after all tests."""
     yield
+    # Session temp dir cleanup is handled by TemporaryDirectory context manager
+    # This fixture ensures the cleanup happens even if tests fail
 
-    # Restore original state after test
-    for handler in root_logger.handlers[:]:
-        root_logger.removeHandler(handler)
-    for handler in original_handlers:
-        root_logger.addHandler(handler)
-    root_logger.setLevel(original_level)
+
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_default_cache():
+    """Clean up default cache after all tests complete."""
+    yield
+    try:
+        from chronicle_mcp.cache import default_cache
+        default_cache.invalidate()
+        default_cache._cache.clear()
+    except Exception:
+        pass
+
+
+@pytest.fixture(scope="session", autouse=True)
+def cleanup_webhook_manager():
+    """Clean up webhook manager after all tests complete."""
+    yield
+    try:
+        from chronicle_mcp.webhooks import webhook_manager
+        webhook_manager.webhooks.clear()
+    except Exception:
+        pass
 
 
 def generate_chrome_timestamp(days_ago: int = 0, hours_ago: int = 0) -> int:
-    """Generate a Chrome-style timestamp (microseconds since 1601-01-01)."""
-    cutoff = datetime.now(timezone.utc) - timedelta(days=days_ago, hours=hours_ago)
+    """Generate a Chrome-style timestamp (microseconds since 1601-01-01).
+
+    Uses CREATED_TIMESTAMP as reference to ensure time-independent test data.
+    """
+    cutoff = CREATED_TIMESTAMP - timedelta(days=days_ago, hours=hours_ago)
     chrome_epoch = datetime(1601, 1, 1, tzinfo=timezone.utc)
     return int((cutoff - chrome_epoch).total_seconds() * 1_000_000)
 
@@ -132,15 +124,16 @@ def sample_chrome_db(temp_dir):
     return db_path
 
 
-@pytest.fixture(scope="session")
-def session_temp_dir():
-    """Session-scoped temporary directory for heavy fixtures."""
-    with tempfile.TemporaryDirectory() as tmpdir:
-        yield tmpdir
+@pytest.fixture
+def session_temp_dir(tmp_path):
+    """Provides a function-scoped temporary directory for test artifacts."""
+    temp_dir = tmp_path / "chronicle_test"
+    temp_dir.mkdir(exist_ok=True)
+    return temp_dir
 
 
 @pytest.fixture(scope="session")
-def realistic_chrome_db(session_temp_dir):
+def realistic_chrome_db(tmp_path_factory):
     """Creates a realistic Chrome history database with 50 entries (session-scoped).
 
     Data distribution:
@@ -150,8 +143,11 @@ def realistic_chrome_db(session_temp_dir):
     - News: 8 entries
     - Social: 6 entries
     - Other: 12 entries
+
+    Uses tmp_path_factory to create session-scoped temp directory.
     """
-    db_path = os.path.join(session_temp_dir, "History_realistic")
+    session_dir = tmp_path_factory.mktemp("realistic_chrome")
+    db_path = str(session_dir / "History_realistic")
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 

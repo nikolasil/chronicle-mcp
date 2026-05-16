@@ -296,7 +296,10 @@ tests/
 │   ├── core/           # Service layer tests
 │   │   ├── test_validation.py
 │   │   ├── test_formatters.py
-│   │   └── test_services.py
+│   │   ├── test_services.py
+│   │   ├── test_analytics.py
+│   │   ├── test_categories.py
+│   │   └── test_exceptions.py
 │   ├── protocols/      # Protocol adapter tests
 │   │   ├── test_mcp.py
 │   │   └── test_http.py
@@ -304,12 +307,31 @@ tests/
 │       ├── test_database.py
 │       ├── test_connection.py
 │       ├── test_paths.py
-│       └── test_cli.py
+│       ├── test_cli.py
+│       ├── test_cache.py
+│       ├── test_webhooks.py
+│       └── test_config.py
 ├── integration/        # Integration tests
 │   └── test_browser.py
 └── benchmark/          # Performance tests
     └── test_performance.py
 ```
+
+### Test Fixtures and Isolation
+
+```
+tests/conftest.py       # Shared fixtures and configuration
+test_isolation.py      # Tests to verify isolation works correctly
+```
+
+**Key Fixtures:**
+- `mock_chrome_path` - Mocks browser path detection
+- `sample_chrome_db` - Creates sample Chrome database
+- `realistic_chrome_db` - Creates session-scoped DB with realistic timestamps
+- `temp_dir` / `tmp_path` - Isolated temporary directories
+- `http_client` - HTTP client with fresh app per test
+- `cleanup_default_cache` - Session-scoped cache teardown (autouse)
+- `cleanup_webhook_manager` - Session-scoped webhook teardown (autouse)
 
 ### Writing Tests
 

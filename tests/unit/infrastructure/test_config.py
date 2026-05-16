@@ -396,36 +396,33 @@ class TestJSONFormatter:
 class TestSetupLogging:
     """Tests for setup_logging function.
 
-    Note: These tests use the reset_logging fixture but may fail when
-    pytest's logging capture is active (run with -p no:logging to test properly).
+    Note: These tests configure logging directly and may conflict with
+    pytest's log capture. They should be run with -p no:logging if needed.
     """
 
     def _is_pytest_logging_active(self):
         """Check if pytest's logging plugin is interfering."""
         return any(type(h).__name__ == "LogCaptureHandler" for h in logging.getLogger().handlers)
 
-    def test_setup_logging_basic(self, reset_logging):
+    def test_setup_logging_basic(self, caplog):
         """Test basic logging setup creates handlers."""
         if self._is_pytest_logging_active():
             pytest.skip("Incompatible with pytest logging capture")
         setup_logging(level="INFO")
         logger = logging.getLogger()
-        # Verify handlers are configured
         assert len(logger.handlers) >= 1
-        # Check logger level is set correctly
         assert logger.level == logging.INFO
 
-    def test_setup_logging_custom_level(self, reset_logging):
+    def test_setup_logging_custom_level(self, caplog):
         """Test logging with custom level creates handlers."""
         if self._is_pytest_logging_active():
             pytest.skip("Incompatible with pytest logging capture")
         setup_logging(level="DEBUG")
         logger = logging.getLogger()
-        # Verify handlers are configured
         assert len(logger.handlers) >= 1
         assert logger.level == logging.DEBUG
 
-    def test_setup_logging_from_config(self, reset_logging, monkeypatch, tmp_path):
+    def test_setup_logging_from_config(self, monkeypatch, tmp_path, caplog):
         """Test logging setup from config file with JSON format."""
         if self._is_pytest_logging_active():
             pytest.skip("Incompatible with pytest logging capture")
@@ -448,7 +445,6 @@ json_format = true
         """Test logging setup with file handler."""
         log_file = tmp_path / "test.log"
 
-        # Create config with file path
         config_file = tmp_path / "chronicle.toml"
         config_file.write_text(
             f"""
@@ -461,10 +457,5 @@ file_path = "{log_file}"
         monkeypatch.chdir(tmp_path)
         setup_logging()
 
-        # Log a message
         logger = logging.getLogger("test")
         logger.info("Test message")
-
-        # Check file was created
-        # Note: File handler might not be immediately flushed
-        # So we just verify setup doesn't raise an error
