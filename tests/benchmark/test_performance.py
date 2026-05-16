@@ -3,6 +3,17 @@ import sqlite3
 
 import pytest
 
+# Benchmark configuration - limit to 2 rounds max with shorter max time
+# to prevent tests from taking too long
+pytestmark = [
+    pytest.mark.performance,
+    pytest.mark.benchmark(
+        min_rounds=2,
+        max_time=0.5,
+        warmup=False,
+    ),
+]
+
 from chronicle_mcp.core.formatters import (
     format_export,
     format_recent_results,

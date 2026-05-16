@@ -1,3 +1,4 @@
+import logging
 import os
 import sqlite3
 import tempfile
@@ -7,6 +8,50 @@ from pathlib import Path
 import pytest
 
 CHROME_EPOCH_OFFSET = 11644473600000000
+
+
+@pytest.fixture
+def reset_logging():
+    """Reset logging state - for tests that need clean logging setup.
+
+    Note: This fixture is not autouse because it interferes with pytest's
+    log capture mechanism. Only use it for tests that specifically need
+    to test logging configuration.
+    """
+    # Store original state
+    root_logger = logging.getLogger()
+    original_handlers = root_logger.handlers[:]
+    original_level = root_logger.level
+
+    # Clear all loggers completely
+    for logger_name in list(logging.root.manager.loggerDict.keys()):
+        logger = logging.getLogger(logger_name)
+        for handler in logger.handlers[:]:
+            logger.removeHandler(handler)
+            handler.close()
+
+    # Clear root logger handlers
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+        handler.close()
+
+    root_logger.setLevel(logging.WARNING)
+
+    # Reset logging._handlers and logging._handlerList to ensure basicConfig works
+    logging._handlers.clear()  # type: ignore
+    logging._handlerList.clear()  # type: ignore
+
+    # Reset the manager's logger dict to clear any cached state
+    logging.root.manager.loggerDict.clear()
+
+    yield
+
+    # Restore original state after test
+    for handler in root_logger.handlers[:]:
+        root_logger.removeHandler(handler)
+    for handler in original_handlers:
+        root_logger.addHandler(handler)
+    root_logger.setLevel(original_level)
 
 
 def generate_chrome_timestamp(days_ago: int = 0, hours_ago: int = 0) -> int:

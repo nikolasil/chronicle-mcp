@@ -34,6 +34,7 @@ class QueryCache:
         """Cache a result."""
         key = self._make_key(query_type, params)
         self.cache[key] = {
+            "type": query_type,
             "result": result,
             "cached_at": __import__("datetime").datetime.now(),
         }
