@@ -13,7 +13,7 @@ class TestDuplicateEntriesMutationSafety:
         """Threshold at exactly 0.9 should be accepted."""
         from chronicle_mcp.core.services import HistoryService
 
-        with patch.object(HistoryService, '_with_connection', return_value=[]):
+        with patch.object(HistoryService, "_with_connection", return_value=[]):
             result = HistoryService.find_duplicate_entries(
                 "chrome",
                 similarity_threshold=0.9,
@@ -25,7 +25,7 @@ class TestDuplicateEntriesMutationSafety:
         """Test boundary threshold values 0.0 and 1.0."""
         from chronicle_mcp.core.services import HistoryService
 
-        with patch.object(HistoryService, '_with_connection', return_value=[]):
+        with patch.object(HistoryService, "_with_connection", return_value=[]):
             result = HistoryService.find_duplicate_entries(
                 "chrome",
                 similarity_threshold=0.0,
@@ -44,7 +44,7 @@ class TestDuplicateEntriesMutationSafety:
         """Empty database should return empty results."""
         from chronicle_mcp.core.services import HistoryService
 
-        with patch.object(HistoryService, '_with_connection', return_value=[]):
+        with patch.object(HistoryService, "_with_connection", return_value=[]):
             result = HistoryService.find_duplicate_entries("chrome")
             assert result["total_entries_analyzed"] == 0
             assert result["duplicate_groups"] == []
@@ -54,10 +54,14 @@ class TestDuplicateEntriesMutationSafety:
         from chronicle_mcp.core.services import HistoryService
 
         for strategy in ["most_visits", "most_recent", "first"]:
-            with patch.object(HistoryService, 'find_duplicate_entries', return_value={
-                "duplicate_groups": [],
-            }):
-                with patch.object(HistoryService, 'delete_history', return_value={"deleted": 0}):
+            with patch.object(
+                HistoryService,
+                "find_duplicate_entries",
+                return_value={
+                    "duplicate_groups": [],
+                },
+            ):
+                with patch.object(HistoryService, "delete_history", return_value={"deleted": 0}):
                     result = HistoryService.delete_duplicates(
                         "chrome",
                         keep_strategy=strategy,
@@ -137,7 +141,7 @@ class TestAnalyticsMutationSafety:
         """Same start/end dates should show zero delta."""
         from chronicle_mcp.core.services import HistoryService
 
-        with patch.object(HistoryService, '_with_connection') as mock_conn:
+        with patch.object(HistoryService, "_with_connection") as mock_conn:
             mock_conn.return_value = {
                 "total_visits": 100,
                 "unique_urls": 50,
@@ -156,7 +160,7 @@ class TestAnalyticsMutationSafety:
         """Productivity analysis should return score and grade."""
         from chronicle_mcp.core.services import HistoryService
 
-        with patch.object(HistoryService, '_with_connection') as mock_conn:
+        with patch.object(HistoryService, "_with_connection") as mock_conn:
             mock_conn.return_value = {}
             result = HistoryService.analyze_productivity(browser="chrome")
             assert "productivity_score" in result
@@ -172,7 +176,7 @@ class TestExportVisualizationMutationSafety:
         """Chart JSON export should have correct structure."""
         from chronicle_mcp.core.services import HistoryService
 
-        with patch.object(HistoryService, '_with_connection') as mock_conn:
+        with patch.object(HistoryService, "_with_connection") as mock_conn:
             mock_conn.return_value = {}
             result = HistoryService.export_visualization(
                 format_type="chart_json",
@@ -186,7 +190,7 @@ class TestExportVisualizationMutationSafety:
         """CSV export should return string content."""
         from chronicle_mcp.core.services import HistoryService
 
-        with patch.object(HistoryService, '_with_connection') as mock_conn:
+        with patch.object(HistoryService, "_with_connection") as mock_conn:
             mock_conn.return_value = {}
             result = HistoryService.export_visualization(
                 format_type="csv",
@@ -205,5 +209,5 @@ class TestInsightsReportMutationSafety:
         """Verify generate_insights_report method exists and is callable."""
         from chronicle_mcp.core.services import HistoryService
 
-        assert hasattr(HistoryService, 'generate_insights_report')
+        assert hasattr(HistoryService, "generate_insights_report")
         assert callable(HistoryService.generate_insights_report)

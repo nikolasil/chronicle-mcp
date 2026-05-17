@@ -26,9 +26,7 @@ class TestSubscribeHistoryMCP:
                 "message": "Subscribed to history changes",
             }
 
-        monkeypatch.setattr(
-            services.HistoryService, "subscribe_history_changes", mock_subscribe
-        )
+        monkeypatch.setattr(services.HistoryService, "subscribe_history_changes", mock_subscribe)
 
         result = subscribe_to_history(browser="chrome")
         assert "test-sub-123" in result
@@ -47,14 +45,9 @@ class TestSubscribeHistoryMCP:
                 "message": "Subscribed to history changes",
             }
 
-        monkeypatch.setattr(
-            services.HistoryService, "subscribe_history_changes", mock_subscribe
-        )
+        monkeypatch.setattr(services.HistoryService, "subscribe_history_changes", mock_subscribe)
 
-        result = subscribe_to_history(
-            browser="chrome",
-            event_types=["history_added"]
-        )
+        result = subscribe_to_history(browser="chrome", event_types=["history_added"])
         assert "test-sub-456" in result
 
     def test_subscribe_invalid_event_type(self, monkeypatch):
@@ -65,14 +58,9 @@ class TestSubscribeHistoryMCP:
         def mock_subscribe(*args, **kwargs):
             raise ValidationError("Invalid event type: invalid_type")
 
-        monkeypatch.setattr(
-            services.HistoryService, "subscribe_history_changes", mock_subscribe
-        )
+        monkeypatch.setattr(services.HistoryService, "subscribe_history_changes", mock_subscribe)
 
-        result = subscribe_to_history(
-            browser="chrome",
-            event_types=["invalid_type"]
-        )
+        result = subscribe_to_history(browser="chrome", event_types=["invalid_type"])
         assert "error" in result.lower() or "Error" in result
 
     def test_subscribe_unexpected_error(self, monkeypatch):
@@ -82,9 +70,7 @@ class TestSubscribeHistoryMCP:
         def mock_subscribe(*args, **kwargs):
             raise RuntimeError("Database error")
 
-        monkeypatch.setattr(
-            services.HistoryService, "subscribe_history_changes", mock_subscribe
-        )
+        monkeypatch.setattr(services.HistoryService, "subscribe_history_changes", mock_subscribe)
 
         result = subscribe_to_history(browser="chrome")
         assert "error" in result.lower() or "Error" in result
@@ -158,9 +144,7 @@ class TestGetSubscriptionStatusMCP:
                 "event_count": 42,
             }
 
-        monkeypatch.setattr(
-            services.HistoryService, "get_subscription_status", mock_get_status
-        )
+        monkeypatch.setattr(services.HistoryService, "get_subscription_status", mock_get_status)
 
         result = get_subscription_status(subscription_id="test-sub-123")
         assert "test-sub-123" in result
@@ -174,9 +158,7 @@ class TestGetSubscriptionStatusMCP:
         def mock_get_status(*args, **kwargs):
             raise ServiceError("Subscription not found")
 
-        monkeypatch.setattr(
-            services.HistoryService, "get_subscription_status", mock_get_status
-        )
+        monkeypatch.setattr(services.HistoryService, "get_subscription_status", mock_get_status)
 
         result = get_subscription_status(subscription_id="nonexistent")
         assert "error" in result.lower() or "Error" in result or "not found" in result.lower()
@@ -188,9 +170,7 @@ class TestGetSubscriptionStatusMCP:
         def mock_get_status(*args, **kwargs):
             raise RuntimeError("Database error")
 
-        monkeypatch.setattr(
-            services.HistoryService, "get_subscription_status", mock_get_status
-        )
+        monkeypatch.setattr(services.HistoryService, "get_subscription_status", mock_get_status)
 
         result = get_subscription_status(subscription_id="test-sub-123")
         assert "error" in result.lower() or "Error" in result

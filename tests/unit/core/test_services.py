@@ -920,7 +920,7 @@ class TestFindDuplicateEntries:
 
         from chronicle_mcp.core.services import HistoryService
 
-        with patch.object(HistoryService, '_with_connection', return_value=[]):
+        with patch.object(HistoryService, "_with_connection", return_value=[]):
             result = HistoryService.find_duplicate_entries(
                 browser="chrome",
                 similarity_threshold=0.9,
@@ -946,10 +946,14 @@ class TestDeleteDuplicates:
         """Test preview mode (confirm=False) returns preview structure."""
         from unittest.mock import patch
 
-        with patch.object(HistoryService, 'find_duplicate_entries', return_value={
-            "duplicate_groups": [],
-            "total_duplicates": 0,
-        }):
+        with patch.object(
+            HistoryService,
+            "find_duplicate_entries",
+            return_value={
+                "duplicate_groups": [],
+                "total_duplicates": 0,
+            },
+        ):
             result = HistoryService.delete_duplicates(
                 browser="chrome",
                 confirm=False,
@@ -962,11 +966,15 @@ class TestDeleteDuplicates:
         """Test confirm=True doesn't raise (actual deletion would be mocked)."""
         from unittest.mock import patch
 
-        with patch.object(HistoryService, 'find_duplicate_entries', return_value={
-            "duplicate_groups": [],
-            "total_duplicates": 0,
-        }):
-            with patch.object(HistoryService, 'delete_history', return_value={"deleted": 0}):
+        with patch.object(
+            HistoryService,
+            "find_duplicate_entries",
+            return_value={
+                "duplicate_groups": [],
+                "total_duplicates": 0,
+            },
+        ):
+            with patch.object(HistoryService, "delete_history", return_value={"deleted": 0}):
                 result = HistoryService.delete_duplicates(
                     browser="chrome",
                     confirm=True,

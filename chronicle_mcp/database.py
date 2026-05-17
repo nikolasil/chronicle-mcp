@@ -266,7 +266,7 @@ def delete_history(conn: sqlite3.Connection, query: str, limit: int = 100) -> in
     cursor = conn.cursor()
     search_query = f"%{query}%"
     cursor.execute(
-        "DELETE FROM urls WHERE (title LIKE ? OR url LIKE ?) AND rowid IN (SELECT rowid FROM urls WHERE (title LIKE ? OR url LIKE ?) LIMIT ?)",
+        "DELETE FROM urls WHERE (title LIKE ? OR url LIKE ?) AND rowid IN (SELECT rowid FROM urls WHERE (title LIKE ? OR url LIKE ?) ORDER BY last_visit_time DESC LIMIT ?)",
         (search_query, search_query, search_query, search_query, limit),
     )
     deleted_count = cursor.rowcount
@@ -503,40 +503,30 @@ def insert_history_entries(
         last_visit_time = entry.get("last_visit_time", 0)
 
         if schema == "firefox":
-            if merge_strategy == "latest":
-                cursor.execute(
-                    """
-                    INSERT OR REPLACE INTO moz_places (url, title, visit_count, last_visit_date)
-                    VALUES (?, ?, COALESCE((SELECT visit_count FROM moz_places WHERE url = ?), 0) + 1, ?)
-                    """,
-                    (url, title, url, last_visit_time),
-                )
-            else:
-                cursor.execute(
-                    """
-                    INSERT INTO moz_places (url, title, visit_count, last_visit_date)
-                    VALUES (?, ?, 1, ?)
-                    """,
-                    (url, title, last_visit_time),
-                )
+            cursor.execute("SELECT visit_count FROM moz_places WHERE url = ?", (url,))
+            row = cursor.fetchone()
+            existing_count = row[0] if row else 0
+            new_count = existing_count + 1 if merge_strategy == "latest" else 1
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO moz_places (url, title, visit_count, last_visit_date)
+                VALUES (?, ?, ?, ?)
+                """,
+                (url, title, new_count, last_visit_time),
+            )
         elif schema == "safari":
             safari_timestamp = last_visit_time / 1000000.0
-            if merge_strategy == "latest":
-                cursor.execute(
-                    """
-                    INSERT OR REPLACE INTO history_items (title, url, visit_time)
-                    VALUES (?, ?, ?)
-                    """,
-                    (title, url, safari_timestamp),
-                )
-            else:
-                cursor.execute(
-                    """
-                    INSERT INTO history_items (title, url, visit_time)
-                    VALUES (?, ?, ?)
-                    """,
-                    (title, url, safari_timestamp),
-                )
+            cursor.execute("SELECT visit_count FROM history_items WHERE url = ?", (url,))
+            row = cursor.fetchone()
+            existing_count = row[0] if row else 0
+            new_count = existing_count + 1 if merge_strategy == "latest" else 1
+            cursor.execute(
+                """
+                INSERT OR REPLACE INTO history_items (title, url, visit_time, visit_count)
+                VALUES (?, ?, ?, ?)
+                """,
+                (title, url, safari_timestamp, new_count),
+            )
         else:
             if merge_strategy == "latest":
                 cursor.execute(
@@ -1265,15 +1255,15 @@ def get_hourly_stats_for_period(
     end_date: str,
 ) -> dict[str, Any]:
     """
-    Gets statistics for a specific time period.
+        Gets statistics for a specific time period.
 
-    Args:
-        conn: SQLite connection
-        start_date: Start date ISO format
-        end_date: End date ISO format
+        Args:
+            conn: SQLite connection
+            start_date: Start date ISO format
+            end_date: End date ISO format
 
-Returns:
-        List of (title, url, timestamp) tuples
+    Returns:
+            List of (title, url, timestamp) tuples
     """
     cursor = conn.cursor()
 
@@ -1307,7 +1297,16 @@ Returns:
 
     cursor.execute(
         """
-        SELECT COUNT(*) as cnt, SUBSTR(url, 1, INSTR(SUBSTR(url, 9), '/') + 8) as domain
+        SELECT COUNT(*) as cnt,
+               SUBSTR(
+                   SUBSTR(url, INSTR(url, '://') + 3),
+                   1,
+                   CASE
+                       WHEN INSTR(SUBSTR(url, INSTR(url, '://') + 3), '/') > 0
+                       THEN INSTR(SUBSTR(url, INSTR(url, '://') + 3), '/') - 1
+                       ELSE 100
+                   END
+               ) as domain
         FROM urls
         WHERE last_visit_time >= ? AND last_visit_time <= ?
         GROUP BY domain

@@ -22,7 +22,11 @@ from chronicle_mcp.core.validation import (
 class TestValidateBrowserProperty:
     """Property-based tests for validate_browser."""
 
-    @given(browser=st.sampled_from(["chrome", "firefox", "edge", "brave", "safari", "vivaldi", "opera"]))
+    @given(
+        browser=st.sampled_from(
+            ["chrome", "firefox", "edge", "brave", "safari", "vivaldi", "opera"]
+        )
+    )
     @settings(max_examples=100)
     def test_valid_browser_returns_lowercase(self, browser):
         """Valid browser names should be returned as lowercase."""

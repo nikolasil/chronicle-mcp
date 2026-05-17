@@ -4,9 +4,8 @@
 
 ChronicleMCP is a Python-based Model Context Protocol (MCP) server that provides AI agents secure access to local browser history. The project uses a layered architecture with the FastMCP framework and SQLite for fast, privacy-first local data access.
 
-**Main Entry Point:** `chronicle_mcp/server.py`
-**CLI Entry Point:** `chronicle_mcp/cli.py`
-**MCP Protocol:** `chronicle_mcp/protocols/mcp.py`
+**Main Entry Point:** `chronicle_mcp/server.py` (MCP server entry point)
+**MCP Protocol:** `chronicle_mcp/protocols/mcp.py` (FastMCP adapter with tool definitions)
 **HTTP Protocol:** `chronicle_mcp/protocols/http.py`
 **Core Service:** `chronicle_mcp/core/services.py`
 **Connection Management:** `chronicle_mcp/connection.py`

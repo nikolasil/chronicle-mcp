@@ -304,8 +304,10 @@ class TestTimestampEdgeCases:
         conn = sqlite3.connect(sample_chrome_db)
         try:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO urls (url, title, visit_count, last_visit_time) VALUES (?, ?, ?, ?)",
-                         ("https://example.com", "Example", 1, 0))
+            cursor.execute(
+                "INSERT INTO urls (url, title, visit_count, last_visit_time) VALUES (?, ?, ?, ?)",
+                ("https://example.com", "Example", 1, 0),
+            )
             conn.commit()
 
             result = query_history(conn, "example", limit=5)
@@ -318,8 +320,10 @@ class TestTimestampEdgeCases:
         conn = sqlite3.connect(sample_chrome_db)
         try:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO urls (url, title, visit_count, last_visit_time) VALUES (?, ?, ?, ?)",
-                         ("https://neg.example.com", "Negative", 1, -1))
+            cursor.execute(
+                "INSERT INTO urls (url, title, visit_count, last_visit_time) VALUES (?, ?, ?, ?)",
+                ("https://neg.example.com", "Negative", 1, -1),
+            )
             conn.commit()
 
             result = query_history(conn, "neg", limit=5)
@@ -332,8 +336,10 @@ class TestTimestampEdgeCases:
         conn = sqlite3.connect(sample_chrome_db)
         try:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO urls (url, title, visit_count, last_visit_time) VALUES (?, ?, ?, ?)",
-                         ("https://large.example.com", "Large", 1, 9999999999999999))
+            cursor.execute(
+                "INSERT INTO urls (url, title, visit_count, last_visit_time) VALUES (?, ?, ?, ?)",
+                ("https://large.example.com", "Large", 1, 9999999999999999),
+            )
             conn.commit()
 
             result = query_history(conn, "large", limit=5)
@@ -350,10 +356,14 @@ class TestDomainMatchingEdgeCases:
         conn = sqlite3.connect(sample_chrome_db)
         try:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO urls (url, title, visit_count, last_visit_time) VALUES (?, ?, ?, ?)",
-                         ("https://notgithub.com/page", "Not GitHub", 1, 1000000))
-            cursor.execute("INSERT INTO urls (url, title, visit_count, last_visit_time) VALUES (?, ?, ?, ?)",
-                         ("https://github.com/real", "Real GitHub", 1, 1000000))
+            cursor.execute(
+                "INSERT INTO urls (url, title, visit_count, last_visit_time) VALUES (?, ?, ?, ?)",
+                ("https://notgithub.com/page", "Not GitHub", 1, 1000000),
+            )
+            cursor.execute(
+                "INSERT INTO urls (url, title, visit_count, last_visit_time) VALUES (?, ?, ?, ?)",
+                ("https://github.com/real", "Real GitHub", 1, 1000000),
+            )
             conn.commit()
 
             real_count = count_domain_visits(conn, "github.com")
@@ -366,8 +376,10 @@ class TestDomainMatchingEdgeCases:
         conn = sqlite3.connect(sample_chrome_db)
         try:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO urls (url, title, visit_count, last_visit_time) VALUES (?, ?, ?, ?)",
-                         ("https://example.com:8080/page", "With Port", 5, 1000000))
+            cursor.execute(
+                "INSERT INTO urls (url, title, visit_count, last_visit_time) VALUES (?, ?, ?, ?)",
+                ("https://example.com:8080/page", "With Port", 5, 1000000),
+            )
             conn.commit()
 
             count = count_domain_visits(conn, "example.com:8080")
@@ -380,10 +392,14 @@ class TestDomainMatchingEdgeCases:
         conn = sqlite3.connect(sample_chrome_db)
         try:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO urls (url, title, visit_count, last_visit_time) VALUES (?, ?, ?, ?)",
-                         ("https://secure.example.com/page", "Secure", 10, 1000000))
-            cursor.execute("INSERT INTO urls (url, title, visit_count, last_visit_time) VALUES (?, ?, ?, ?)",
-                         ("http://insecure.example.com/page", "Insecure", 5, 1000000))
+            cursor.execute(
+                "INSERT INTO urls (url, title, visit_count, last_visit_time) VALUES (?, ?, ?, ?)",
+                ("https://secure.example.com/page", "Secure", 10, 1000000),
+            )
+            cursor.execute(
+                "INSERT INTO urls (url, title, visit_count, last_visit_time) VALUES (?, ?, ?, ?)",
+                ("http://insecure.example.com/page", "Insecure", 5, 1000000),
+            )
             conn.commit()
 
             count = count_domain_visits(conn, "secure.example.com")
@@ -411,12 +427,16 @@ class TestBookmarkFolderHierarchy:
                                     "type": "folder",
                                     "name": "Level 2",
                                     "children": [
-                                        {"type": "url", "name": "Deep Link", "url": "https://deep.example.com"}
-                                    ]
+                                        {
+                                            "type": "url",
+                                            "name": "Deep Link",
+                                            "url": "https://deep.example.com",
+                                        }
+                                    ],
                                 }
-                            ]
+                            ],
                         }
-                    ]
+                    ],
                 }
             }
         }
@@ -435,8 +455,8 @@ class TestBookmarkFolderHierarchy:
                     "type": "folder",
                     "children": [
                         {"type": "folder", "name": "Empty Folder", "children": []},
-                        {"type": "url", "name": "Valid Link", "url": "https://valid.example.com"}
-                    ]
+                        {"type": "url", "name": "Valid Link", "url": "https://valid.example.com"},
+                    ],
                 }
             }
         }
@@ -455,12 +475,9 @@ class TestBookmarkFolderHierarchy:
                     "type": "folder",
                     "children": [
                         {"type": "url", "name": "Other Link", "url": "https://other.example.com"}
-                    ]
+                    ],
                 },
-                "bookmark_bar": {
-                    "type": "folder",
-                    "children": []
-                }
+                "bookmark_bar": {"type": "folder", "children": []},
             }
         }
         bookmark_file.write_text(json.dumps(bookmark_data))
@@ -513,10 +530,13 @@ class TestDownloadEdgeCases:
                     start_time INTEGER
                 )
             """)
-            cursor.execute("""
+            cursor.execute(
+                """
                 INSERT INTO downloads (filename, url, start_time) VALUES
                 (?, ?, ?)
-            """, ("文档.pdf", "https://example.com/doc.pdf", 13316000000000000))
+            """,
+                ("文档.pdf", "https://example.com/doc.pdf", 13316000000000000),
+            )
             conn.commit()
 
             result = query_downloads_chrome(conn, None, 10)
@@ -608,6 +628,7 @@ class TestConnectionCleanup:
 
         temp_path = get_temp_filename("test")
         import shutil
+
         shutil.copy2(str(db_path), temp_path)
 
         assert os.path.exists(temp_path)

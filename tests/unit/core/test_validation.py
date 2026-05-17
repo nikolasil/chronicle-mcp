@@ -87,6 +87,16 @@ class TestValidateQuery:
             validate_query(None)  # type: ignore
         assert "Query cannot be empty" in str(exc_info.value)
 
+    def test_query_exceeds_max_length(self):
+        long_query = "a" * 1001
+        with pytest.raises(ValidationError) as exc_info:
+            validate_query(long_query)
+        assert "1000 characters or less" in str(exc_info.value)
+
+    def test_query_at_max_length(self):
+        result = validate_query("a" * 1000)
+        assert len(result) == 1000
+
 
 class TestValidateLimit:
     """Tests for validate_limit function."""
@@ -148,6 +158,15 @@ class TestValidateHours:
         with pytest.raises(ValidationError) as exc_info:
             validate_hours(24.5)
         assert "Hours must be an integer" in str(exc_info.value)
+
+    def test_hours_exceeds_max(self):
+        with pytest.raises(ValidationError) as exc_info:
+            validate_hours(100000)
+        assert "must be 8760 or less" in str(exc_info.value)
+
+    def test_hours_at_max_boundary(self):
+        result = validate_hours(8760)
+        assert result == 8760
 
 
 class TestValidateFormatType:
@@ -346,6 +365,16 @@ class TestValidateExcludeDomains:
     def test_filters_empty_strings(self):
         result = validate_exclude_domains(["example.com", "", "test.com"])
         assert result == ["example.com", "test.com"]
+
+    def test_invalid_domain_no_tld(self):
+        with pytest.raises(ValidationError) as exc_info:
+            validate_exclude_domains(["invalid"])
+        assert "Invalid domain format" in str(exc_info.value)
+
+    def test_invalid_domain_with_space(self):
+        with pytest.raises(ValidationError) as exc_info:
+            validate_exclude_domains(["example com"])
+        assert "Invalid domain format" in str(exc_info.value)
 
 
 class TestValidateFormatTypeExport:

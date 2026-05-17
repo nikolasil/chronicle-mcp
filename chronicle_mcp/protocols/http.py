@@ -94,15 +94,20 @@ class RequestMetrics:
 
 
 _request_count: contextvars.ContextVar[int] = contextvars.ContextVar("request_count", default=0)
-_request_latency_total: contextvars.ContextVar[float] = contextvars.ContextVar("request_latency_total", default=0.0)
+_request_latency_total: contextvars.ContextVar[float] = contextvars.ContextVar(
+    "request_latency_total", default=0.0
+)
 _start_time: contextvars.ContextVar[float] = contextvars.ContextVar("start_time")
-_default_browser: contextvars.ContextVar[str] = contextvars.ContextVar("default_browser", default=DEFAULT_BROWSER)
+_default_browser: contextvars.ContextVar[str] = contextvars.ContextVar(
+    "default_browser", default=DEFAULT_BROWSER
+)
 _correlation_id: contextvars.ContextVar[str] = contextvars.ContextVar("correlation_id", default="")
 
 
 def generate_correlation_id() -> str:
     """Generate a unique correlation ID for request tracing."""
     import uuid
+
     return str(uuid.uuid4())[:16]
 
 
@@ -145,12 +150,11 @@ def _classify_operation(path: str) -> str:
     return "other"
 
 
-def error_response(message: str, status_code: int = 400, correlation_id: str | None = None) -> JSONResponse:
+def error_response(
+    message: str, status_code: int = 400, correlation_id: str | None = None
+) -> JSONResponse:
     error_id = correlation_id or get_correlation_id()
-    return JSONResponse(
-        {"error": message, "correlation_id": error_id},
-        status_code=status_code
-    )
+    return JSONResponse({"error": message, "correlation_id": error_id}, status_code=status_code)
 
 
 def handle_service_error_http(error: Exception) -> JSONResponse:
@@ -339,34 +343,32 @@ async def openapi_spec(request: Request) -> JSONResponse:
             "description": "HTTP REST API for ChronicleMCP - Browser History Context Server",
             "version": version,
             "contact": {"name": "ChronicleMCP Support"},
-            "license": {"name": "MIT"}
+            "license": {"name": "MIT"},
         },
-        "servers": [
-            {"url": "http://localhost:8080", "description": "Local development server"}
-        ],
+        "servers": [{"url": "http://localhost:8080", "description": "Local development server"}],
         "paths": {
             "/ready": {
                 "get": {
                     "summary": "Health check",
-                    "responses": {"200": {"description": "Server is ready"}}
+                    "responses": {"200": {"description": "Server is ready"}},
                 }
             },
             "/metrics": {
                 "get": {
                     "summary": "Get metrics",
-                    "responses": {"200": {"description": "Metrics data"}}
+                    "responses": {"200": {"description": "Metrics data"}},
                 }
             },
             "/metrics/prometheus": {
                 "get": {
                     "summary": "Prometheus metrics",
-                    "responses": {"200": {"description": "Prometheus format metrics"}}
+                    "responses": {"200": {"description": "Prometheus format metrics"}},
                 }
             },
             "/api/browsers": {
                 "get": {
                     "summary": "List available browsers",
-                    "responses": {"200": {"description": "List of browsers"}}
+                    "responses": {"200": {"description": "List of browsers"}},
                 }
             },
             "/api/search": {
@@ -382,13 +384,16 @@ async def openapi_spec(request: Request) -> JSONResponse:
                                         "query": {"type": "string"},
                                         "limit": {"type": "integer", "default": 20},
                                         "browser": {"type": "string"},
-                                        "format_type": {"type": "string", "enum": ["json", "markdown", "csv"]}
-                                    }
+                                        "format_type": {
+                                            "type": "string",
+                                            "enum": ["json", "markdown", "csv"],
+                                        },
+                                    },
                                 }
                             }
-                        }
+                        },
                     },
-                    "responses": {"200": {"description": "Search results"}}
+                    "responses": {"200": {"description": "Search results"}},
                 }
             },
             "/api/recent": {
@@ -403,13 +408,13 @@ async def openapi_spec(request: Request) -> JSONResponse:
                                         "hours": {"type": "integer", "default": 24},
                                         "limit": {"type": "integer", "default": 20},
                                         "browser": {"type": "string"},
-                                        "format_type": {"type": "string"}
-                                    }
+                                        "format_type": {"type": "string"},
+                                    },
                                 }
                             }
                         }
                     },
-                    "responses": {"200": {"description": "Recent history entries"}}
+                    "responses": {"200": {"description": "Recent history entries"}},
                 }
             },
             "/api/count": {
@@ -423,13 +428,13 @@ async def openapi_spec(request: Request) -> JSONResponse:
                                     "required": ["domain"],
                                     "properties": {
                                         "domain": {"type": "string"},
-                                        "browser": {"type": "string"}
-                                    }
+                                        "browser": {"type": "string"},
+                                    },
                                 }
                             }
                         }
                     },
-                    "responses": {"200": {"description": "Visit count"}}
+                    "responses": {"200": {"description": "Visit count"}},
                 }
             },
             "/api/top-domains": {
@@ -443,13 +448,13 @@ async def openapi_spec(request: Request) -> JSONResponse:
                                     "properties": {
                                         "limit": {"type": "integer", "default": 10},
                                         "browser": {"type": "string"},
-                                        "format_type": {"type": "string"}
-                                    }
+                                        "format_type": {"type": "string"},
+                                    },
                                 }
                             }
                         }
                     },
-                    "responses": {"200": {"description": "Top domains list"}}
+                    "responses": {"200": {"description": "Top domains list"}},
                 }
             },
             "/api/most-visited": {
@@ -463,19 +468,19 @@ async def openapi_spec(request: Request) -> JSONResponse:
                                     "properties": {
                                         "limit": {"type": "integer", "default": 10},
                                         "browser": {"type": "string"},
-                                        "format_type": {"type": "string"}
-                                    }
+                                        "format_type": {"type": "string"},
+                                    },
                                 }
                             }
                         }
                     },
-                    "responses": {"200": {"description": "Most visited pages"}}
+                    "responses": {"200": {"description": "Most visited pages"}},
                 }
             },
             "/api/bookmarks": {
                 "get": {
                     "summary": "List bookmarks browsers",
-                    "responses": {"200": {"description": "List of browsers with bookmarks"}}
+                    "responses": {"200": {"description": "List of browsers with bookmarks"}},
                 }
             },
             "/api/bookmarks/query": {
@@ -490,19 +495,19 @@ async def openapi_spec(request: Request) -> JSONResponse:
                                         "query": {"type": "string"},
                                         "limit": {"type": "integer", "default": 20},
                                         "browser": {"type": "string"},
-                                        "format_type": {"type": "string"}
-                                    }
+                                        "format_type": {"type": "string"},
+                                    },
                                 }
                             }
                         }
                     },
-                    "responses": {"200": {"description": "Bookmark results"}}
+                    "responses": {"200": {"description": "Bookmark results"}},
                 }
             },
             "/api/downloads": {
                 "get": {
                     "summary": "List downloads browsers",
-                    "responses": {"200": {"description": "List of browsers with downloads"}}
+                    "responses": {"200": {"description": "List of browsers with downloads"}},
                 }
             },
             "/api/downloads/query": {
@@ -517,16 +522,16 @@ async def openapi_spec(request: Request) -> JSONResponse:
                                         "query": {"type": "string"},
                                         "limit": {"type": "integer", "default": 20},
                                         "browser": {"type": "string"},
-                                        "format_type": {"type": "string"}
-                                    }
+                                        "format_type": {"type": "string"},
+                                    },
                                 }
                             }
                         }
                     },
-                    "responses": {"200": {"description": "Download results"}}
+                    "responses": {"200": {"description": "Download results"}},
                 }
-            }
-        }
+            },
+        },
     }
     return JSONResponse(content=spec)
 
@@ -561,7 +566,7 @@ class MetricsMiddleware:
                             "latency_ms": round(latency * 1000, 2),
                             "operation": operation,
                         }
-                    }
+                    },
                 )
             await send(message)
 
@@ -721,7 +726,9 @@ async def domain_search_endpoint(request: Request) -> JSONResponse:
 async def browser_stats_endpoint(request: Request) -> JSONResponse:
     try:
         data = await request.json() if await request.body() else {}
-        result = HistoryService.get_browser_stats(browser=data.get("browser", get_default_browser()))
+        result = HistoryService.get_browser_stats(
+            browser=data.get("browser", get_default_browser())
+        )
         return JSONResponse(result["stats"])
     except Exception as e:
         return handle_service_error_http(e)
@@ -1014,7 +1021,9 @@ app = create_app()
 
 @contextlib.asynccontextmanager
 async def lifespan(app: Starlette) -> Any:
-    _metrics.set(RequestMetrics(default_browser=getattr(app.state, 'default_browser', DEFAULT_BROWSER)))
+    _metrics.set(
+        RequestMetrics(default_browser=getattr(app.state, "default_browser", DEFAULT_BROWSER))
+    )
     logger.info("ChronicleMCP HTTP server starting...")
     yield
     logger.info("ChronicleMCP HTTP server shutting down...")

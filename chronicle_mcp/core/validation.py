@@ -39,6 +39,10 @@ def validate_browser(browser: str) -> str:
     return browser_lower
 
 
+MAX_QUERY_LENGTH = 1000
+MAX_HOURS = 8760
+
+
 def validate_query(query: str | None, field_name: str = "query") -> str:
     """Validate search query string.
 
@@ -55,7 +59,14 @@ def validate_query(query: str | None, field_name: str = "query") -> str:
     if not query or not isinstance(query, str) or not query.strip():
         raise ValidationError(f"{field_name.capitalize()} cannot be empty", field=field_name)
 
-    return query.strip()
+    query_stripped = query.strip()
+    if len(query_stripped) > MAX_QUERY_LENGTH:
+        raise ValidationError(
+            f"{field_name.capitalize()} must be {MAX_QUERY_LENGTH} characters or less",
+            field=field_name,
+        )
+
+    return query_stripped
 
 
 def validate_limit(
@@ -103,6 +114,9 @@ def validate_hours(hours: int) -> int:
 
     if hours < 1:
         raise ValidationError("Hours must be a positive integer", field="hours")
+
+    if hours > MAX_HOURS:
+        raise ValidationError(f"Hours must be {MAX_HOURS} or less (max 1 year)", field="hours")
 
     return hours
 
@@ -301,6 +315,9 @@ def validate_exclude_domains(exclude_domains: list[str] | None) -> list[str]:
 
     Returns:
         Cleaned list of domains
+
+    Raises:
+        ValidationError: If domains are invalid
     """
     if not exclude_domains:
         return []
@@ -308,4 +325,27 @@ def validate_exclude_domains(exclude_domains: list[str] | None) -> list[str]:
     if not isinstance(exclude_domains, list):
         raise ValidationError("exclude_domains must be a list", field="exclude_domains")
 
-    return [str(d).strip() for d in exclude_domains if d and str(d).strip()]
+    cleaned: list[str] = []
+    for d in exclude_domains:
+        domain_str = str(d).strip()
+        if not domain_str:
+            continue
+        if " " in domain_str or not _is_valid_domain_format(domain_str):
+            raise ValidationError(
+                f"Invalid domain format: '{domain_str}'",
+                field="exclude_domains",
+            )
+        cleaned.append(domain_str)
+
+    return cleaned
+
+
+def _is_valid_domain_format(domain: str) -> bool:
+    """Check if a string looks like a valid domain."""
+    if not domain:
+        return False
+    if domain.count(".") == 0:
+        return False
+    if len(domain) > 253:
+        return False
+    return True

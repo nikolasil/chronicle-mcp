@@ -411,20 +411,24 @@ class HistoryService:
         }
 
     @classmethod
-    def get_browser_stats(cls, browser: str = "chrome") -> dict[str, Any]:
+    def get_browser_stats(
+        cls, browser: str = "chrome", format_type: str = "markdown"
+    ) -> dict[str, Any]:
         """Get browser statistics.
 
         Args:
             browser: Browser to analyze
+            format_type: 'markdown' or 'json'
 
         Returns:
             Dictionary with statistics and formatted message
         """
         browser_lower = validate_browser(browser)
+        format_clean = validate_format_type(format_type)
 
         stats = cls._with_connection(browser_lower, db_get_browser_stats)
 
-        return {"stats": stats, "message": format_browser_stats(stats)}
+        return {"stats": stats, "message": format_browser_stats(stats, format_clean)}
 
     @classmethod
     def get_most_visited_pages(
@@ -734,6 +738,8 @@ class HistoryService:
         from chronicle_mcp.core.categories import CATEGORY_PATTERNS
 
         browser_lower = validate_browser(browser)
+        validate_date_range(start_date1, end_date1)
+        validate_date_range(start_date2, end_date2)
 
         period1_stats = cls._with_connection(
             browser_lower,
@@ -1199,10 +1205,22 @@ class HistoryService:
         validate_limit(limit, 1, 1000)
         validate_fuzzy_threshold(similarity_threshold)
 
+        def normalize_url_for_comparison(url: str) -> str:
+            """Normalize URL for comparison (strip http/https, www, trailing slashes)."""
+            url_clean = url.strip().lower()
+            if url_clean.startswith("http://"):
+                url_clean = url_clean[7:]
+            elif url_clean.startswith("https://"):
+                url_clean = url_clean[8:]
+            if url_clean.startswith("www."):
+                url_clean = url_clean[4:]
+            url_clean = url_clean.rstrip("/")
+            return url_clean
+
         def url_similarity(url1: str, url2: str) -> float:
             """Calculate similarity between two URLs."""
-            url1_clean = url1.strip().lower()
-            url2_clean = url2.strip().lower()
+            url1_clean = normalize_url_for_comparison(url1)
+            url2_clean = normalize_url_for_comparison(url2)
             if url1_clean == url2_clean:
                 return 1.0
             return SequenceMatcher(None, url1_clean, url2_clean).ratio()
@@ -1329,16 +1347,22 @@ class HistoryService:
             }
 
         def batch_delete(conn: Any) -> int:
-            """Batch delete duplicate URLs using SQL IN clause."""
+            """Batch delete duplicate URLs using SQL IN clause with chunking."""
             cursor = conn.cursor()
             urls_to_delete = [url for url, _ in to_delete]
             if not urls_to_delete:
                 return 0
-            placeholders = ",".join("?" * len(urls_to_delete))
 
-            cursor.execute(f"DELETE FROM urls WHERE url IN ({placeholders})", urls_to_delete)
+            BATCH_SIZE = 500
+            total_deleted = 0
+            for i in range(0, len(urls_to_delete), BATCH_SIZE):
+                batch = urls_to_delete[i : i + BATCH_SIZE]
+                placeholders = ",".join("?" * len(batch))
+                cursor.execute(f"DELETE FROM urls WHERE url IN ({placeholders})", batch)
+                total_deleted += cursor.rowcount
+
             conn.commit()
-            return cursor.rowcount  # type: ignore[no-any-return]
+            return total_deleted
 
         deleted_count = cls._with_connection(browser_lower, batch_delete)
 

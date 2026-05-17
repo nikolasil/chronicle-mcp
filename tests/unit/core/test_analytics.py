@@ -80,6 +80,19 @@ class TestCompareTimePeriods:
         assert "period1" in result
         assert "period2" in result
 
+    def test_compare_periods_invalid_date_range(self, mock_chrome_path, sample_chrome_db):
+        """Should raise error for invalid date range (start > end)."""
+        from chronicle_mcp.core import InvalidDateRangeError
+
+        with pytest.raises(InvalidDateRangeError):
+            HistoryService.compare_time_periods(
+                start_date1="2024-01-31",
+                end_date1="2024-01-01",
+                start_date2="2024-02-01",
+                end_date2="2024-02-29",
+                browser="chrome",
+            )
+
 
 class TestAnalyzeProductivity:
     """Tests for analyze_productivity service method."""
@@ -97,7 +110,9 @@ class TestAnalyzeProductivity:
         assert "grade" in result
         assert result["grade"] in ["A", "B", "C", "D", "F", "N/A"]
 
-    def test_productivity_analysis_returns_category_breakdown(self, mock_chrome_path, sample_chrome_db):
+    def test_productivity_analysis_returns_category_breakdown(
+        self, mock_chrome_path, sample_chrome_db
+    ):
         """Should return category breakdown with counts and percentages."""
         result = HistoryService.analyze_productivity(browser="chrome")
         assert "category_breakdown" in result
@@ -106,7 +121,9 @@ class TestAnalyzeProductivity:
             assert "count" in data
             assert "percentage" in data
 
-    def test_productivity_analysis_returns_recommendations(self, mock_chrome_path, sample_chrome_db):
+    def test_productivity_analysis_returns_recommendations(
+        self, mock_chrome_path, sample_chrome_db
+    ):
         """Should return recommendations list."""
         result = HistoryService.analyze_productivity(browser="chrome")
         assert "recommendations" in result
@@ -179,7 +196,9 @@ class TestSuggestCategories:
 class TestExportVisualization:
     """Tests for export_visualization service method."""
 
-    def test_export_visualization_returns_chart_json_by_default(self, mock_chrome_path, sample_chrome_db):
+    def test_export_visualization_returns_chart_json_by_default(
+        self, mock_chrome_path, sample_chrome_db
+    ):
         """Should return Chart.js format data by default."""
         result = HistoryService.export_visualization(browser="chrome")
         assert "charts" in result
@@ -204,7 +223,9 @@ class TestExportVisualization:
         assert "Category" in result["content"]
         assert result["format"] == "csv"
 
-    def test_export_visualization_includes_category_breakdown(self, mock_chrome_path, sample_chrome_db):
+    def test_export_visualization_includes_category_breakdown(
+        self, mock_chrome_path, sample_chrome_db
+    ):
         """Should include category breakdown in output."""
         result = HistoryService.export_visualization(browser="chrome")
         assert "category_breakdown" in result
@@ -222,7 +243,9 @@ class TestExportVisualization:
         assert "doughnut" in chart_types
         assert "bar" in chart_types
 
-    def test_export_visualization_doughnut_has_category_labels(self, mock_chrome_path, sample_chrome_db):
+    def test_export_visualization_doughnut_has_category_labels(
+        self, mock_chrome_path, sample_chrome_db
+    ):
         """Doughnut chart should have category labels."""
         result = HistoryService.export_visualization(browser="chrome")
         doughnut_chart = next((c for c in result["charts"] if c["type"] == "doughnut"), None)
@@ -233,7 +256,9 @@ class TestExportVisualization:
 class TestGenerateInsightsReport:
     """Tests for generate_insights_report service method."""
 
-    def test_generate_insights_report_returns_markdown_summary(self, mock_chrome_path, sample_chrome_db):
+    def test_generate_insights_report_returns_markdown_summary(
+        self, mock_chrome_path, sample_chrome_db
+    ):
         """Should return markdown summary."""
         result = HistoryService.generate_insights_report(browser="chrome", format_type="markdown")
         assert "summary_markdown" in result
@@ -245,21 +270,33 @@ class TestGenerateInsightsReport:
         result = HistoryService.generate_insights_report(browser="chrome", format_type="markdown")
         assert "**Browser:** chrome" in result["summary_markdown"]
 
-    def test_generate_insights_report_contains_productivity(self, mock_chrome_path, sample_chrome_db):
+    def test_generate_insights_report_contains_productivity(
+        self, mock_chrome_path, sample_chrome_db
+    ):
         """Markdown should contain productivity score and grade."""
         result = HistoryService.generate_insights_report(browser="chrome", format_type="markdown")
         assert "**Score:**" in result["summary_markdown"]
         assert "productivity" in result["summary_markdown"].lower()
 
-    def test_generate_insights_report_contains_top_domains(self, mock_chrome_path, sample_chrome_db):
+    def test_generate_insights_report_contains_top_domains(
+        self, mock_chrome_path, sample_chrome_db
+    ):
         """Markdown should contain top domains section."""
         result = HistoryService.generate_insights_report(browser="chrome", format_type="markdown")
-        assert "## Top Domains" in result["summary_markdown"] or "Top Domains" in result["summary_markdown"]
+        assert (
+            "## Top Domains" in result["summary_markdown"]
+            or "Top Domains" in result["summary_markdown"]
+        )
 
-    def test_generate_insights_report_contains_recommendations(self, mock_chrome_path, sample_chrome_db):
+    def test_generate_insights_report_contains_recommendations(
+        self, mock_chrome_path, sample_chrome_db
+    ):
         """Markdown should contain recommendations section."""
         result = HistoryService.generate_insights_report(browser="chrome", format_type="markdown")
-        assert "## Recommendations" in result["summary_markdown"] or "Recommendations" in result["summary_markdown"]
+        assert (
+            "## Recommendations" in result["summary_markdown"]
+            or "Recommendations" in result["summary_markdown"]
+        )
 
     def test_generate_insights_report_json_format(self, mock_chrome_path, sample_chrome_db):
         """Should return detailed data when format is json."""
@@ -290,7 +327,9 @@ class TestGenerateInsightsReport:
 class TestAnalyticsWithRealisticData:
     """Tests for analytics with realistic database."""
 
-    def test_analyze_productivity_with_realistic_data(self, mock_realistic_chrome, realistic_chrome_db):
+    def test_analyze_productivity_with_realistic_data(
+        self, mock_realistic_chrome, realistic_chrome_db
+    ):
         """Should return meaningful productivity analysis."""
         result = HistoryService.analyze_productivity(browser="chrome")
 
@@ -299,7 +338,9 @@ class TestAnalyticsWithRealisticData:
         assert result["grade"] in ["A", "B", "C", "D", "F", "N/A"]
         assert len(result["category_breakdown"]) > 0
 
-    def test_compare_time_periods_with_realistic_data(self, mock_realistic_chrome, realistic_chrome_db):
+    def test_compare_time_periods_with_realistic_data(
+        self, mock_realistic_chrome, realistic_chrome_db
+    ):
         """Should return meaningful period comparison."""
         result = HistoryService.compare_time_periods(
             start_date1="2024-01-01",
@@ -313,25 +354,41 @@ class TestAnalyticsWithRealisticData:
         assert result["period2"]["total_visits"] >= 0
         assert isinstance(result["changes"]["total_visits_delta"], int)
 
-    def test_suggest_categories_with_realistic_data(self, mock_realistic_chrome, realistic_chrome_db):
+    def test_suggest_categories_with_realistic_data(
+        self, mock_realistic_chrome, realistic_chrome_db
+    ):
         """Should return meaningful category suggestions."""
         result = HistoryService.suggest_categories(browser="chrome", limit=20)
 
         assert result["count"] <= 20
         for suggestion in result["uncategorized"]:
-            assert suggestion["suggested_category"] in CATEGORY_PATTERNS.keys() or suggestion["suggested_category"] is None
+            assert (
+                suggestion["suggested_category"] in CATEGORY_PATTERNS.keys()
+                or suggestion["suggested_category"] is None
+            )
 
-    def test_export_visualization_with_realistic_data(self, mock_realistic_chrome, realistic_chrome_db):
+    def test_export_visualization_with_realistic_data(
+        self, mock_realistic_chrome, realistic_chrome_db
+    ):
         """Should return meaningful visualization data."""
         result = HistoryService.export_visualization(browser="chrome")
 
         assert len(result["charts"]) >= 3
-        total_visits = sum(sum(ds["data"]) for ds in result["charts"][0]["data"]["datasets"]) if result["charts"] else 0
+        total_visits = (
+            sum(sum(ds["data"]) for ds in result["charts"][0]["data"]["datasets"])
+            if result["charts"]
+            else 0
+        )
         assert total_visits >= 0
 
-    def test_generate_insights_report_with_realistic_data(self, mock_realistic_chrome, realistic_chrome_db):
+    def test_generate_insights_report_with_realistic_data(
+        self, mock_realistic_chrome, realistic_chrome_db
+    ):
         """Should return comprehensive insights."""
         result = HistoryService.generate_insights_report(browser="chrome", period="month")
 
         assert "summary_markdown" in result
-        assert "# Browsing Insights Report" in result["summary_markdown"] or "Browsing Insights" in result["summary_markdown"]
+        assert (
+            "# Browsing Insights Report" in result["summary_markdown"]
+            or "Browsing Insights" in result["summary_markdown"]
+        )

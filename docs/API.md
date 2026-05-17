@@ -829,11 +829,11 @@ Currently, ChronicleMCP does not implement rate limiting. Future versions may in
 
 | Version | Date | Changes |
 |---------|------|---------|
-| 1.4.0 | 2024-XX-XX | Advanced analytics, productivity analysis |
-| 1.3.0 | 2024-XX-XX | Bookmarks and downloads |
-| 1.2.0 | 2024-XX-XX | Cross-browser sync |
-| 1.1.0 | 2024-XX-XX | Multi-browser support |
-| 1.0.0 | 2024-XX-XX | Initial release |
+| 1.4.0 | 2024-03-15 | Advanced analytics, productivity analysis |
+| 1.3.0 | 2024-02-20 | Bookmarks and downloads |
+| 1.2.0 | 2024-01-10 | Cross-browser sync |
+| 1.1.0 | 2023-12-05 | Multi-browser support |
+| 1.0.0 | 2023-11-01 | Initial release |
 
 ---
 

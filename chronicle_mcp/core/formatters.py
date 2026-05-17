@@ -195,16 +195,30 @@ def format_advanced_search_results(
     return "\n\n".join(results)
 
 
-def format_browser_stats(stats: dict[str, Any]) -> str:
-    """Format browser statistics as JSON.
+def format_browser_stats(stats: dict[str, Any], format_type: str = "markdown") -> str:
+    """Format browser statistics for output.
 
     Args:
         stats: Dictionary with browser statistics
+        format_type: 'markdown' or 'json'
 
     Returns:
-        JSON formatted string
+        Formatted string
     """
-    return json.dumps(stats, indent=2)
+    if format_type == "json":
+        return json.dumps(stats, indent=2)
+
+    lines = [
+        f"- **Total Entries:** {stats.get('total_entries', 0)}",
+        f"- **Total Visits:** {stats.get('total_visits', 0)}",
+        f"- **Unique URLs:** {stats.get('unique_urls', 0)}",
+    ]
+    if stats.get("first_visit"):
+        lines.append(f"- **First Visit:** {stats['first_visit']}")
+    if stats.get("last_visit"):
+        lines.append(f"- **Last Visit:** {stats['last_visit']}")
+
+    return "\n".join(lines)
 
 
 def format_export(rows: list[dict[str, Any]], format_type: str = "csv") -> str:

@@ -106,6 +106,8 @@ def cleanup_temp_file(temp_path: str) -> None:
 @contextmanager
 def get_history_connection(
     browser: str = "chrome",
+    max_retries: int = 3,
+    retry_delay: float = 0.1,
 ) -> Generator[sqlite3.Connection, None, None]:
     """Creates a temporary copy of the history database to avoid 'Database Locked' errors.
 
@@ -115,6 +117,8 @@ def get_history_connection(
 
     Args:
         browser: Browser name (chrome, edge, firefox) - case insensitive
+        max_retries: Maximum number of retries on lock errors
+        retry_delay: Initial delay between retries (exponential backoff)
 
     Yields:
         SQLite connection to the history database
@@ -123,7 +127,7 @@ def get_history_connection(
         BrowserNotFoundError: If the browser is not recognized
         BrowserPathNotFoundError: If the history path doesn't exist
         PermissionError: If the file cannot be read
-        DatabaseLockedError: If the database is locked
+        DatabaseLockedError: If the database is locked after retries
     """
     browser_lower = browser.lower()
 
@@ -137,35 +141,60 @@ def get_history_connection(
 
     temp_path = get_temp_filename(browser_lower)
 
-    try:
-        logger.debug(f"Copying {browser} history to temp file: {temp_path}")
-        shutil.copy2(history_path, temp_path)
-
-        conn = sqlite3.connect(temp_path)
+    for attempt in range(max_retries):
         try:
-            yield conn
-        except sqlite3.OperationalError as e:
-            if "locked" in str(e).lower():
-                raise DatabaseLockedError(browser_lower, history_path) from e
-            raise
-        finally:
-            conn.close()
-            cleanup_temp_file(temp_path)
+            logger.debug(f"Copying {browser} history to temp file: {temp_path}")
+            shutil.copy2(history_path, temp_path)
 
-    except PermissionError:
-        raise
-    except OSError as e:
-        if "permission" in str(e).lower():
-            raise PermissionError(browser_lower, history_path) from e
-        cleanup_temp_file(temp_path)
-        raise ConnectionError(
-            f"Failed to access {browser} history: {e}",
-            browser=browser_lower,
-            details=str(e),
-        ) from e
-    except Exception:
-        cleanup_temp_file(temp_path)
-        raise
+            conn = sqlite3.connect(temp_path)
+            try:
+                yield conn
+            except sqlite3.OperationalError as e:
+                if "locked" in str(e).lower():
+                    conn.close()
+                    cleanup_temp_file(temp_path)
+                    if attempt < max_retries - 1:
+                        delay = retry_delay * (2**attempt)
+                        logger.debug(
+                            f"Database locked, retrying in {delay}s (attempt {attempt + 1}/{max_retries})"
+                        )
+                        time.sleep(delay)
+                        continue
+                    raise DatabaseLockedError(browser_lower, history_path) from e
+                raise
+            finally:
+                conn.close()
+                cleanup_temp_file(temp_path)
+            return
+
+        except PermissionError:
+            raise
+        except OSError as e:
+            if "permission" in str(e).lower():
+                raise PermissionError(browser_lower, history_path) from e
+            cleanup_temp_file(temp_path)
+            if attempt < max_retries - 1:
+                delay = retry_delay * (2**attempt)
+                logger.debug(
+                    f"OS error, retrying in {delay}s (attempt {attempt + 1}/{max_retries}): {e}"
+                )
+                time.sleep(delay)
+                continue
+            raise ConnectionError(
+                f"Failed to access {browser} history: {e}",
+                browser=browser_lower,
+                details=str(e),
+            ) from e
+        except Exception as e:
+            cleanup_temp_file(temp_path)
+            if attempt < max_retries - 1:
+                delay = retry_delay * (2**attempt)
+                logger.debug(
+                    f"Unexpected error, retrying in {delay}s (attempt {attempt + 1}/{max_retries}): {e}"
+                )
+                time.sleep(delay)
+                continue
+            raise
 
 
 def execute_with_connection(browser: str, func: Callable[[sqlite3.Connection], Any]) -> Any:
