@@ -6,47 +6,34 @@ This document describes the internal architecture of ChronicleMCP after the rest
 
 ChronicleMCP is a secure, local-first Model Context Protocol (MCP) server that provides AI agents with access to local browser history data. The codebase follows a layered architecture with clear separation of concerns.
 
-## New Layered Architecture
+## Layered Architecture
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Protocol Layer                          │
-│  ┌─────────────┐    ┌─────────────┐    ┌─────────────┐     │
-│  │   CLI       │    │   MCP       │    │   HTTP      │     │
-│  │   Interface │    │   Protocol  │    │   Protocol  │     │
-│  └──────┬──────┘    └──────┬──────┘    └──────┬──────┘     │
-└─────────┼──────────────────┼───────────────────┼───────────┘
-          │                  │                   │
-          └──────────────────┼───────────────────┘
-                             │
-┌────────────────────────────▼──────────────────────────────┐
-│                    Service Layer (Core)                   │
-│  ┌─────────────────────────────────────────────────────┐ │
-│  │   HistoryService                                      │ │
-│  │   ├─ search_history()                                 │ │
-│  │   ├─ get_recent_history()                             │ │
-│  │   ├─ count_visits()                                   │ │
-│  │   ├─ list_top_domains()                               │ │
-│  │   └─ ... (all business logic)                         │ │
-│  └─────────────────────────────────────────────────────┘ │
-│                                                            │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐       │
-│  │ Validation  │  │ Formatters  │  │ Exceptions  │       │
-│  └─────────────┘  └─────────────┘  └─────────────┘       │
-└────────────────────────────────────────────────────────────┘
-                             │
-┌────────────────────────────▼──────────────────────────────┐
-│                   Infrastructure Layer                     │
-│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐       │
-│  │ Connection  │  │  Database   │  │    Paths    │       │
-│  │   Manager   │  │ Operations  │  │  Detection  │       │
-│  └─────────────┘  └─────────────┘  └─────────────┘       │
-└────────────────────────────────────────────────────────────┘
-                             │
-                    ┌────────▼────────┐
-                    │  Browser History │
-                    │    Databases     │
-                    └──────────────────┘
+```mermaid
+graph TB
+    subgraph Protocol["Protocol Layer"]
+        CLI[CLI Interface]
+        MCP[MCP Protocol]
+        HTTP[HTTP Protocol]
+    end
+
+    subgraph Service["Service Layer (Core)"]
+        HS[HistoryService]
+        VAL[Validation]
+        FMT[Formatters]
+        EXC[Exceptions]
+    end
+
+    subgraph Infra["Infrastructure Layer"]
+        CON[Connection Manager]
+        DB[(Database)]
+        PTH[Paths]
+    end
+
+    CLI -->|calls| Service
+    MCP -->|calls| Service
+    HTTP -->|calls| Service
+    Service -->|uses| Infra
+    Infra -->|queries| DB[(Browser History)]
 ```
 
 ## Project Structure

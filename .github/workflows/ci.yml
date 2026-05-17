@@ -34,6 +34,26 @@ jobs:
       - name: Run pre-commit
         run: pre-commit run --all-files
 
+  codeql:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: python
+          queries: security-extended
+
+      - name: Perform Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:python"
+
   type-check:
     runs-on: ubuntu-latest
     steps:
@@ -82,7 +102,7 @@ jobs:
         run: deptry chronicle_mcp/
 
   test:
-    needs: [lint-and-format, type-check, codespell, deadcode-detection]
+    needs: [lint-and-format, type-check, codespell, deadcode-detection, codeql]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -225,3 +245,30 @@ jobs:
           auto-push: true
           gh-pages-branch: gh-pages
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  docker-build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: docker build -t chronicle-mcp:test .
+
+      - name: Test Docker image health
+        run: |
+          docker run -d --name test-container -p 8080:8080 chronicle-mcp:test
+          sleep 5
+          curl -f http://localhost:8080/health || exit 1
+          docker logs test-container
+          docker stop test-container
+
+      - name: Run container integration tests
+        run: |
+          docker run -d --name test-container -p 8080:8080 chronicle-mcp:test
+          sleep 3
+          curl -s http://localhost:8080/api/browsers | grep -q "browsers" || exit 1
+          docker stop test-container

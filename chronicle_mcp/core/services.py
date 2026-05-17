@@ -1273,6 +1273,7 @@ class HistoryService:
         similarity_threshold: float = 0.9,
         keep_strategy: str = "most_visits",
         confirm: bool = False,
+        _preview_result: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Delete duplicate history entries.
 
@@ -1281,6 +1282,7 @@ class HistoryService:
             similarity_threshold: URL similarity threshold for duplicates
             keep_strategy: Which entry to keep ('most_visits', 'most_recent', 'first')
             confirm: Must be True to actually delete; False returns preview
+            _preview_result: Internal use - preview result from first call to avoid double computation
 
         Returns:
             Dictionary with deletion results or preview
@@ -1303,39 +1305,46 @@ class HistoryService:
                 "total_duplicates": preview_result["total_duplicates"],
             }
 
-        def get_duplicates_for_deletion(conn: Any) -> list[tuple[str, str]]:
-            """Get pairs of duplicate URLs to delete."""
-            duplicates = cls.find_duplicate_entries(
+        if _preview_result is None:
+            preview_result = cls.find_duplicate_entries(
                 browser=browser_lower,
                 similarity_threshold=similarity_threshold,
                 limit=100,
             )
-            to_delete: list[tuple[str, str]] = []
-            for group in duplicates["duplicate_groups"]:
-                original_url = group["url"]
-                for similar in group.get("similar_to", []):
-                    to_delete.append((similar["url"], original_url))
-            return to_delete
+        else:
+            preview_result = _preview_result
 
-        pairs_to_delete = cls._with_connection(browser_lower, get_duplicates_for_deletion)
+        to_delete: list[tuple[str, str]] = []
+        for group in preview_result["duplicate_groups"]:
+            original_url = group["url"]
+            for similar in group.get("similar_to", []):
+                to_delete.append((similar["url"], original_url))
 
-        deleted_count = 0
-        for duplicate_url, original_url in pairs_to_delete:
-            try:
-                result = cls.delete_history(
-                    query=duplicate_url,
-                    limit=1,
-                    browser=browser_lower,
-                    confirm=True,
-                )
-                if result.get("count", 0) > 0:
-                    deleted_count += 1
-            except Exception:
-                continue
+        if not to_delete:
+            return {
+                "preview": False,
+                "deleted_count": 0,
+                "total_pairs_checked": 0,
+                "message": "No duplicate entries to delete",
+            }
+
+        def batch_delete(conn: Any) -> int:
+            """Batch delete duplicate URLs using SQL IN clause."""
+            cursor = conn.cursor()
+            urls_to_delete = [url for url, _ in to_delete]
+            if not urls_to_delete:
+                return 0
+            placeholders = ",".join("?" * len(urls_to_delete))
+
+            cursor.execute(f"DELETE FROM urls WHERE url IN ({placeholders})", urls_to_delete)
+            conn.commit()
+            return cursor.rowcount  # type: ignore[no-any-return]
+
+        deleted_count = cls._with_connection(browser_lower, batch_delete)
 
         return {
             "preview": False,
             "deleted_count": deleted_count,
-            "total_pairs_checked": len(pairs_to_delete),
+            "total_pairs_checked": len(to_delete),
             "message": f"Deleted {deleted_count} duplicate entries",
         }

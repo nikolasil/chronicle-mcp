@@ -578,12 +578,26 @@ def sync_to_browser(
 
     Returns:
         Number of entries inserted
+
+    Raises:
+        ValueError: If target database is not a valid SQLite database with history table
     """
     if not entries:
         return 0
 
     conn = sqlite3.connect(target_db_path)
     try:
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        tables = [row[0] for row in cursor.fetchall()]
+
+        has_history_table = any(t in tables for t in ["urls", "moz_places", "history_items"])
+        if not has_history_table:
+            raise ValueError(
+                f"Target database at {target_db_path} does not contain a recognized history table. "
+                f"Found tables: {tables}"
+            )
+
         result = insert_history_entries(conn, entries, merge_strategy)
         return result
     finally:
@@ -1270,6 +1284,10 @@ Returns:
         return {"total_visits": 0, "unique_urls": 0, "top_domains": []}
 
     chrome_epoch = datetime(1601, 1, 1, tzinfo=timezone.utc)
+    if start_dt.tzinfo is None:
+        start_dt = start_dt.replace(tzinfo=timezone.utc)
+    if end_dt.tzinfo is None:
+        end_dt = end_dt.replace(tzinfo=timezone.utc)
     start_microseconds = int((start_dt - chrome_epoch).total_seconds() * 1000000)
     end_microseconds = int((end_dt - chrome_epoch).total_seconds() * 1000000)
 
