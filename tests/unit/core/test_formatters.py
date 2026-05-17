@@ -192,16 +192,27 @@ class TestFormatAdvancedSearchResults:
 class TestFormatBrowserStats:
     """Tests for format_browser_stats function."""
 
-    def test_format(self):
+    def test_format_json(self):
         stats = {
             "total_entries": 100,
             "total_visits": 500,
             "unique_urls": 80,
         }
-        result = format_browser_stats(stats)
+        result = format_browser_stats(stats, "json")
         data = json.loads(result)
         assert data["total_entries"] == 100
         assert data["total_visits"] == 500
+
+    def test_format_markdown(self):
+        stats = {
+            "total_entries": 100,
+            "total_visits": 500,
+            "unique_urls": 80,
+            "last_visit": "2024-01-01T10:00:00",
+        }
+        result = format_browser_stats(stats, "markdown")
+        assert "Total Entries" in result
+        assert "100" in result
 
 
 class TestFormatExport:
