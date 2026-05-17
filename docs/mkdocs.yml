@@ -32,9 +32,6 @@ plugins:
   - search:
       lang:
         - en
-  - gen_ref_pages:
-      - member_order: groupwise
-      - show_source: false
   - mdxinclude:
       enabled: !ENV [ENABLE_MDX_INCLUDE, False]
   - social:
@@ -44,23 +41,19 @@ plugins:
 nav:
   - Home: index.md
   - Installation:
-      - Install: install.md
-      - Browser Support: browser_support.md
-  - User Guide: user_guide.md
-  - CLI Reference: cli.md
+      - Install: INSTALL.md
+      - Browser Support: BROWSER_SUPPORT.md
+  - User Guide: USER_GUIDE.md
+  - CLI Reference: CLI.md
   - HTTP API:
-      - Overview: api_index.md
-      - Endpoints: api_endpoints.md
-      - Examples: api_examples.md
-  - Advanced Search: advanced_search.md
-  - Analytics: analytics.md
-  - Architecture: architecture.md
-  - Troubleshooting: troubleshooting.md
-  - Reference:
-      - Services: reference/services.md
-      - Validation: reference/validation.md
-      - Protocols: reference/protocols.md
-  - Security: security.md
+      - Overview: API_INDEX.md
+      - Endpoints: API_ENDPOINTS.md
+      - Examples: API_EXAMPLES.md
+  - Advanced Search: ADVANCED_SEARCH.md
+  - Analytics: ANALYTICS.md
+  - Architecture: ARCHITECTURE.md
+  - Troubleshooting: TROUBLESHOOTING.md
+  - Security: SECURITY_HARDENING.md
 
 markdown_extensions:
   - pymdownx.highlight:

@@ -920,14 +920,6 @@ class TestFindDuplicateEntries:
 
         from chronicle_mcp.core.services import HistoryService
 
-        mock_result = {
-            "browser": "chrome",
-            "similarity_threshold": 0.9,
-            "duplicate_groups": [],
-            "total_duplicates": 0,
-            "total_entries_analyzed": 0,
-        }
-
         with patch.object(HistoryService, '_with_connection', return_value=[]):
             result = HistoryService.find_duplicate_entries(
                 browser="chrome",

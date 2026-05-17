@@ -5,6 +5,7 @@ It handles validation, database operations, and returns structured data.
 Protocol adapters (MCP, HTTP) consume these services and format responses.
 """
 
+import json
 import logging
 from collections.abc import Callable
 from typing import Any
@@ -582,8 +583,6 @@ class HistoryService:
 
         if not target_path:
             raise BrowserNotFoundError(target)
-
-        import json
 
         entries_json = cls._with_connection(
             source, lambda conn: db_export_history(conn, "json", 10000)

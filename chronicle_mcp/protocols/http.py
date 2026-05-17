@@ -12,6 +12,10 @@ import time
 from datetime import datetime, timezone
 from typing import Any
 
+from slowapi import Limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
 from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
@@ -34,6 +38,14 @@ setup_logging()
 logger = logging.getLogger(__name__)
 
 DEFAULT_BROWSER = "chrome"
+limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
+
+
+def _rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
+    return JSONResponse(
+        {"error": "Rate limit exceeded", "detail": str(exc.detail)},
+        status_code=429,
+    )
 
 
 class RequestMetrics:
@@ -70,6 +82,22 @@ _request_count: contextvars.ContextVar[int] = contextvars.ContextVar("request_co
 _request_latency_total: contextvars.ContextVar[float] = contextvars.ContextVar("request_latency_total", default=0.0)
 _start_time: contextvars.ContextVar[float] = contextvars.ContextVar("start_time")
 _default_browser: contextvars.ContextVar[str] = contextvars.ContextVar("default_browser", default=DEFAULT_BROWSER)
+_correlation_id: contextvars.ContextVar[str] = contextvars.ContextVar("correlation_id", default="")
+
+
+def generate_correlation_id() -> str:
+    """Generate a unique correlation ID for request tracing."""
+    import uuid
+    return str(uuid.uuid4())[:16]
+
+
+def get_correlation_id() -> str:
+    """Get the current correlation ID or generate a new one."""
+    cid = _correlation_id.get()
+    if not cid:
+        cid = generate_correlation_id()
+        _correlation_id.set(cid)
+    return cid
 
 
 _metrics: contextvars.ContextVar[RequestMetrics] = contextvars.ContextVar(
@@ -85,8 +113,12 @@ def get_default_browser() -> str:
     return _default_browser.get()
 
 
-def error_response(message: str, status_code: int = 400) -> JSONResponse:
-    return JSONResponse({"error": message}, status_code=status_code)
+def error_response(message: str, status_code: int = 400, correlation_id: str | None = None) -> JSONResponse:
+    error_id = correlation_id or get_correlation_id()
+    return JSONResponse(
+        {"error": message, "correlation_id": error_id},
+        status_code=status_code
+    )
 
 
 def handle_service_error_http(error: Exception) -> JSONResponse:
@@ -198,17 +230,34 @@ chronicle_browsers_available {browsers_count}
 
 
 class MetricsMiddleware:
-    """Starlette middleware for tracking request metrics."""
+    """Starlette middleware for tracking request metrics and correlation IDs."""
 
     def __init__(self, app: Any):
         self.app = app
 
     async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
         start = time.time()
+        cid = generate_correlation_id()
+        _correlation_id.set(cid)
+
+        scope["correlation_id"] = cid
 
         async def send_wrapper(message: Any) -> None:
             if message["type"] == "http.response.body":
-                get_metrics().increment(time.time() - start)
+                latency = time.time() - start
+                get_metrics().increment(latency)
+                logger.info(
+                    "Request completed",
+                    extra={
+                        "extra_data": {
+                            "correlation_id": cid,
+                            "method": scope.get("method"),
+                            "path": scope.get("path"),
+                            "status_code": message.get("status", 0),
+                            "latency_ms": round(latency * 1000, 2),
+                        }
+                    }
+                )
             await send(message)
 
         await self.app(scope, receive, send_wrapper)
@@ -222,6 +271,7 @@ async def list_browsers_endpoint(request: Request) -> JSONResponse:
         return handle_service_error_http(e)
 
 
+@limiter.limit("30/minute")
 async def search_endpoint(request: Request) -> JSONResponse:
     try:
         data = await request.json()
@@ -239,6 +289,7 @@ async def search_endpoint(request: Request) -> JSONResponse:
         return handle_service_error_http(e)
 
 
+@limiter.limit("30/minute")
 async def recent_endpoint(request: Request) -> JSONResponse:
     try:
         data = await request.json()
@@ -256,6 +307,7 @@ async def recent_endpoint(request: Request) -> JSONResponse:
         return handle_service_error_http(e)
 
 
+@limiter.limit("30/minute")
 async def count_endpoint(request: Request) -> JSONResponse:
     try:
         data = await request.json()
@@ -301,6 +353,7 @@ async def search_date_endpoint(request: Request) -> JSONResponse:
         return handle_service_error_http(e)
 
 
+@limiter.limit("10/minute")
 async def delete_endpoint(request: Request) -> JSONResponse:
     try:
         data = await request.json()
@@ -638,11 +691,15 @@ def create_middleware(default_browser: str = DEFAULT_BROWSER) -> list[Middleware
 
 
 def create_app(default_browser: str = DEFAULT_BROWSER) -> Starlette:
-    app = Starlette(
+    application = Starlette(
         routes=routes,
         middleware=create_middleware(default_browser),
     )
-    return app
+    application.state.default_browser = default_browser
+    application.state.limiter = limiter
+    application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    application.add_middleware(SlowAPIMiddleware)
+    return application
 
 
 app = create_app()

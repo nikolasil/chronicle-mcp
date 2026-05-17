@@ -1,31 +1,30 @@
 version: 2
 updates:
-  - package-ecosystem: "pip"
-    directory: "/"
-    target-branch: "main"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 10
-    labels:
-      - "dependencies"
-      - "automated"
-
   - package-ecosystem: "github-actions"
     directory: "/"
-    target-branch: "main"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    commit-message:
+      prefix: "ci"
     labels:
       - "dependencies"
       - "github-actions"
 
-  - package-ecosystem: "docker"
+  - package-ecosystem: "pip"
     directory: "/"
-    target-branch: "main"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
+    commit-message:
+      prefix: "deps"
     labels:
       - "dependencies"
-      - "docker"
+      - "python"
+    allow:
+      - dependency-type: "direct"
+    ignore:
+      - dependency-name: "pytest"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "mypy"
+        update-types: ["version-update:semver-major"]

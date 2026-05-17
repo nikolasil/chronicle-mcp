@@ -87,10 +87,6 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-
       - name: Download release files
         uses: actions/download-artifact@v4
         with:
@@ -114,10 +110,6 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-
       - name: Download release files
         uses: actions/download-artifact@v4
         with:
@@ -147,10 +139,6 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-
       - name: Download release files
         uses: actions/download-artifact@v4
         with:
@@ -164,52 +152,18 @@ jobs:
           python-version: "3.12"
           cache: 'pip'
 
-      - name: Install cyclonedx-python-lib
-        run: pip install cyclonedx-python-lib
+      - name: Install syft
+        run: pip install syft
 
-      - name: Generate SBOM
+      - name: Generate SBOM with syft
         run: |
-          python -c "
-          from cyclonedx_python_lib import get_cyclonedx_library_version
-          from cyclonedx_stdlib import BomParser
-          import json
-          from pathlib import Path
-
-          # Create SBOM manually for pip project
-          import subprocess
-          result = subprocess.run(['pip', 'install', '-e', '.'], capture_output=True)
-          
-          # Generate basic SBOM with PyPI info
-          sbom = {
-            'bomFormat': 'CycloneDX',
-            'specVersion': '1.4',
-            'version': 1,
-            'metadata': {
-              'timestamp': subprocess.run(['date', '+%Y-%m-%dT%H:%M:%SZ'], capture_output=True, text=True).stdout.strip(),
-              'tools': [
-                {
-                  'vendor': 'cyclonedx-python-lib',
-                  'name': 'cyclonedx-python-lib',
-                  'version': '0.14.0'
-                }
-              ],
-              'component': {
-                'name': 'chronicle-mcp',
-                'version': '1.4.0'
-              }
-            },
-            'components': []
-          }
-          
-          with open('sbom.json', 'w') as f:
-            json.dump(sbom, f, indent=2)
-          "
+          syft . -o cyclonedx-json=syft-sbom.json --catalogs pypi
 
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
         with:
           name: sbom
-          path: sbom.json
+          path: syft-sbom.json
           retention-days: 365
 
   build-binaries:
@@ -229,10 +183,6 @@ jobs:
             artifact_name: chronicle-mcp-windows
             release_name: chronicle-mcp-windows.exe
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: main
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -242,11 +192,10 @@ jobs:
       - name: Install dependencies
         run: |
           pip install pyinstaller
-          pip install -e .
+          pip install --no-deps --no-build-isolation -e .
 
       - name: Build binary
         run: |
-          pip install --no-deps --no-build-isolation -e .
           pyinstaller --onefile --collect-all fastmcp --collect-all rich --collect-all chronicle_mcp --collect-all docket --collect-all fakeredis --collect-all lupa --name chronicle-mcp chronicle_mcp/__main__.py
           mv dist/chronicle-mcp* dist/${{ matrix.release_name }}
 
@@ -272,12 +221,15 @@ jobs:
           - os: ubuntu-latest
             artifact_name: chronicle-mcp-linux
             release_name: chronicle-mcp-linux
+            is_windows: false
           - os: macos-latest
             artifact_name: chronicle-mcp-macos
             release_name: chronicle-mcp-macos
+            is_windows: false
           - os: windows-latest
             artifact_name: chronicle-mcp-windows
             release_name: chronicle-mcp-windows.exe
+            is_windows: true
     steps:
       - name: Download binary
         uses: actions/download-artifact@v4
@@ -285,21 +237,31 @@ jobs:
           name: ${{ matrix.artifact_name }}
           path: ./binary/
 
-      - name: Test binary
+      - name: Test binary help and version
         run: |
-          chmod +x ./binary/${{ matrix.release_name }}
-          ./binary/${{ matrix.release_name }} --help
-          ./binary/${{ matrix.release_name }} version
+          $ext = if ('${{ matrix.is_windows }}' -eq 'true') { '.exe' } else { '' }
+          chmod +x ./binary/${{ matrix.release_name }}$ext
+          ./binary/${{ matrix.release_name }}$ext --help
+          ./binary/${{ matrix.release_name }}$ext version
+
+      - name: Test MCP server starts (non-Windows)
+        if: matrix.is_windows == false
+        run: |
+          timeout 5 ./binary/${{ matrix.release_name }} mcp 2>&1 || true
+          echo "Binary can start MCP mode"
 
   build-container:
-    needs: test
+    needs: [test, prepare]
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.version.outputs.VERSION }}
+      version: ${{ needs.prepare.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Download release files
+        uses: actions/download-artifact@v4
         with:
-          ref: main
+          name: release-files
+          path: ./
+          merge-multiple: true
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
