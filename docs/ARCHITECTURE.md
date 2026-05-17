@@ -236,24 +236,155 @@ Low-level operations, protocol-agnostic.
 ### Service Layer Flow
 
 ```
-1. Protocol Adapter receives request
-         ↓
-2. Call HistoryService.method()
-         ↓
-3. Validate inputs (validation.py)
-         ↓
-4. Execute business logic
-         ↓
-5. Query database (via connection.py)
-         ↓
-6. Format results (formatters.py)
-         ↓
-7. Return structured data (dict/list)
-         ↓
-8. Protocol Adapter formats for protocol
-         ↓
-9. Return response
+┌─────────────────────────────────────────────────────────────────┐
+│                        Request Flow                              │
+└─────────────────────────────────────────────────────────────────┘
+
+  Client Request
+        │
+        ▼
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│  Protocol       │    │  Service Layer   │    │ Infrastructure  │
+│  Adapter        │───▶│  (HistoryService)│───▶│  Layer          │
+│  (HTTP/MCP/CLI) │    │                  │    │  (DB/Paths)     │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+        │                      │                       │
+        │              Validation                      │
+        │              Formatting                      │
+        │              Business Logic                  │
+        │                      │                       │
+        ▼                      ▼                       ▼
+  Response          Structured Data             SQLite Query
+  (Protocol-specific)  (dict)                    (Connection)
 ```
+
+### Example: Search History Flow
+
+```
+┌────────┐    ┌────────────┐    ┌────────────┐    ┌─────────┐    ┌────────┐
+│  HTTP  │───▶│ History   │───▶│ Validation │───▶│ Database│───▶│Result  │
+│ Client │    │ Service   │    │            │    │ Query   │    │Format  │
+└────────┘    └────────────┘    └────────────┘    └─────────┘    └────────┘
+                  │                  │                │
+                  │          validate_query()   query_history()
+                  │          validate_browser()  sanitize_url()
+                  │          validate_limit()    format_chrome_timestamp()
+                  │
+                  ▼
+          ┌───────────────┐
+          │ Return dict   │
+          │ {results,    │
+          │  count,      │
+          │  message}    │
+          └───────────────┘
+```
+
+### Database Connection Flow
+
+```
+get_history_connection(browser)
+         │
+         ▼
+┌─────────────────────────────────┐
+│  1. Get browser path             │
+│     (paths.get_browser_path)    │
+└─────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────┐
+│  2. Validate path exists        │
+│     (os.path.exists)            │
+└─────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────┐
+│  3. Copy to temp file           │
+│     (shutil.copy2)              │
+│     Temp: ~/AppData/Local/tmp   │
+└─────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────┐
+│  4. Open SQLite connection      │
+│     (sqlite3.connect)            │
+└─────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────┐
+│  5. Execute queries (yield)     │
+└─────────────────────────────────┘
+         │
+         ▼
+┌─────────────────────────────────┐
+│  6. Close connection & cleanup   │
+│     (conn.close)                │
+│     (cleanup_temp_file)          │
+└─────────────────────────────────┘
+```
+
+### MCP Tool Registration Flow
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                    MCP Tool Registration                       │
+└──────────────────────────────────────────────────────────────┘
+
+  server.py imports mcp from protocols/mcp.py
+         │
+         ▼
+  @tool decorator applied to functions
+         │
+         ▼
+  FastMCP.register_tool("search_history", fn)
+         │
+         ▼
+  AI Assistant calls tool via MCP protocol
+         │
+         ▼
+  ┌─────────────────────────────────────┐
+  │ MCP Handler                          │
+  │ 1. Parse tool arguments              │
+  │ 2. Call HistoryService.method()      │
+  │ 3. Handle ServiceError → string error │
+  │ 4. Return result["message"]          │
+  └─────────────────────────────────────┘
+```
+
+### Subscription/Real-time Flow
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│                 Real-time Subscription Flow                   │
+└──────────────────────────────────────────────────────────────┘
+
+  Client calls subscribe_to_history(browser, event_types)
+         │
+         ▼
+  HistoryService.subscribe_history_changes()
+         │
+         ▼
+  SubscriptionManager.subscribe()
+         │
+         ├──▶ Create Subscription object
+         │         with callback & event_types
+         │
+         ├──▶ Store in _subscriptions dict
+         │
+         └──▶ Return subscription_id
+
+  Later: Browser history changes
+         │
+         ▼
+  notify_new_history() called
+         │
+         ▼
+  SubscriptionManager.publish_event()
+         │
+         ▼
+  Match subscriptions by browser + event_type
+         │
+         ▼
+  Execute callback(HistoryEvent)
 
 ### Example: Search History
 

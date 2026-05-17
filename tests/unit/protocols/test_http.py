@@ -209,7 +209,7 @@ class TestErrorHandling:
         response = http_client.post(
             "/api/search", json={"query": "test", "browser": "invalid_browser_xyz"}
         )
-        assert response.status_code in (200, 400, 404)
+        assert response.status_code == 400
 
 
 class TestBookmarksEndpoints:
@@ -321,8 +321,9 @@ class TestBookmarksErrorHandling:
         monkeypatch.setattr(services.HistoryService, "get_bookmarks", mock_get_bookmarks)
 
         response = http_client.post("/api/bookmarks/query", json={"browser": "chrome"})
-        # Should return error response
-        assert response.status_code in (200, 500)
+        assert response.status_code == 500
+        data = response.json()
+        assert "error" in data
 
     def test_list_bookmarks_endpoint_error(self, http_client, monkeypatch):
         """Test list bookmarks endpoint error handling."""
@@ -336,7 +337,9 @@ class TestBookmarksErrorHandling:
         )
 
         response = http_client.get("/api/bookmarks")
-        assert response.status_code in (200, 500)
+        assert response.status_code == 500
+        data = response.json()
+        assert "error" in data
 
 
 class TestDownloadsErrorHandling:
@@ -352,8 +355,9 @@ class TestDownloadsErrorHandling:
         monkeypatch.setattr(services.HistoryService, "get_downloads", mock_get_downloads)
 
         response = http_client.post("/api/downloads/query", json={"browser": "chrome"})
-        # Should return error response
-        assert response.status_code in (200, 500)
+        assert response.status_code == 500
+        data = response.json()
+        assert "error" in data
 
     def test_list_downloads_endpoint_error(self, http_client, monkeypatch):
         """Test list downloads endpoint error handling."""
@@ -367,4 +371,6 @@ class TestDownloadsErrorHandling:
         )
 
         response = http_client.get("/api/downloads")
-        assert response.status_code in (200, 500)
+        assert response.status_code == 500
+        data = response.json()
+        assert "error" in data

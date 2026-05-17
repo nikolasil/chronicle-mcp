@@ -674,7 +674,7 @@ def subscribe_to_history(
         result = HistoryService.subscribe_history_changes(
             browser=browser,
             event_types=event_types,
-            callback=lambda event: None,
+            callback=None,
         )
         return json.dumps(result, indent=2)
     except Exception as e:

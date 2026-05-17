@@ -53,8 +53,6 @@ def format_chrome_timestamp(microseconds: int) -> str:
         ISO 8601 formatted datetime string
     """
     try:
-        from datetime import datetime, timedelta, timezone
-
         epoch_delta = timedelta(microseconds=microseconds)
         chrome_epoch = datetime(1601, 1, 1, tzinfo=timezone.utc)
         dt = chrome_epoch + epoch_delta
@@ -103,8 +101,6 @@ def query_recent_history(
     Returns:
         List of (title, url, timestamp) tuples
     """
-    from datetime import datetime, timedelta, timezone
-
     cursor = conn.cursor()
     chrome_epoch = datetime(1601, 1, 1, tzinfo=timezone.utc)
     cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
@@ -132,7 +128,10 @@ def count_domain_visits(conn: sqlite3.Connection, domain: str) -> int:
         Number of visits to the domain
     """
     cursor = conn.cursor()
-    cursor.execute("SELECT SUM(visit_count) FROM urls WHERE url LIKE ?", (f"%{domain}%",))
+    cursor.execute(
+        "SELECT SUM(visit_count) FROM urls WHERE url LIKE ?",
+        (f"%://{domain}/%",),
+    )
     result = cursor.fetchone()
     return int(result[0]) if result and result[0] else 0
 
@@ -161,7 +160,7 @@ def get_top_domains(conn: sqlite3.Connection, limit: int = 10) -> list[tuple[str
             END
         ) as domain, SUM(visit_count) as total
         FROM urls
-        WHERE url LIKE 'http%'
+WHERE url LIKE 'http%' OR url LIKE 'https%'
         GROUP BY domain
         ORDER BY total DESC
         LIMIT ?
@@ -1158,7 +1157,8 @@ def _get_uncategorized_count(
 
     if not all_known_domains:
         cursor.execute("SELECT COALESCE(SUM(visit_count), 0) FROM urls")
-        return cursor.fetchone()[0] if cursor.fetchone() else 0
+        result = cursor.fetchone()
+        return result[0] if result else 0
 
     exclude_conditions = " OR ".join(["url LIKE ?" for _ in all_known_domains])
     params = [f"%{d}%" for d in all_known_domains]
@@ -1184,8 +1184,6 @@ def get_visit_patterns_by_hour(conn: sqlite3.Connection) -> dict[int, int]:
     Returns:
         Dict mapping hour (0-23) to visit count
     """
-    from datetime import datetime, timedelta, timezone
-
     cursor = conn.cursor()
     cursor.execute("SELECT last_visit_time FROM urls WHERE last_visit_time > 0")
 
@@ -1219,8 +1217,6 @@ def search_history_for_period(
     Returns:
         List of (title, url, timestamp) tuples
     """
-    from datetime import datetime, timezone
-
     cursor = conn.cursor()
 
     try:
@@ -1262,11 +1258,9 @@ def get_hourly_stats_for_period(
         start_date: Start date ISO format
         end_date: End date ISO format
 
-    Returns:
-        Dict with stats for the period
+Returns:
+        List of (title, url, timestamp) tuples
     """
-    from datetime import datetime, timezone
-
     cursor = conn.cursor()
 
     try:

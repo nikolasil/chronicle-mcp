@@ -48,10 +48,14 @@ nav:
       - Browser Support: browser_support.md
   - User Guide: user_guide.md
   - CLI Reference: cli.md
-  - HTTP API: api.md
+  - HTTP API:
+      - Overview: api_index.md
+      - Endpoints: api_endpoints.md
+      - Examples: api_examples.md
   - Advanced Search: advanced_search.md
   - Analytics: analytics.md
   - Architecture: architecture.md
+  - Troubleshooting: troubleshooting.md
   - Reference:
       - Services: reference/services.md
       - Validation: reference/validation.md

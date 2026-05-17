@@ -125,9 +125,9 @@ def http_command(
             "--foreground",
         ]
         with open(log_file, "w") as f:
-            subprocess.Popen(cmd, stdout=f, stderr=f)
+            proc = subprocess.Popen(cmd, stdout=f, stderr=f)
+        pid_file.write_text(str(proc.pid))
         click.echo(f"Server started in background (PID file: {pid_file})")
-        pid_file.write_text(str(os.getpid()))
         return
 
     click.echo(f"Starting ChronicleMCP HTTP server on {host}:{port}")

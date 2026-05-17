@@ -583,7 +583,6 @@ class HistoryService:
         if not target_path:
             raise BrowserNotFoundError(target)
 
-        assert target_path is not None
         import json
 
         entries_json = cls._with_connection(
@@ -607,8 +606,6 @@ class HistoryService:
         with get_history_connection(source) as conn_source:
             entries = get_history_entries(conn_source, 10000)
 
-        target_path = get_browser_path(target)
-        assert target_path is not None
         synced_count = sync_to_browser(target_path, entries, strategy)
 
         return {
