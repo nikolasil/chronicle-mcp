@@ -20,8 +20,9 @@ from starlette.applications import Starlette
 from starlette.middleware import Middleware
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
-from starlette.responses import JSONResponse, Response
-from starlette.routing import Route
+from starlette.responses import JSONResponse, Response, HTMLResponse
+from starlette.routing import Route, Mount
+from starlette.staticfiles import StaticFiles
 
 from chronicle_mcp.config import get_version, load_config, setup_logging
 from chronicle_mcp.core import (
@@ -56,10 +57,21 @@ class RequestMetrics:
         self._latency_token = _request_latency_total.set(0.0)
         self._start_token = _start_time.set(time.time())
         self._default_browser_token = _default_browser.set(default_browser)
+        self._histogram_buckets = {
+            "search": [],
+            "recent": [],
+            "count": [],
+            "top_domains": [],
+            "delete": [],
+            "export": [],
+            "other": [],
+        }
 
-    def increment(self, latency: float) -> None:
+    def increment(self, latency: float, operation: str = "other") -> None:
         _request_count.set(_request_count.get() + 1)
         _request_latency_total.set(_request_latency_total.get() + latency)
+        if operation in self._histogram_buckets:
+            self._histogram_buckets[operation].append(latency)
 
     @property
     def request_count(self) -> int:
@@ -76,6 +88,9 @@ class RequestMetrics:
     @property
     def default_browser(self) -> str:
         return _default_browser.get()
+
+    def get_histogram_buckets(self) -> dict[str, list[float]]:
+        return self._histogram_buckets
 
 
 _request_count: contextvars.ContextVar[int] = contextvars.ContextVar("request_count", default=0)
@@ -111,6 +126,23 @@ def get_metrics() -> RequestMetrics:
 
 def get_default_browser() -> str:
     return _default_browser.get()
+
+
+def _classify_operation(path: str) -> str:
+    """Classify request operation type for histogram metrics."""
+    if "/search" in path or path == "/api/search":
+        return "search"
+    elif "/recent" in path:
+        return "recent"
+    elif "/count" in path:
+        return "count"
+    elif "/top-domains" in path or "/top_domains" in path:
+        return "top_domains"
+    elif "/delete" in path:
+        return "delete"
+    elif "/export" in path:
+        return "export"
+    return "other"
 
 
 def error_response(message: str, status_code: int = 400, correlation_id: str | None = None) -> JSONResponse:
@@ -206,9 +238,21 @@ async def prometheus_metrics(request: Request) -> Response:
     except Exception:
         browsers_count = 0
 
+    histogram_buckets = metrics.get_histogram_buckets()
+
+    def calculate_percentile(values: list[float], percentile: float) -> float:
+        if not values:
+            return 0.0
+        sorted_vals = sorted(values)
+        idx = int(len(sorted_vals) * percentile / 100.0)
+        return sorted_vals[min(idx, len(sorted_vals) - 1)]
+
+    search_latencies = histogram_buckets.get("search", [])
+    recent_latencies = histogram_buckets.get("recent", [])
+
     metrics_output = f"""# HELP chronicle_uptime_seconds Server uptime in seconds
 # TYPE chronicle_uptime_seconds gauge
-chronicle_uptime_seconds {uptime}
+chronicle_uptime_seconds {uptime:.2f}
 
 # HELP chronicle_requests_total Total number of requests
 # TYPE chronicle_requests_total counter
@@ -216,17 +260,275 @@ chronicle_requests_total {count}
 
 # HELP chronicle_requests_per_second Requests per second
 # TYPE chronicle_requests_per_second gauge
-chronicle_requests_per_second {count / uptime if uptime > 0 else 0}
+chronicle_requests_per_second {count / uptime if uptime > 0 else 0:.4f}
 
 # HELP chronicle_average_latency_seconds Average request latency
 # TYPE chronicle_average_latency_seconds gauge
-chronicle_average_latency_seconds {avg_latency}
+chronicle_average_latency_seconds {avg_latency:.4f}
 
 # HELP chronicle_browsers_available Number of available browsers
 # TYPE chronicle_browsers_available gauge
 chronicle_browsers_available {browsers_count}
+
+# HELP chronicle_search_latency_seconds Search operation latency
+# TYPE chronicle_search_latency_seconds histogram
+chronicle_search_latency_seconds_bucket{{le="0.01"}} {sum(1 for v in search_latencies if v <= 0.01)}
+chronicle_search_latency_seconds_bucket{{le="0.05"}} {sum(1 for v in search_latencies if v <= 0.05)}
+chronicle_search_latency_seconds_bucket{{le="0.1"}} {sum(1 for v in search_latencies if v <= 0.1)}
+chronicle_search_latency_seconds_bucket{{le="0.5"}} {sum(1 for v in search_latencies if v <= 0.5)}
+chronicle_search_latency_seconds_bucket{{le="1.0"}} {sum(1 for v in search_latencies if v <= 1.0)}
+chronicle_search_latency_seconds_bucket{{le="+Inf"}} {len(search_latencies)}
+chronicle_search_latency_seconds_sum {sum(search_latencies):.4f}
+chronicle_search_latency_seconds_count {len(search_latencies)}
+
+# HELP chronicle_recent_latency_seconds Recent history operation latency
+# TYPE chronicle_recent_latency_seconds histogram
+chronicle_recent_latency_seconds_bucket{{le="0.01"}} {sum(1 for v in recent_latencies if v <= 0.01)}
+chronicle_recent_latency_seconds_bucket{{le="0.05"}} {sum(1 for v in recent_latencies if v <= 0.05)}
+chronicle_recent_latency_seconds_bucket{{le="0.1"}} {sum(1 for v in recent_latencies if v <= 0.1)}
+chronicle_recent_latency_seconds_bucket{{le="0.5"}} {sum(1 for v in recent_latencies if v <= 0.5)}
+chronicle_recent_latency_seconds_bucket{{le="1.0"}} {sum(1 for v in recent_latencies if v <= 1.0)}
+chronicle_recent_latency_seconds_bucket{{le="+Inf"}} {len(recent_latencies)}
+chronicle_recent_latency_seconds_sum {sum(recent_latencies):.4f}
+chronicle_recent_latency_seconds_count {len(recent_latencies)}
 """
     return Response(content=metrics_output, media_type="text/plain")
+
+
+async def docs_endpoint(request: Request) -> HTMLResponse:
+    docs_html = """
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ChronicleMCP API Documentation</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui.css">
+    <style>
+        body { margin: 0; padding: 0; }
+        .topbar { display: none; }
+    </style>
+</head>
+<body>
+    <div id="swagger-ui"></div>
+    <script src="https://cdn.jsdelivr.net/npm/swagger-ui-dist@5.9.0/swagger-ui-bundle.js"></script>
+    <script>
+        window.onload = function() {
+            SwaggerUIBundle({
+                url: "/api-docs/openapi.json",
+                dom_id: '#swagger-ui',
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIBundle.SwaggerUIStandalonePreset
+                ],
+                layout: "BaseLayout",
+                deepLinking: true
+            });
+        };
+    </script>
+</body>
+</html>
+    """
+    return HTMLResponse(content=docs_html)
+
+
+async def openapi_spec(request: Request) -> JSONResponse:
+    version = get_version()
+    spec = {
+        "openapi": "3.0.3",
+        "info": {
+            "title": "ChronicleMCP HTTP API",
+            "description": "HTTP REST API for ChronicleMCP - Browser History Context Server",
+            "version": version,
+            "contact": {"name": "ChronicleMCP Support"},
+            "license": {"name": "MIT"}
+        },
+        "servers": [
+            {"url": "http://localhost:8080", "description": "Local development server"}
+        ],
+        "paths": {
+            "/ready": {
+                "get": {
+                    "summary": "Health check",
+                    "responses": {"200": {"description": "Server is ready"}}
+                }
+            },
+            "/metrics": {
+                "get": {
+                    "summary": "Get metrics",
+                    "responses": {"200": {"description": "Metrics data"}}
+                }
+            },
+            "/metrics/prometheus": {
+                "get": {
+                    "summary": "Prometheus metrics",
+                    "responses": {"200": {"description": "Prometheus format metrics"}}
+                }
+            },
+            "/api/browsers": {
+                "get": {
+                    "summary": "List available browsers",
+                    "responses": {"200": {"description": "List of browsers"}}
+                }
+            },
+            "/api/search": {
+                "post": {
+                    "summary": "Search browser history",
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "query": {"type": "string"},
+                                        "limit": {"type": "integer", "default": 20},
+                                        "browser": {"type": "string"},
+                                        "format_type": {"type": "string", "enum": ["json", "markdown", "csv"]}
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "responses": {"200": {"description": "Search results"}}
+                }
+            },
+            "/api/recent": {
+                "post": {
+                    "summary": "Get recent history",
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "hours": {"type": "integer", "default": 24},
+                                        "limit": {"type": "integer", "default": 20},
+                                        "browser": {"type": "string"},
+                                        "format_type": {"type": "string"}
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "responses": {"200": {"description": "Recent history entries"}}
+                }
+            },
+            "/api/count": {
+                "post": {
+                    "summary": "Count visits to domain",
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": ["domain"],
+                                    "properties": {
+                                        "domain": {"type": "string"},
+                                        "browser": {"type": "string"}
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "responses": {"200": {"description": "Visit count"}}
+                }
+            },
+            "/api/top-domains": {
+                "post": {
+                    "summary": "Get top domains",
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "limit": {"type": "integer", "default": 10},
+                                        "browser": {"type": "string"},
+                                        "format_type": {"type": "string"}
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "responses": {"200": {"description": "Top domains list"}}
+                }
+            },
+            "/api/most-visited": {
+                "post": {
+                    "summary": "Get most visited pages",
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "limit": {"type": "integer", "default": 10},
+                                        "browser": {"type": "string"},
+                                        "format_type": {"type": "string"}
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "responses": {"200": {"description": "Most visited pages"}}
+                }
+            },
+            "/api/bookmarks": {
+                "get": {
+                    "summary": "List bookmarks browsers",
+                    "responses": {"200": {"description": "List of browsers with bookmarks"}}
+                }
+            },
+            "/api/bookmarks/query": {
+                "post": {
+                    "summary": "Search bookmarks",
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "query": {"type": "string"},
+                                        "limit": {"type": "integer", "default": 20},
+                                        "browser": {"type": "string"},
+                                        "format_type": {"type": "string"}
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "responses": {"200": {"description": "Bookmark results"}}
+                }
+            },
+            "/api/downloads": {
+                "get": {
+                    "summary": "List downloads browsers",
+                    "responses": {"200": {"description": "List of browsers with downloads"}}
+                }
+            },
+            "/api/downloads/query": {
+                "post": {
+                    "summary": "Search downloads",
+                    "requestBody": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "query": {"type": "string"},
+                                        "limit": {"type": "integer", "default": 20},
+                                        "browser": {"type": "string"},
+                                        "format_type": {"type": "string"}
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "responses": {"200": {"description": "Download results"}}
+                }
+            }
+        }
+    }
+    return JSONResponse(content=spec)
 
 
 class MetricsMiddleware:
@@ -245,16 +547,19 @@ class MetricsMiddleware:
         async def send_wrapper(message: Any) -> None:
             if message["type"] == "http.response.body":
                 latency = time.time() - start
-                get_metrics().increment(latency)
+                path = scope.get("path", "")
+                operation = _classify_operation(path)
+                get_metrics().increment(latency, operation)
                 logger.info(
                     "Request completed",
                     extra={
                         "extra_data": {
                             "correlation_id": cid,
                             "method": scope.get("method"),
-                            "path": scope.get("path"),
+                            "path": path,
                             "status_code": message.get("status", 0),
                             "latency_ms": round(latency * 1000, 2),
+                            "operation": operation,
                         }
                     }
                 )
@@ -652,6 +957,8 @@ routes = [
     Route("/ready", ready_check),
     Route("/metrics", metrics_check),
     Route("/metrics/prometheus", prometheus_metrics),
+    Route("/docs", docs_endpoint),
+    Route("/api-docs/openapi.json", openapi_spec),
     Route("/api/browsers", list_browsers_endpoint),
     Route("/api/search", search_endpoint, methods=["POST"]),
     Route("/api/recent", recent_endpoint, methods=["POST"]),

@@ -1,0 +1,297 @@
+name: Auto Release on Tag
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'v*.*.*-*'
+
+permissions:
+  contents: write
+  id-token: write
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Is pre-release: $(echo "$VERSION" | grep -q '-' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+
+      - name: Validate version format
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+            echo "Error: Invalid version format: $VERSION"
+            exit 1
+          fi
+          echo "Releasing version: $VERSION"
+
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Get previous tag
+        id: prev_tag
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD~1 2>/dev/null || echo "")
+          echo "PREV_TAG=$PREV_TAG" >> $GITHUB_OUTPUT
+
+      - name: Check for changes since last release
+        run: |
+          CURRENT_TAG="v${{ steps.version.outputs.VERSION }}"
+          if [[ -n "${{ steps.prev_tag.outputs.PREV_TAG }}" ]]; then
+            echo "Changes since ${{ steps.prev_tag.outputs.PREV_TAG }}:"
+            git log "${{ steps.prev_tag.outputs.PREV_TAG }}..$CURRENT_TAG" --oneline | head -20
+          fi
+
+      - name: Update version in pyproject.toml
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          sed -i "s/^version = \".*\"/version = \"$VERSION\"/" pyproject.toml
+
+      - name: Generate changelog with git-cliff
+        uses: orhun/git-cliff-action@v4
+        with:
+          config: cliff.toml
+          args: --verbose -u --tag "v${{ steps.version.outputs.VERSION }}" --prepend CHANGELOG.md
+        env:
+          GITHUB_REPO: ${{ github.repository }}
+
+      - name: Upload release files
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-files
+          path: |
+            pyproject.toml
+            CHANGELOG.md
+            cliff.toml
+            Formula/chronicle-mcp.rb
+          retention-days: 7
+
+  test:
+    needs: release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download release files
+        uses: actions/download-artifact@v4
+        with:
+          name: release-files
+          path: ./
+          merge-multiple: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run test suite
+        run: pytest tests/ -v --tb=short
+
+  build-package:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download release files
+        uses: actions/download-artifact@v4
+        with:
+          name: release-files
+          path: ./
+          merge-multiple: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: 'pip'
+
+      - name: Build package
+        run: |
+          pip install build
+          python -m build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-dist
+          path: dist/
+          retention-days: 7
+
+  build-binaries:
+    needs: test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: chronicle-mcp-linux
+            release_name: chronicle-mcp-linux
+          - os: macos-latest
+            artifact_name: chronicle-mcp-macos
+            release_name: chronicle-mcp-macos
+          - os: windows-latest
+            artifact_name: chronicle-mcp-windows
+            release_name: chronicle-mcp-windows.exe
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          pip install pyinstaller
+          pip install --no-deps --no-build-isolation -e .
+
+      - name: Build binary
+        run: |
+          pyinstaller --onefile --collect-all fastmcp --collect-all rich --collect-all chronicle_mcp --collect-all docket --collect-all fakeredis --collect-all lupa --name chronicle-mcp chronicle_mcp/__main__.py
+          mv dist/chronicle-mcp* dist/${{ matrix.release_name }}
+
+      - name: Upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: dist/${{ matrix.release_name }}
+          retention-days: 7
+
+  build-container:
+    needs: test
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
+    steps:
+      - name: Download release files
+        uses: actions/download-artifact@v4
+        with:
+          name: release-files
+          path: ./
+          merge-multiple: true
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  sign-container:
+    needs: build-container
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install cosign
+        uses: actions/cosign-installer@v3
+        with:
+          cosign-version: v2.2.0
+
+      - name: Sign container image
+        env:
+          COSIGN_EXPERIMENTAL: 1
+        run: |
+          cosign sign --yes ghcr.io/${{ github.repository }}:${{ needs.build-container.outputs.version }}
+
+  publish:
+    needs: [release, build-package, build-binaries, build-container, sign-container]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/chronicle-mcp
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v${{ needs.build-container.outputs.version }}
+          fetch-depth: 0
+
+      - name: Download package
+        uses: actions/download-artifact@v4
+        with:
+          name: python-dist
+          path: dist/
+
+      - name: Download binaries
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts/
+          pattern: 'chronicle-mcp-*'
+          merge-multiple: true
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.build-container.outputs.version }}
+          files: |
+            release-artifacts/*
+            dist/*.whl
+            dist/*.tar.gz
+          draft: false
+          prerelease: ${{ needs.release.outputs.IS_PRE_RELEASE }}
+          generate_release_notes: true
+
+  summary:
+    needs: [release, publish]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        run: |
+          VERSION="${{ needs.build-container.outputs.version }}"
+          echo "## Release v$VERSION Complete"
+          echo "- PyPI: Published"
+          echo "- GitHub Release: Created"
+          echo "- Docker: Published to ghcr.io"
+          echo "- Binaries: Available in release"
