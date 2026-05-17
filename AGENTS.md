@@ -285,6 +285,58 @@ Gets downloads history from a browser.
 
 ---
 
+### 6. Analytics and Insights
+
+#### `compare_time_periods(start_date1, end_date1, start_date2, end_date2, browser)`
+
+Compare browsing statistics between two time periods.
+
+#### `analyze_productivity(start_date, end_date, browser)`
+
+Analyze browsing productivity and generate recommendations.
+
+#### `suggest_categories(browser, limit)`
+
+Suggest categories for uncategorized URLs.
+
+#### `export_visualization(format_type, period, browser)`
+
+Export data formatted for visualization (Chart.js compatible).
+
+#### `generate_insights_report(period, browser, format_type)`
+
+Generate comprehensive browsing insights report.
+
+---
+
+### 7. Real-time Subscriptions
+
+#### `subscribe_to_history(browser, event_types)`
+
+Subscribe to real-time history changes for a browser.
+
+#### `unsubscribe_from_history(subscription_id)`
+
+Unsubscribe from history change notifications.
+
+#### `get_subscription_status(subscription_id)`
+
+Get subscription status or global event statistics.
+
+---
+
+### 8. History Deduplication
+
+#### `find_duplicate_history(browser, similarity_threshold, limit)`
+
+Find potential duplicate history entries based on URL similarity.
+
+#### `delete_duplicate_history(browser, similarity_threshold, keep_strategy, confirm)`
+
+Delete duplicate history entries.
+
+---
+
 ## Testing
 
 ### Unit Tests Structure

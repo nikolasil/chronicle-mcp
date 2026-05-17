@@ -17,7 +17,7 @@ import pytest
 from chronicle_mcp.connection import (
     BrowserPathNotFoundError,
     DatabaseLockedError,
-    PermissionError,
+    PermissionDeniedError,
     cleanup_temp_file,
     get_temp_filename,
 )
@@ -105,7 +105,7 @@ class TestPermissionDeniedHandling:
         os.chmod(str(db_path), 0o000)
 
         try:
-            with pytest.raises(PermissionError):
+            with pytest.raises(PermissionDeniedError):
                 with connection.get_history_connection("chrome"):
                     pass
         finally:

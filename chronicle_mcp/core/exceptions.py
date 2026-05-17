@@ -45,10 +45,14 @@ class BrowserPathNotFoundError(ServiceError):
 class DatabaseLockedError(ServiceError):
     """Raised when database is locked (browser running)."""
 
-    def __init__(self, browser: str):
+    def __init__(self, browser: str, path: str | None = None):
         self.browser = browser
+        self.path = path
+        msg = f"Unable to access {browser} history database (locked)"
+        if path:
+            msg += f" at {path}"
         super().__init__(
-            message=f"Unable to access {browser} history database (locked)", code="DATABASE_LOCKED"
+            message=msg, code="DATABASE_LOCKED"
         )
 
 

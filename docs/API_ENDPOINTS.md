@@ -729,6 +729,193 @@ Query downloads history from a browser.
 
 ---
 
+## Subscription Endpoints
+
+### Subscribe to History
+
+**POST** `/api/subscribe`
+
+Subscribe to real-time history changes for a browser.
+
+**Request Body:**
+
+```json
+{
+  "browser": "chrome",
+  "event_types": ["history_added", "history_deleted"]
+}
+```
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `browser` | String | No | chrome | Browser to subscribe to |
+| `event_types` | Array | No | ["history_added", "history_deleted"] | Event types to receive |
+
+**Response (200 OK):**
+
+```json
+{
+  "subscription_id": "550e8400-e29b-41d4-a716-446655440000",
+  "browser": "chrome",
+  "event_types": ["history_added", "history_deleted"],
+  "status": "active"
+}
+```
+
+---
+
+### Unsubscribe
+
+**POST** `/api/unsubscribe`
+
+Unsubscribe from history change notifications.
+
+**Request Body:**
+
+```json
+{
+  "subscription_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "success": true,
+  "subscription_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+---
+
+### Subscription Status
+
+**POST** `/api/subscription-status`
+
+Get subscription status or global event statistics.
+
+**Request Body:**
+
+```json
+{
+  "subscription_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+Or for global stats (omit subscription_id):
+
+```json
+{}
+```
+
+**Response (200 OK):**
+
+```json
+{
+  "total_subscriptions": 3,
+  "total_events": 156,
+  "events_by_type": {
+    "history_added": 120,
+    "history_deleted": 36
+  },
+  "last_event_time": "2024-01-15T14:22:00Z"
+}
+```
+
+---
+
+## Deduplication Endpoints
+
+### Find Duplicates
+
+**POST** `/api/find-duplicates`
+
+Find potential duplicate history entries based on URL similarity.
+
+**Request Body:**
+
+```json
+{
+  "browser": "chrome",
+  "similarity_threshold": 0.9,
+  "limit": 100
+}
+```
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `browser` | String | No | chrome | Browser to analyze |
+| `similarity_threshold` | Float | No | 0.9 | URL similarity threshold (0.0-1.0) |
+| `limit` | Integer | No | 100 | Maximum duplicate groups to return |
+
+**Response (200 OK):**
+
+```json
+{
+  "duplicate_groups": [
+    {
+      "canonical_url": "https://example.com/page",
+      "count": 3,
+      "similar_to": [
+        {"url": "https://example.com/page?utm_source=email", "visit_count": 5},
+        {"url": "https://example.com/page/", "visit_count": 3}
+      ]
+    }
+  ],
+  "total_duplicates": 1
+}
+```
+
+---
+
+### Delete Duplicates
+
+**POST** `/api/delete-duplicates`
+
+Delete duplicate history entries.
+
+**Request Body:**
+
+```json
+{
+  "browser": "chrome",
+  "similarity_threshold": 0.9,
+  "keep_strategy": "most_visits",
+  "confirm": false
+}
+```
+
+| Parameter | Type | Required | Default | Description |
+|-----------|------|----------|---------|-------------|
+| `browser` | String | No | chrome | Browser to clean |
+| `similarity_threshold` | Float | No | 0.9 | URL similarity threshold |
+| `keep_strategy` | String | No | most_visits | Which to keep (most_visits, most_recent, first) |
+| `confirm` | Boolean | No | false | Set to true to actually delete |
+
+**Response (200 OK - Preview):**
+
+```json
+{
+  "preview": true,
+  "message": "Found 15 duplicate groups",
+  "duplicate_groups": [],
+  "total_duplicates": 15
+}
+```
+
+**Response (200 OK - Deleted):**
+
+```json
+{
+  "preview": false,
+  "message": "Deleted 15 duplicate entries",
+  "deleted_count": 15
+}
+```
+
+---
+
 ## Error Codes
 
 | HTTP Status | Code | Description |

@@ -51,7 +51,7 @@ class BrowserPathNotFoundError(ConnectionError):
         )
 
 
-class PermissionError(ConnectionError):
+class PermissionDeniedError(ConnectionError):
     """Raised when permission is denied accessing the history database."""
 
     def __init__(self, browser: str, path: str):
@@ -65,11 +65,11 @@ class PermissionError(ConnectionError):
 class DatabaseLockedError(ConnectionError):
     """Raised when the database is locked (browser is open)."""
 
-    def __init__(self, browser: str, path: str):
+    def __init__(self, browser: str, path: str | None = None):
         super().__init__(
             message=f"Unable to access {browser} history database (locked)",
             browser=browser,
-            details="Ensure the browser is closed before querying",
+            details="Ensure the browser is closed before querying" + (f" at {path}" if path else ""),
         )
 
 
@@ -126,7 +126,7 @@ def get_history_connection(
     Raises:
         BrowserNotFoundError: If the browser is not recognized
         BrowserPathNotFoundError: If the history path doesn't exist
-        PermissionError: If the file cannot be read
+        PermissionDeniedError: If the file cannot be read
         DatabaseLockedError: If the database is locked after retries
     """
     browser_lower = browser.lower()
@@ -167,11 +167,11 @@ def get_history_connection(
                 cleanup_temp_file(temp_path)
             return
 
-        except PermissionError:
+        except PermissionDeniedError:
             raise
         except OSError as e:
             if "permission" in str(e).lower():
-                raise PermissionError(browser_lower, history_path) from e
+                raise PermissionDeniedError(browser_lower, history_path) from e
             cleanup_temp_file(temp_path)
             if attempt < max_retries - 1:
                 delay = retry_delay * (2**attempt)

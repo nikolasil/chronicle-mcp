@@ -4,8 +4,8 @@ This section provides documentation for the ChronicleMCP HTTP API.
 
 ## Documents
 
-- [API Overview](api_index.md) - Quick start and overview
-- [Endpoints Reference](api_endpoints.md) - Complete endpoint reference
+- [API Reference](api.md) - Complete HTTP API reference
+- [Endpoints Reference](api_endpoints.md) - Complete endpoint reference (detailed parameter tables)
 - [API Examples](api_examples.md) - cURL examples and usage patterns
 
 ## Base URL

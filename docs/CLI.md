@@ -205,7 +205,7 @@ chronicle-mcp version
 ### Output
 
 ```
-ChronicleMCP version: 1.1.0
+ChronicleMCP version: 1.4.0
 ```
 
 ---

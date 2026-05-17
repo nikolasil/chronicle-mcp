@@ -20,7 +20,7 @@ from chronicle_mcp.connection import (
     DatabaseLockedError as ConnDatabaseLockedError,
 )
 from chronicle_mcp.connection import (
-    PermissionError as ConnPermissionError,
+    PermissionDeniedError as ConnPermissionDeniedError,
 )
 from chronicle_mcp.connection import (
     get_history_connection,
@@ -140,7 +140,7 @@ class HistoryService:
             raise BrowserNotFoundError(browser)
         except ConnDatabaseLockedError:
             raise DatabaseLockedError(browser)
-        except ConnPermissionError:
+        except ConnPermissionDeniedError:
             raise PermissionDeniedError(browser, "")
         except ConnConnectionError as e:
             logger.error(f"Connection error: {e.message}")

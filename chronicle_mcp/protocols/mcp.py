@@ -4,9 +4,11 @@ This module provides the MCP server interface using FastMCP.
 All business logic is delegated to the HistoryService in the core layer.
 """
 
+import functools
 import json
 import logging
-from typing import Any, cast
+from collections.abc import Callable
+from typing import Any, TypeVar
 
 from fastmcp import FastMCP
 
@@ -27,14 +29,7 @@ logger = logging.getLogger(__name__)
 
 mcp = FastMCP("Chronicle")
 
-MCP_TOOLS: list[str] = []
-
-
-def tool(func: Any) -> Any:
-    """Decorator to register MCP tools with error handling."""
-    registered = mcp.tool()(func)
-    MCP_TOOLS.append(func.__name__)
-    return registered
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 def handle_service_error(error: Exception) -> str:
@@ -63,21 +58,36 @@ def handle_service_error(error: Exception) -> str:
         return format_error_message("An unexpected error occurred")
 
 
-@tool
+def mcp_tool(func: F) -> F:
+    """Decorator to register MCP tools with standardized error handling.
+
+    This decorator wraps MCP tools with consistent error handling,
+    replacing the need for try/except blocks in each tool.
+    """
+    @functools.wraps(func)
+    def wrapper(*args: Any, **kwargs: Any) -> str:
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            return handle_service_error(e)
+
+    # Register with FastMCP
+    registered = mcp.tool()(wrapper)
+    return registered
+
+
+@mcp_tool
 def list_available_browsers() -> str:
     """Returns a list of browsers with detected history databases on this system.
 
     Returns:
         List of available browsers (chrome, edge, firefox)
     """
-    try:
-        result = HistoryService.list_available_browsers()
-        return cast(str, result["message"])
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.list_available_browsers()
+    return result["message"]
 
 
-@tool
+@mcp_tool
 def search_history(
     query: str,
     limit: int = 5,
@@ -95,16 +105,13 @@ def search_history(
     Returns:
         Formatted list of matching history entries or error message
     """
-    try:
-        result = HistoryService.search_history(
-            query=query, limit=limit, browser=browser, format_type=format_type
-        )
-        return cast(str, result["message"])
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.search_history(
+        query=query, limit=limit, browser=browser, format_type=format_type
+    )
+    return result["message"]
 
 
-@tool
+@mcp_tool
 def get_recent_history(
     hours: int = 24,
     limit: int = 20,
@@ -122,16 +129,13 @@ def get_recent_history(
     Returns:
         Formatted list of recent history entries or error message
     """
-    try:
-        result = HistoryService.get_recent_history(
-            hours=hours, limit=limit, browser=browser, format_type=format_type
-        )
-        return cast(str, result["message"])
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.get_recent_history(
+        hours=hours, limit=limit, browser=browser, format_type=format_type
+    )
+    return result["message"]
 
 
-@tool
+@mcp_tool
 def count_visits(domain: str, browser: str = "chrome") -> str:
     """Counts total visits to a specific domain.
 
@@ -142,14 +146,11 @@ def count_visits(domain: str, browser: str = "chrome") -> str:
     Returns:
         Number of visits to the domain or error message
     """
-    try:
-        result = HistoryService.count_visits(domain=domain, browser=browser)
-        return cast(str, result["message"])
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.count_visits(domain=domain, browser=browser)
+    return result["message"]
 
 
-@tool
+@mcp_tool
 def list_top_domains(
     limit: int = 10,
     browser: str = "chrome",
@@ -165,16 +166,13 @@ def list_top_domains(
     Returns:
         Formatted list of top domains or error message
     """
-    try:
-        result = HistoryService.list_top_domains(
-            limit=limit, browser=browser, format_type=format_type
-        )
-        return cast(str, result["message"])
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.list_top_domains(
+        limit=limit, browser=browser, format_type=format_type
+    )
+    return result["message"]
 
 
-@tool
+@mcp_tool
 def search_history_by_date(
     query: str,
     start_date: str,
@@ -196,21 +194,18 @@ def search_history_by_date(
     Returns:
         Formatted list of matching history entries or error message
     """
-    try:
-        result = HistoryService.search_history_by_date(
-            query=query,
-            start_date=start_date,
-            end_date=end_date,
-            limit=limit,
-            browser=browser,
-            format_type=format_type,
-        )
-        return cast(str, result["message"])
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.search_history_by_date(
+        query=query,
+        start_date=start_date,
+        end_date=end_date,
+        limit=limit,
+        browser=browser,
+        format_type=format_type,
+    )
+    return result["message"]
 
 
-@tool
+@mcp_tool
 def delete_history(
     query: str,
     limit: int = 100,
@@ -228,16 +223,13 @@ def delete_history(
     Returns:
         Number of entries deleted or preview message
     """
-    try:
-        result = HistoryService.delete_history(
-            query=query, limit=limit, browser=browser, confirm=confirm
-        )
-        return cast(str, result["message"])
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.delete_history(
+        query=query, limit=limit, browser=browser, confirm=confirm
+    )
+    return result["message"]
 
 
-@tool
+@mcp_tool
 def search_by_domain(
     domain: str,
     query: str | None = None,
@@ -259,21 +251,18 @@ def search_by_domain(
     Returns:
         Formatted list of matching history entries or error message
     """
-    try:
-        result = HistoryService.search_by_domain(
-            domain=domain,
-            query=query,
-            limit=limit,
-            browser=browser,
-            format_type=format_type,
-            exclude_domains=exclude_domains,
-        )
-        return cast(str, result["message"])
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.search_by_domain(
+        domain=domain,
+        query=query,
+        limit=limit,
+        browser=browser,
+        format_type=format_type,
+        exclude_domains=exclude_domains,
+    )
+    return result["message"]
 
 
-@tool
+@mcp_tool
 def get_browser_stats(browser: str = "chrome") -> str:
     """Gets browsing statistics for the browser database.
 
@@ -283,14 +272,11 @@ def get_browser_stats(browser: str = "chrome") -> str:
     Returns:
         JSON string with browsing statistics
     """
-    try:
-        result = HistoryService.get_browser_stats(browser=browser)
-        return cast(str, result["message"])
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.get_browser_stats(browser=browser)
+    return result["message"]
 
 
-@tool
+@mcp_tool
 def get_most_visited_pages(
     limit: int = 20,
     browser: str = "chrome",
@@ -306,16 +292,13 @@ def get_most_visited_pages(
     Returns:
         Formatted list of most visited pages or error message
     """
-    try:
-        result = HistoryService.get_most_visited_pages(
-            limit=limit, browser=browser, format_type=format_type
-        )
-        return cast(str, result["message"])
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.get_most_visited_pages(
+        limit=limit, browser=browser, format_type=format_type
+    )
+    return result["message"]
 
 
-@tool
+@mcp_tool
 def export_history(
     format_type: str = "csv",
     limit: int = 1000,
@@ -333,16 +316,13 @@ def export_history(
     Returns:
         CSV or JSON formatted history data
     """
-    try:
-        result = HistoryService.export_history(
-            format_type=format_type, limit=limit, query=query, browser=browser
-        )
-        return cast(str, result["content"])
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.export_history(
+        format_type=format_type, limit=limit, query=query, browser=browser
+    )
+    return result["content"]
 
 
-@tool
+@mcp_tool
 def search_history_advanced(
     query: str,
     limit: int = 20,
@@ -370,24 +350,21 @@ def search_history_advanced(
     Returns:
         Formatted list of matching history entries or error message
     """
-    try:
-        result = HistoryService.search_history_advanced(
-            query=query,
-            limit=limit,
-            browser=browser,
-            format_type=format_type,
-            exclude_domains=exclude_domains,
-            sort_by=sort_by,
-            use_regex=use_regex,
-            use_fuzzy=use_fuzzy,
-            fuzzy_threshold=fuzzy_threshold,
-        )
-        return cast(str, result["message"])
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.search_history_advanced(
+        query=query,
+        limit=limit,
+        browser=browser,
+        format_type=format_type,
+        exclude_domains=exclude_domains,
+        sort_by=sort_by,
+        use_regex=use_regex,
+        use_fuzzy=use_fuzzy,
+        fuzzy_threshold=fuzzy_threshold,
+    )
+    return result["message"]
 
 
-@tool
+@mcp_tool
 def sync_history(
     source_browser: str,
     target_browser: str,
@@ -405,47 +382,38 @@ def sync_history(
     Returns:
         Summary of sync operation
     """
-    try:
-        result = HistoryService.sync_history(
-            source_browser=source_browser,
-            target_browser=target_browser,
-            merge_strategy=merge_strategy,
-            dry_run=dry_run,
-        )
-        return cast(str, result["message"])
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.sync_history(
+        source_browser=source_browser,
+        target_browser=target_browser,
+        merge_strategy=merge_strategy,
+        dry_run=dry_run,
+    )
+    return result["message"]
 
 
-@tool
+@mcp_tool
 def list_available_bookmarks() -> str:
     """Returns a list of browsers with detected bookmarks on this system.
 
     Returns:
         List of available browsers with bookmarks
     """
-    try:
-        result = HistoryService.list_available_bookmarks()
-        return cast(str, result["message"])
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.list_available_bookmarks()
+    return result["message"]
 
 
-@tool
+@mcp_tool
 def list_available_downloads() -> str:
     """Returns a list of browsers with detected downloads history on this system.
 
     Returns:
         List of available browsers with downloads
     """
-    try:
-        result = HistoryService.list_available_downloads()
-        return cast(str, result["message"])
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.list_available_downloads()
+    return result["message"]
 
 
-@tool
+@mcp_tool
 def get_bookmarks(
     query: str | None = None,
     limit: int = 50,
@@ -463,19 +431,16 @@ def get_bookmarks(
     Returns:
         Formatted list of bookmarks or error message
     """
-    try:
-        result = HistoryService.get_bookmarks(
-            query=query,
-            limit=limit,
-            browser=browser,
-            format_type=format_type,
-        )
-        return cast(str, result["message"])
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.get_bookmarks(
+        query=query,
+        limit=limit,
+        browser=browser,
+        format_type=format_type,
+    )
+    return result["message"]
 
 
-@tool
+@mcp_tool
 def get_downloads(
     query: str | None = None,
     limit: int = 50,
@@ -493,24 +458,16 @@ def get_downloads(
     Returns:
         Formatted list of downloads or error message
     """
-    try:
-        result = HistoryService.get_downloads(
-            query=query,
-            limit=limit,
-            browser=browser,
-            format_type=format_type,
-        )
-        return cast(str, result["message"])
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.get_downloads(
+        query=query,
+        limit=limit,
+        browser=browser,
+        format_type=format_type,
+    )
+    return result["message"]
 
 
-def get_registered_tools() -> list[str]:
-    """Returns the list of registered MCP tool names."""
-    return MCP_TOOLS.copy()
-
-
-@tool
+@mcp_tool
 def compare_time_periods(
     start_date1: str,
     end_date1: str,
@@ -530,20 +487,17 @@ def compare_time_periods(
     Returns:
         Comparison data showing changes between periods
     """
-    try:
-        result = HistoryService.compare_time_periods(
-            start_date1=start_date1,
-            end_date1=end_date1,
-            start_date2=start_date2,
-            end_date2=end_date2,
-            browser=browser,
-        )
-        return json.dumps(result, indent=2)
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.compare_time_periods(
+        start_date1=start_date1,
+        end_date1=end_date1,
+        start_date2=start_date2,
+        end_date2=end_date2,
+        browser=browser,
+    )
+    return json.dumps(result, indent=2)
 
 
-@tool
+@mcp_tool
 def analyze_productivity(
     start_date: str | None = None,
     end_date: str | None = None,
@@ -559,18 +513,15 @@ def analyze_productivity(
     Returns:
         Productivity score, category breakdown, and recommendations
     """
-    try:
-        result = HistoryService.analyze_productivity(
-            start_date=start_date,
-            end_date=end_date,
-            browser=browser,
-        )
-        return json.dumps(result, indent=2)
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.analyze_productivity(
+        start_date=start_date,
+        end_date=end_date,
+        browser=browser,
+    )
+    return json.dumps(result, indent=2)
 
 
-@tool
+@mcp_tool
 def suggest_categories(
     browser: str = "chrome",
     limit: int = 20,
@@ -584,17 +535,14 @@ def suggest_categories(
     Returns:
         List of URLs that could be categorized with suggested categories
     """
-    try:
-        result = HistoryService.suggest_categories(
-            browser=browser,
-            limit=limit,
-        )
-        return json.dumps(result, indent=2)
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.suggest_categories(
+        browser=browser,
+        limit=limit,
+    )
+    return json.dumps(result, indent=2)
 
 
-@tool
+@mcp_tool
 def export_visualization(
     format_type: str = "chart_json",
     period: str = "month",
@@ -610,18 +558,15 @@ def export_visualization(
     Returns:
         Chart-ready JSON data with category breakdown and activity patterns
     """
-    try:
-        result = HistoryService.export_visualization(
-            format_type=format_type,
-            period=period,
-            browser=browser,
-        )
-        return json.dumps(result, indent=2)
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.export_visualization(
+        format_type=format_type,
+        period=period,
+        browser=browser,
+    )
+    return json.dumps(result, indent=2)
 
 
-@tool
+@mcp_tool
 def generate_insights_report(
     period: str = "week",
     browser: str = "chrome",
@@ -638,20 +583,17 @@ def generate_insights_report(
         Comprehensive insights with productivity score, category breakdown,
         top domains, and recommendations
     """
-    try:
-        result = HistoryService.generate_insights_report(
-            period=period,
-            browser=browser,
-            format_type=format_type,
-        )
-        if format_type == "json":
-            return json.dumps(result, indent=2)
-        return cast(str, result["summary_markdown"])
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.generate_insights_report(
+        period=period,
+        browser=browser,
+        format_type=format_type,
+    )
+    if format_type == "json":
+        return json.dumps(result, indent=2)
+    return result["summary_markdown"]
 
 
-@tool
+@mcp_tool
 def subscribe_to_history(
     browser: str = "chrome",
     event_types: list[str] | None = None,
@@ -670,18 +612,15 @@ def subscribe_to_history(
     if event_types is None:
         event_types = ["history_added", "history_deleted"]
 
-    try:
-        result = HistoryService.subscribe_history_changes(
-            browser=browser,
-            event_types=event_types,
-            callback=None,  # type: ignore[arg-type]
-        )
-        return json.dumps(result, indent=2)
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.subscribe_history_changes(
+        browser=browser,
+        event_types=event_types,
+        callback=None,
+    )
+    return json.dumps(result, indent=2)
 
 
-@tool
+@mcp_tool
 def unsubscribe_from_history(subscription_id: str) -> str:
     """Unsubscribe from history change notifications.
 
@@ -691,14 +630,11 @@ def unsubscribe_from_history(subscription_id: str) -> str:
     Returns:
         Success status
     """
-    try:
-        result = HistoryService.unsubscribe_history_changes(subscription_id)
-        return json.dumps(result, indent=2)
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.unsubscribe_history_changes(subscription_id)
+    return json.dumps(result, indent=2)
 
 
-@tool
+@mcp_tool
 def get_subscription_status(subscription_id: str | None = None) -> str:
     """Get subscription status or global event statistics.
 
@@ -708,14 +644,11 @@ def get_subscription_status(subscription_id: str | None = None) -> str:
     Returns:
         Subscription information or global statistics
     """
-    try:
-        result = HistoryService.get_subscription_status(subscription_id)
-        return json.dumps(result, indent=2)
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.get_subscription_status(subscription_id)
+    return json.dumps(result, indent=2)
 
 
-@tool
+@mcp_tool
 def find_duplicate_history(
     browser: str = "chrome",
     similarity_threshold: float = 0.9,
@@ -731,18 +664,15 @@ def find_duplicate_history(
     Returns:
         JSON with duplicate groups and statistics
     """
-    try:
-        result = HistoryService.find_duplicate_entries(
-            browser=browser,
-            similarity_threshold=similarity_threshold,
-            limit=limit,
-        )
-        return json.dumps(result, indent=2)
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.find_duplicate_entries(
+        browser=browser,
+        similarity_threshold=similarity_threshold,
+        limit=limit,
+    )
+    return json.dumps(result, indent=2)
 
 
-@tool
+@mcp_tool
 def delete_duplicate_history(
     browser: str = "chrome",
     similarity_threshold: float = 0.9,
@@ -760,13 +690,10 @@ def delete_duplicate_history(
     Returns:
         Deletion results or preview
     """
-    try:
-        result = HistoryService.delete_duplicates(
-            browser=browser,
-            similarity_threshold=similarity_threshold,
-            keep_strategy=keep_strategy,
-            confirm=confirm,
-        )
-        return json.dumps(result, indent=2)
-    except Exception as e:
-        return handle_service_error(e)
+    result = HistoryService.delete_duplicates(
+        browser=browser,
+        similarity_threshold=similarity_threshold,
+        keep_strategy=keep_strategy,
+        confirm=confirm,
+    )
+    return json.dumps(result, indent=2)

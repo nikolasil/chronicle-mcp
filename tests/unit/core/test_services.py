@@ -863,10 +863,10 @@ class TestWithConnectionErrorHandling:
 
     def test_permission_denied_error(self, monkeypatch):
         """Test PermissionDeniedError is raised for permission issues."""
-        from chronicle_mcp.connection import PermissionError as ConnPermissionError
+        from chronicle_mcp.connection import PermissionDeniedError as ConnPermissionDeniedError
 
         def mock_get_history_connection(browser):
-            raise ConnPermissionError("chrome", "/path/to/db")
+            raise ConnPermissionDeniedError("chrome", "/path/to/db")
 
         monkeypatch.setattr(
             "chronicle_mcp.core.services.get_history_connection",

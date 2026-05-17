@@ -9,15 +9,7 @@ Usage:
     python -m chronicle_mcp.server --help      # Show options
 """
 
-import sys
-
-from chronicle_mcp.protocols.mcp import get_registered_tools, mcp
+from chronicle_mcp.protocols.mcp import mcp
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "--help":
-        print(__doc__)
-        print("\nRegistered MCP Tools:")
-        for tool_name in get_registered_tools():
-            print(f"  - {tool_name}")
-    else:
-        mcp.run()
+    mcp.run()

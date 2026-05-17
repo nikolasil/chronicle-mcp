@@ -302,7 +302,7 @@ chronicle-mcp version
 
 Expected output:
 ```
-ChronicleMCP version: 1.1.0
+ChronicleMCP version: 1.4.0
 ```
 
 ### Check Available Browsers

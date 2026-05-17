@@ -117,7 +117,7 @@ ChronicleMCP aims to provide AI agents with secure, privacy-first access to loca
 
 | Version | Status | Release Date | Key Features |
 |---------|--------|-------------|--------------|
-| 1.4.0 | Current | 2025-01-XX | Advanced search, analytics, insights |
+| 1.4.0 | Current | 2026-02-16 | Advanced search, analytics, insights |
 | 1.3.0 | Released | 2024-11-XX | Bookmarks, downloads |
 | 1.2.0 | Released | 2024-09-XX | Cross-browser sync |
 | 1.1.0 | Released | 2024-07-XX | Multi-browser support |
@@ -136,6 +136,6 @@ ChronicleMCP aims to provide AI agents with secure, privacy-first access to loca
 
 ## Last Updated
 
-This roadmap was last updated: **May 2026**
+This roadmap was last updated: **May 17, 2026**
 
 *Note: Dates and timelines are estimates and may change based on contributor availability and project priorities.*

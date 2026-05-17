@@ -4,14 +4,16 @@ from chronicle_mcp.config import Config, get_version, load_config, logger, setup
 
 __version__ = get_version()
 from chronicle_mcp.connection import (
-    BrowserNotFoundError,
-    BrowserPathNotFoundError,
     ConnectionError,
-    DatabaseLockedError,
-    PermissionError,
     cleanup_temp_file,
     execute_with_connection,
     get_history_connection,
+)
+from chronicle_mcp.core.exceptions import (
+    BrowserNotFoundError,
+    BrowserPathNotFoundError,
+    DatabaseLockedError,
+    PermissionDeniedError,
 )
 from chronicle_mcp.database import (
     count_domain_visits,
@@ -59,6 +61,6 @@ __all__ = [
     "ConnectionError",
     "BrowserNotFoundError",
     "BrowserPathNotFoundError",
-    "PermissionError",
+    "PermissionDeniedError",
     "DatabaseLockedError",
 ]
