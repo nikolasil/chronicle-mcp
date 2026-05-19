@@ -9,63 +9,13 @@ import re
 import sqlite3
 from datetime import datetime, timedelta, timezone
 from typing import Any
-from urllib.parse import urlparse
 
-
-def sanitize_url(url: str) -> str:
-    """Removes sensitive query parameters from URLs."""
-    parsed = urlparse(url)
-    sensitive_params = {
-        "token",
-        "session",
-        "key",
-        "password",
-        "auth",
-        "sid",
-        "access_token",
-        "api_key",
-        "apikey",
-        "api-secret",
-        "secret",
-        "api_token",
-        "apitoken",
-        "bearer",
-        "jwt",
-        "csrf",
-        "xsrf",
-        "nonce",
-        "salt",
-        "hash",
-    }
-
-    query_parts = []
-    for part in parsed.query.split("&"):
-        param = part.split("=")[0] if "=" in part else part
-        if param.lower() not in sensitive_params:
-            query_parts.append(part)
-
-    safe_query = "&".join(query_parts)
-    reconstructed = parsed._replace(query=safe_query)
-    return reconstructed.geturl()
-
-
-def format_chrome_timestamp(microseconds: int) -> str:
-    """
-    Converts Chrome's microseconds-since-1601-01-01 to ISO 8601 string.
-
-    Args:
-        microseconds: Chrome's last_visit_time value
-
-    Returns:
-        ISO 8601 formatted datetime string
-    """
-    try:
-        epoch_delta = timedelta(microseconds=microseconds)
-        chrome_epoch = datetime(1601, 1, 1, tzinfo=timezone.utc)
-        dt = chrome_epoch + epoch_delta
-        return dt.isoformat()
-    except Exception:
-        return f"microseconds={microseconds}"
+from chronicle_mcp.database.timestamps import (
+    format_chrome_timestamp,
+    format_firefox_timestamp,
+    format_safari_timestamp,
+)
+from chronicle_mcp.database.utils import fuzzy_match_score, sanitize_url
 
 
 def query_history(
@@ -758,34 +708,6 @@ def search_with_regex(
         raise ValueError(f"Invalid regex pattern: {e}")
 
 
-def fuzzy_match_score(s1: str, s2: str) -> float:
-    """
-    Calculates fuzzy match similarity score between two strings.
-
-    Args:
-        s1: First string
-        s2: Second string
-
-    Returns:
-        Similarity score between 0 and 1
-    """
-    if not s1 or not s2:
-        return 0.0
-
-    s1_lower = s1.lower()
-    s2_lower = s2.lower()
-
-    if s1_lower == s2_lower:
-        return 1.0
-
-    from difflib import SequenceMatcher
-
-    score1 = SequenceMatcher(None, s1_lower, s2_lower).ratio()
-    score2 = SequenceMatcher(None, s2_lower, s1_lower).ratio()
-
-    return max(score1, score2)
-
-
 def search_with_fuzzy(
     conn: sqlite3.Connection, query: str, threshold: float = 0.6, limit: int = 20
 ) -> list[tuple[str, str, str, float]]:
@@ -939,44 +861,6 @@ SCHEMA_COLUMNS: dict[str, dict[str, str]] = {
 def get_schema_columns(schema: str) -> dict[str, str]:
     """Get column/table mapping for a schema."""
     return SCHEMA_COLUMNS.get(schema, SCHEMA_COLUMNS["chrome"])
-
-
-def format_firefox_timestamp(microseconds: int) -> str:
-    """
-    Converts Firefox's microseconds-since-1970-01-01 to ISO 8601 string.
-
-    Args:
-        microseconds: Firefox's visit_date value
-
-    Returns:
-        ISO 8601 formatted datetime string
-    """
-    try:
-        epoch_delta = timedelta(microseconds=microseconds)
-        firefox_epoch = datetime(1970, 1, 1, tzinfo=timezone.utc)
-        dt = firefox_epoch + epoch_delta
-        return dt.isoformat()
-    except Exception:
-        return f"microseconds={microseconds}"
-
-
-def format_safari_timestamp(seconds: int) -> str:
-    """
-    Converts Apple's CFAbsoluteTime (seconds since 2001-01-01) to ISO 8601 string.
-
-    Args:
-        seconds: Safari's timestamp value
-
-    Returns:
-        ISO 8601 formatted datetime string
-    """
-    try:
-        epoch_delta = timedelta(seconds=seconds)
-        safari_epoch = datetime(2001, 1, 1, tzinfo=timezone.utc)
-        dt = safari_epoch + epoch_delta
-        return dt.isoformat()
-    except Exception:
-        return f"seconds={seconds}"
 
 
 def query_history_universal(
