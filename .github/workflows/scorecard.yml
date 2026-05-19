@@ -24,11 +24,6 @@ jobs:
 
       - name: Run Scorecard
         uses: ossf/scorecard-action@v2.4.3
-        with:
-          results-file: results.sarif
-          results-format: sarif
-          repo-token: ${{ secrets.GITHUB_TOKEN }}
-          publish-results: true
 
       - name: Upload results to GitHub
         uses: github/codeql-action/upload-sarif@v3
