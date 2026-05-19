@@ -5,6 +5,16 @@ validation, and formatting. Protocol adapters (MCP, HTTP) consume these
 services to provide their respective interfaces.
 """
 
+from chronicle_mcp.core import (
+    analytics_service,
+    bookmarks_service,
+    browser_service,
+    dedup_service,
+    domain_service,
+    history_service,
+    search_service,
+    subscription_service,
+)
 from chronicle_mcp.core.exceptions import (
     BrowserNotFoundError,
     BrowserPathNotFoundError,
@@ -51,8 +61,17 @@ from chronicle_mcp.core.validation import (
 )
 
 __all__ = [
-    # Service
+    # Services
     "HistoryService",
+    # Service modules (for direct use)
+    "analytics_service",
+    "bookmarks_service",
+    "browser_service",
+    "dedup_service",
+    "domain_service",
+    "history_service",
+    "search_service",
+    "subscription_service",
     # Exceptions
     "ServiceError",
     "ValidationError",
