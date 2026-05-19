@@ -305,9 +305,7 @@ def validate_regex_pattern(pattern: str) -> None:
         raise ValidationError(f"Invalid regex pattern: {e}", field="use_regex")
 
     if len(pattern) > 500:
-        raise ValidationError(
-            "Regex pattern is too long (max 500 characters)", field="use_regex"
-        )
+        raise ValidationError("Regex pattern is too long (max 500 characters)", field="use_regex")
 
 
 def validate_merge_strategy(strategy: str) -> str:

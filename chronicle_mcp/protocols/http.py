@@ -101,7 +101,7 @@ def create_app(default_browser: str = DEFAULT_BROWSER) -> Starlette:
     )
     application.state.default_browser = default_browser
     application.state.limiter = limiter
-    application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+    application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)  # type: ignore[arg-type]
     application.add_middleware(SlowAPIMiddleware)
     return application
 

@@ -22,7 +22,7 @@ _default_browser: contextvars.ContextVar[str] = contextvars.ContextVar(
     "default_browser", default=DEFAULT_BROWSER
 )
 _correlation_id: contextvars.ContextVar[str] = contextvars.ContextVar("correlation_id", default="")
-_metrics: contextvars.ContextVar["RequestMetrics"] = contextvars.ContextVar(
+_metrics: contextvars.ContextVar["RequestMetrics | None"] = contextvars.ContextVar(
     "_metrics", default=None
 )
 

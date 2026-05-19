@@ -489,7 +489,9 @@ def search_history_advanced(
         return [(title, url, ts) for title, url, ts, _ in results]
 
     cursor = conn.cursor()
-    conditions: list[tuple[str, ...]] = [("(title LIKE ? OR url LIKE ?)", f"%{query}%", f"%{query}%")]
+    conditions: list[tuple[str, ...]] = [
+        ("(title LIKE ? OR url LIKE ?)", f"%{query}%", f"%{query}%")
+    ]
 
     if exclude_domains:
         for domain in exclude_domains:

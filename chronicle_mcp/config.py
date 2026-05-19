@@ -175,6 +175,10 @@ def load_config(config_path: str | None = None) -> Config:
             logger.warning("tomli/tomllib not available, skipping config file")
             return config
 
+    if config_path is None:
+        logger.warning("No config file path provided")
+        return config
+
     try:
         with open(config_path, "rb") as f:
             data = tomllib.load(f)
