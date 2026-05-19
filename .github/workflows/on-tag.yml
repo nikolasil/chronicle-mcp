@@ -19,6 +19,8 @@ jobs:
   release:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/v')
+    outputs:
+      version: ${{ steps.version.outputs.VERSION }}
     steps:
       - name: Extract version from tag
         id: version
@@ -87,12 +89,10 @@ jobs:
     needs: release
     runs-on: ubuntu-latest
     steps:
-      - name: Download release files
-        uses: actions/download-artifact@v4
+      - uses: actions/checkout@v4
         with:
-          name: release-files
-          path: ./
-          merge-multiple: true
+          ref: v${{ needs.release.outputs.version }}
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
