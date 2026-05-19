@@ -931,4 +931,4 @@ Delete duplicate history entries.
 
 - [API Overview](../API_INDEX.md)
 - [API Examples](../API_EXAMPLES.md)
-- [CLI Reference](cli.md)
+- [CLI Reference](CLI.md)

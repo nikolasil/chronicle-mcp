@@ -239,6 +239,6 @@ After all retries exhausted, the event is logged and dropped.
 
 ## See Also
 
-- [Architecture](architecture.md) - System architecture
+- [Architecture](ARCHITECTURE.md) - System architecture
 - [Configuration](config.md) - Configuration options
 - [TROUBLESHOOTING.md](troubleshooting.md) - Common issues

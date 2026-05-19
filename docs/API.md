@@ -839,6 +839,6 @@ Currently, ChronicleMCP does not implement rate limiting. Future versions may in
 
 ## See Also
 
-- [CLI Reference](cli.md)
-- [Installation Guide](install.md)
-- [Architecture](architecture.md)
+- [CLI Reference](CLI.md)
+- [Installation Guide](INSTALL.md)
+- [Architecture](ARCHITECTURE.md)

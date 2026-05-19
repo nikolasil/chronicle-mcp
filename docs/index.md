@@ -34,12 +34,10 @@ chronicle-mcp list-browsers    # Detect available browsers
 
 ## Documentation
 
-- [Installation Guide](install.md)
-- [User Guide](user_guide.md)
-- [CLI Reference](cli.md)
-- [HTTP API](api.md)
-- [Advanced Search](advanced_search.md)
-- [Architecture](architecture.md)
+- [Installation Guide](INSTALL.md)
+- [CLI Reference](CLI.md)
+- [HTTP API](API.md)
+- [Architecture](ARCHITECTURE.md)
 - [Browser Support](browser_support.md)
 - [Security Hardening](security_hardening.md)
 

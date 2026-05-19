@@ -180,6 +180,5 @@ The cache implementation is thread-safe for concurrent access.
 
 ## See Also
 
-- [Configuration Guide](config.md) - Cache configuration options
-- [Architecture](architecture.md) - System architecture
-- [TROUBLESHOOTING.md](troubleshooting.md) - Cache-related issues
+- [Architecture](ARCHITECTURE.md) - System architecture
+- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Cache-related issues

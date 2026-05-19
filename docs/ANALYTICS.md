@@ -403,5 +403,5 @@ These features are available as MCP tools:
 ## See Also
 
 - [Advanced Search](advanced_search.md)
-- [Architecture](architecture.md)
-- [CLI Reference](cli.md)
+- [Architecture](ARCHITECTURE.md)
+- [CLI Reference](CLI.md)

@@ -319,4 +319,4 @@ curl -X POST http://localhost:8080/api/downloads/query \
 
 - [API Overview](../API_INDEX.md)
 - [API Endpoints Reference](../API_ENDPOINTS.md)
-- [CLI Reference](cli.md)
+- [CLI Reference](CLI.md)

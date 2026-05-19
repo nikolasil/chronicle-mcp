@@ -207,6 +207,30 @@ def get_top_domains(conn: sqlite3.Connection, limit: int = 10) -> list[tuple[str
         List of (domain, visit_count) tuples
     """
     schema = detect_schema(conn)
+
+    if schema == "firefox":
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT SUBSTR(
+                SUBSTR(p.url, INSTR(p.url, '://') + 3),
+                1,
+                CASE
+                    WHEN INSTR(SUBSTR(p.url, INSTR(p.url, '://') + 3), '/') > 0
+                    THEN INSTR(SUBSTR(p.url, INSTR(p.url, '://') + 3), '/') - 1
+                    ELSE 100
+                END
+            ) as domain, SUM(p.visit_count) as total
+            FROM moz_places p
+            WHERE p.visit_count > 0 AND p.url LIKE 'http%'
+            GROUP BY domain
+            ORDER BY total DESC
+            LIMIT ?
+            """,
+            (limit,),
+        )
+        return [(row[0], row[1]) for row in cursor.fetchall()]
+
     if schema != "chrome":
         return []
 
@@ -350,12 +374,34 @@ def delete_history(conn: sqlite3.Connection, query: str, limit: int = 100) -> in
     Returns:
         Number of entries deleted
     """
+    schema = detect_schema(conn)
+    cols = get_schema_columns(schema)
+    table = cols["table"]
+    title_col = cols["title_col"]
+    url_col = cols["url_col"]
+    timestamp_col = cols["timestamp_col"]
+
     cursor = conn.cursor()
     search_query = f"%{query}%"
-    cursor.execute(
-        "DELETE FROM urls WHERE (title LIKE ? OR url LIKE ?) AND rowid IN (SELECT rowid FROM urls WHERE (title LIKE ? OR url LIKE ?) ORDER BY last_visit_time DESC LIMIT ?)",
-        (search_query, search_query, search_query, search_query, limit),
-    )
+
+    if schema == "firefox":
+        cursor.execute(
+            f"""DELETE FROM {table} WHERE rowid IN (
+                SELECT p.rowid FROM {table} p
+                WHERE (p.{title_col} LIKE ? OR p.{url_col} LIKE ?)
+                ORDER BY p.{timestamp_col} DESC LIMIT ?
+            )""",
+            (search_query, search_query, limit),
+        )
+    else:
+        cursor.execute(
+            f"""DELETE FROM {table} WHERE (title LIKE ? OR url LIKE ?) AND rowid IN (
+                SELECT rowid FROM {table} WHERE (title LIKE ? OR url LIKE ?)
+                ORDER BY {timestamp_col} DESC LIMIT ?
+            )""",
+            (search_query, search_query, search_query, search_query, limit),
+        )
+
     deleted_count = cursor.rowcount
     conn.commit()
     return deleted_count if deleted_count > 0 else 0

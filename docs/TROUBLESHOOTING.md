@@ -387,7 +387,7 @@ When reporting bugs, include:
 
 ## See Also
 
-- [Installation Guide](install.md)
-- [Browser Support](browser_support.md)
-- [Architecture](architecture.md)
+- [Installation Guide](INSTALL.md)
+- [Browser Support](BROWSER_SUPPORT.md)
+- [Architecture](ARCHITECTURE.md)
 - [GitHub Issues](https://github.com/nikolasil/chronicle-mcp/issues)
