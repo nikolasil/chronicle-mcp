@@ -32,6 +32,9 @@ from chronicle_mcp.core.exceptions import (
 
 logger = logging.getLogger(__name__)
 
+# Module-level reference to get_history_connection, can be patched by tests
+_get_history_connection = get_history_connection
+
 
 def with_connection(browser: str, operation: Callable[..., Any]) -> Any:
     """Execute an operation with a database connection.
@@ -50,7 +53,7 @@ def with_connection(browser: str, operation: Callable[..., Any]) -> Any:
         DatabaseError: For other database errors
     """
     try:
-        with get_history_connection(browser) as conn:
+        with _get_history_connection(browser) as conn:
             return operation(conn)
     except ConnBrowserNotFoundError:
         raise BrowserNotFoundError(browser)

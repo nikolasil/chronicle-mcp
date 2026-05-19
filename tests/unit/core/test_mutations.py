@@ -44,7 +44,7 @@ class TestDuplicateEntriesMutationSafety:
         """Empty database should return empty results."""
         from chronicle_mcp.core.services import HistoryService
 
-        with patch.object(HistoryService, "_with_connection", return_value=[]):
+        with patch("chronicle_mcp.core.dedup_service.with_connection", return_value=[]):
             result = HistoryService.find_duplicate_entries("chrome")
             assert result["total_entries_analyzed"] == 0
             assert result["duplicate_groups"] == []

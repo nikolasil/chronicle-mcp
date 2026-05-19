@@ -292,9 +292,7 @@ def export_visualization(
 
     breakdown = get_category_breakdown(category_stats)
 
-    visit_patterns = with_connection(
-        browser_lower, lambda conn: get_visit_patterns_by_hour(conn)
-    )
+    visit_patterns = with_connection(browser_lower, lambda conn: get_visit_patterns_by_hour(conn))
 
     top_domains = with_connection(browser_lower, lambda conn: db_get_top_domains(conn, 10))
 

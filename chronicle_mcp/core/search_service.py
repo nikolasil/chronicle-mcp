@@ -124,9 +124,7 @@ def search_history(
 
     logger.info(f"Searching history for '{query_clean}' in {browser_lower} (limit={limit_val})")
 
-    rows = _with_connection(
-        browser_lower, lambda conn: query_history(conn, query_clean, limit_val)
-    )
+    rows = _with_connection(browser_lower, lambda conn: query_history(conn, query_clean, limit_val))
 
     return {
         "results": rows,
@@ -183,9 +181,7 @@ def count_visits(domain: str, browser: str = "chrome") -> dict[str, Any]:
     browser_lower = validate_browser(browser)
     domain_clean = validate_domain(domain)
 
-    count = _with_connection(
-        browser_lower, lambda conn: count_domain_visits(conn, domain_clean)
-    )
+    count = _with_connection(browser_lower, lambda conn: count_domain_visits(conn, domain_clean))
 
     return {
         "domain": domain_clean,
@@ -212,9 +208,7 @@ def list_top_domains(
     limit_val = validate_limit(limit, 1, 50)
     format_clean = validate_format_type(format_type)
 
-    domains = _with_connection(
-        browser_lower, lambda conn: db_get_top_domains(conn, limit_val)
-    )
+    domains = _with_connection(browser_lower, lambda conn: db_get_top_domains(conn, limit_val))
 
     return {
         "domains": domains,
@@ -240,9 +234,7 @@ def get_most_visited_pages(
     limit_val = validate_limit(limit, 1, 100)
     format_clean = validate_format_type(format_type)
 
-    pages = _with_connection(
-        browser_lower, lambda conn: db_get_most_visited_pages(conn, limit_val)
-    )
+    pages = _with_connection(browser_lower, lambda conn: db_get_most_visited_pages(conn, limit_val))
 
     return {
         "pages": pages,

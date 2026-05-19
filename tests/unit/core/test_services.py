@@ -190,12 +190,12 @@ class TestListAvailableBrowsers:
 
     def test_returns_empty_list_when_no_browsers(self, monkeypatch):
         """Test returns empty list when no browsers found."""
-        from chronicle_mcp.core import services
+        from chronicle_mcp.core import browser_service
 
         def mock_get_available_browsers():
             return []
 
-        monkeypatch.setattr(services, "get_available_browsers", mock_get_available_browsers)
+        monkeypatch.setattr(browser_service, "get_available_browsers", mock_get_available_browsers)
 
         result = HistoryService.list_available_browsers()
         assert result["browsers"] == []
@@ -674,7 +674,7 @@ class TestSyncHistory:
         """Test sync in dry run mode."""
         import sqlite3
 
-        from chronicle_mcp.core import services
+        from chronicle_mcp.core import history_service
 
         firefox_db = temp_dir / "firefox_places.sqlite"
         conn = sqlite3.connect(str(firefox_db))
@@ -691,14 +691,12 @@ class TestSyncHistory:
         conn.commit()
         conn.close()
 
-        original_get_browser_path = services.get_browser_path
-
         def mock_get_browser_path(browser):
             if browser.lower() == "firefox":
                 return str(firefox_db)
-            return original_get_browser_path(browser)
+            return sample_chrome_db
 
-        monkeypatch.setattr(services, "get_browser_path", mock_get_browser_path)
+        monkeypatch.setattr(history_service, "get_browser_path", mock_get_browser_path)
 
         result = HistoryService.sync_history(
             source_browser="chrome",
@@ -763,6 +761,7 @@ class TestSyncHistory:
         import sqlite3
 
         import chronicle_mcp.connection
+        import chronicle_mcp.core.history_service
         import chronicle_mcp.core.services
         from chronicle_mcp import paths
 
@@ -792,6 +791,9 @@ class TestSyncHistory:
         monkeypatch.setattr(paths, "get_browser_path", mock_get_browser_path)
         monkeypatch.setattr(chronicle_mcp.connection, "get_browser_path", mock_get_browser_path)
         monkeypatch.setattr(chronicle_mcp.core.services, "get_browser_path", mock_get_browser_path)
+        monkeypatch.setattr(
+            chronicle_mcp.core.history_service, "get_browser_path", mock_get_browser_path
+        )
 
         # Verify the mock is working
         assert mock_get_browser_path("chrome") == sample_chrome_db, "Chrome mock failed"
@@ -835,7 +837,7 @@ class TestWithConnectionErrorHandling:
             raise ConnBrowserNotFoundError("chrome")
 
         monkeypatch.setattr(
-            "chronicle_mcp.core.services.get_history_connection",
+            "chronicle_mcp.core._connection._get_history_connection",
             mock_get_history_connection,
         )
 
@@ -851,7 +853,7 @@ class TestWithConnectionErrorHandling:
             raise ConnDatabaseLockedError("chrome", "/path/to/db")
 
         monkeypatch.setattr(
-            "chronicle_mcp.core.services.get_history_connection",
+            "chronicle_mcp.core._connection._get_history_connection",
             mock_get_history_connection,
         )
 
@@ -869,7 +871,7 @@ class TestWithConnectionErrorHandling:
             raise ConnPermissionDeniedError("chrome", "/path/to/db")
 
         monkeypatch.setattr(
-            "chronicle_mcp.core.services.get_history_connection",
+            "chronicle_mcp.core._connection._get_history_connection",
             mock_get_history_connection,
         )
 
@@ -887,7 +889,7 @@ class TestWithConnectionErrorHandling:
             raise ConnConnectionError("Connection failed", browser="chrome", details="timeout")
 
         monkeypatch.setattr(
-            "chronicle_mcp.core.services.get_history_connection",
+            "chronicle_mcp.core._connection._get_history_connection",
             mock_get_history_connection,
         )
 
@@ -905,7 +907,7 @@ class TestWithConnectionErrorHandling:
             raise RuntimeError("Unexpected error")
 
         monkeypatch.setattr(
-            "chronicle_mcp.core.services.get_history_connection",
+            "chronicle_mcp.core._connection._get_history_connection",
             mock_get_history_connection,
         )
 
