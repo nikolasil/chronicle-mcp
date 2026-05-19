@@ -26,6 +26,7 @@ from chronicle_mcp.core.validation import (
     validate_hours,
     validate_limit,
     validate_query,
+    validate_regex_pattern,
     validate_search_options,
     validate_sort_by,
 )
@@ -267,6 +268,8 @@ def search_history_advanced(
     exclude_clean = validate_exclude_domains(exclude_domains)
     threshold_val = validate_fuzzy_threshold(fuzzy_threshold)
     validate_search_options(use_regex, use_fuzzy)
+    if use_regex:
+        validate_regex_pattern(query_clean)
 
     options = {
         "sort_by": sort_clean,

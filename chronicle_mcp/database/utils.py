@@ -1,7 +1,7 @@
 """Utility functions for database operations."""
 
 from difflib import SequenceMatcher
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 
 def sanitize_url(url: str) -> str:
@@ -33,7 +33,9 @@ def sanitize_url(url: str) -> str:
     query_parts = []
     for part in parsed.query.split("&"):
         param = part.split("=")[0] if "=" in part else part
-        if param.lower() not in sensitive_params:
+        decoded_param = unquote(param)
+        param_name = decoded_param.split("=")[0].lower()
+        if param_name not in sensitive_params:
             query_parts.append(part)
 
     safe_query = "&".join(query_parts)

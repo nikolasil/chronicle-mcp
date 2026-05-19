@@ -45,6 +45,18 @@ def cleanup_webhook_manager():
         pass
 
 
+@pytest.fixture(autouse=True)
+def cleanup_config_cache():
+    """Clear config cache before each test to ensure isolation."""
+    try:
+        from chronicle_mcp import config
+
+        config._config_cache.clear()
+    except Exception:
+        pass
+    yield
+
+
 def generate_chrome_timestamp(days_ago: int = 0, hours_ago: int = 0) -> int:
     """Generate a Chrome-style timestamp (microseconds since 1601-01-01).
 

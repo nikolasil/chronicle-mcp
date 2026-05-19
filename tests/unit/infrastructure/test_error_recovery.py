@@ -201,6 +201,25 @@ class TestSanitizationEdgeCases:
 
         assert "token=" not in result
 
+    def test_url_with_encoded_param_name(self):
+        """Test sanitization with URL-encoded parameter name (e.g., token%3Dvalue)."""
+        url = "https://example.com/page?token%3Dsecret"
+        result = sanitize_url(url)
+
+        assert "token" not in result.lower()
+        assert "secret" not in result
+
+    def test_url_with_double_encoded_param_name(self):
+        """Test sanitization with double-encoded parameter name.
+
+        Double encoding of 'token' would be: token -> %74oken -> %2574oken
+        Since '%2574' decodes to 't', the parameter '%2574oken' decodes to 'token'.
+        """
+        url = "https://example.com/page?%2574oken=secret"
+        result = sanitize_url(url)
+
+        assert "token" not in result.lower()
+
     def test_url_with_no_query_params(self):
         """Test URL with no query parameters."""
         url = "https://github.com/user/repo"

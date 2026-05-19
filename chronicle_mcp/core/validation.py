@@ -4,6 +4,8 @@ This module provides validation functions for all service inputs.
 Validation functions raise ValidationError on failure.
 """
 
+import re
+
 from chronicle_mcp.core.exceptions import InvalidDateRangeError, ValidationError
 
 VALID_BROWSERS = ["chrome", "edge", "firefox", "brave", "safari", "vivaldi", "opera"]
@@ -265,6 +267,46 @@ def validate_search_options(use_regex: bool, use_fuzzy: bool) -> None:
     if use_regex and use_fuzzy:
         raise ValidationError(
             "Cannot use both regex and fuzzy matching simultaneously", field="search_options"
+        )
+
+
+def validate_regex_pattern(pattern: str) -> None:
+    """Validate regex pattern for safety (ReDoS prevention).
+
+    Args:
+        pattern: Regex pattern to validate
+
+    Raises:
+        ValidationError: If pattern is potentially dangerous
+    """
+    if not pattern or not isinstance(pattern, str):
+        raise ValidationError("Regex pattern cannot be empty", field="use_regex")
+
+    nested_repetition_patterns = [
+        r"(.+)+",
+        r"(.*)+",
+        r"(.+)+",
+        r"(a+)+",
+        r"(a*)+",
+        r"(a{1,})+",
+        r"({[^}]+})+",
+    ]
+
+    for dangerous in nested_repetition_patterns:
+        if dangerous in pattern:
+            raise ValidationError(
+                "Regex pattern may cause excessive backtracking (nested quantifiers)",
+                field="use_regex",
+            )
+
+    try:
+        re.compile(pattern)
+    except re.error as e:
+        raise ValidationError(f"Invalid regex pattern: {e}", field="use_regex")
+
+    if len(pattern) > 500:
+        raise ValidationError(
+            "Regex pattern is too long (max 500 characters)", field="use_regex"
         )
 
 

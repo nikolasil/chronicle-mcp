@@ -56,6 +56,7 @@ from chronicle_mcp.core.validation import (
     validate_limit,
     validate_merge_strategy,
     validate_query,
+    validate_regex_pattern,
     validate_search_options,
     validate_sort_by,
 )
@@ -93,6 +94,7 @@ __all__ = [
     "validate_sort_by",
     "validate_fuzzy_threshold",
     "validate_search_options",
+    "validate_regex_pattern",
     "validate_merge_strategy",
     "validate_browsers_different",
     "validate_exclude_domains",

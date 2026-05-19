@@ -6,8 +6,10 @@ regex search, fuzzy matching, and multi-option search.
 
 import re
 import sqlite3
+import threading
 from typing import Any
 
+from chronicle_mcp.database.sql_builder import build_search_query
 from chronicle_mcp.database.timestamps import (
     format_chrome_timestamp,
     format_firefox_timestamp,
@@ -37,24 +39,24 @@ def search_by_domain(
         List of (title, url, timestamp) tuples
     """
     cursor = conn.cursor()
-    params: list[str | int] = []
-    sql_conditions = ["url LIKE ?"]
-    params.append(f"%{domain}%")
+    conditions: list[tuple[str, ...]] = [("url LIKE ?", f"%{domain}%")]
 
     if query:
         search_query = f"%{query}%"
-        sql_conditions.append("(title LIKE ? OR url LIKE ?)")
-        params.extend([search_query, search_query])
+        conditions.append(("title LIKE ? OR url LIKE ?", search_query, search_query))
 
     if exclude_domains:
         for exclude in exclude_domains:
-            sql_conditions.append("url NOT LIKE ?")
-            params.append(f"%{exclude}%")
+            conditions.append(("url NOT LIKE ?", f"%{exclude}%"))
 
-    where_clause = " AND ".join(sql_conditions)
-    # nosec B608 - where_clause is built from controlled literals, not user input
-    sql = f"SELECT title, url, last_visit_time FROM urls WHERE {where_clause} ORDER BY last_visit_time DESC LIMIT ?"  # nosec B608
-    params.append(limit)
+    sql, params = build_search_query(
+        table="urls",
+        columns=["title", "url", "last_visit_time"],
+        conditions=conditions,
+        order_by="last_visit_time",
+        order_dir="DESC",
+        limit=limit,
+    )
 
     cursor.execute(sql, params)
     return [
@@ -115,7 +117,7 @@ def get_most_visited_pages(conn: sqlite3.Connection, limit: int = 20) -> list[tu
     from chronicle_mcp.database.query import detect_schema, get_schema_columns
 
     schema = detect_schema(conn)
-    if schema != "chrome":
+    if schema not in ("chrome", "firefox", "safari"):
         return []
 
     cols = get_schema_columns(schema)
@@ -154,6 +156,15 @@ def export_history(
     import json
     from io import StringIO
 
+    from chronicle_mcp.database.query import detect_schema
+
+    schema = detect_schema(conn)
+    timestamp_formatter = {
+        "chrome": format_chrome_timestamp,
+        "firefox": format_firefox_timestamp,
+        "safari": format_safari_timestamp,
+    }.get(schema, format_chrome_timestamp)
+
     cursor = conn.cursor()
     params: list[str | int] = []
     sql = "SELECT title, url, last_visit_time FROM urls"
@@ -168,7 +179,7 @@ def export_history(
 
     cursor.execute(sql, params)
     rows = [
-        {"title": title, "url": sanitize_url(url), "timestamp": format_chrome_timestamp(ts)}
+        {"title": title, "url": sanitize_url(url), "timestamp": timestamp_formatter(ts)}
         for title, url, ts in cursor.fetchall()
     ]
 
@@ -355,7 +366,7 @@ def sync_to_browser(
 
 
 def search_with_regex(
-    conn: sqlite3.Connection, pattern: str, limit: int = 20
+    conn: sqlite3.Connection, pattern: str, limit: int = 20, timeout_seconds: float = 1.0
 ) -> list[tuple[str, str, str]]:
     """
     Searches history using regex patterns.
@@ -364,22 +375,44 @@ def search_with_regex(
         conn: SQLite connection
         pattern: Python regex pattern
         limit: Maximum results
+        timeout_seconds: Maximum time to spend on regex matching
 
     Returns:
         List of (title, url, timestamp) tuples
+
+    Raises:
+        ValueError: If regex pattern is invalid
+        TimeoutError: If regex matching exceeds timeout
     """
     cursor = conn.cursor()
     try:
         compiled = re.compile(pattern, re.IGNORECASE)
         cursor.execute(
             "SELECT title, url, last_visit_time FROM urls ORDER BY last_visit_time DESC LIMIT ?",
-            (limit,),
+            (limit * 3,),
         )
         matches = []
-        for title, url, ts in cursor.fetchall():
-            if compiled.search(title or "") or compiled.search(url or ""):
-                matches.append((title, sanitize_url(url), format_chrome_timestamp(ts)))
-        return matches[:limit]
+        timeout_flag = threading.Event()
+
+        def timeout_handler() -> None:
+            timeout_flag.set()
+
+        timer = threading.Timer(timeout_seconds, timeout_handler)
+        timer.start()
+
+        try:
+            for title, url, ts in cursor.fetchall():
+                if timeout_flag.is_set():
+                    raise TimeoutError("Regex matching exceeded time limit")
+                if compiled.search(title or "") or compiled.search(url or ""):
+                    matches.append((title, sanitize_url(url), format_chrome_timestamp(ts)))
+                if len(matches) >= limit:
+                    break
+        finally:
+            timer.cancel()
+            timer.join()
+
+        return matches
     except re.error as e:
         raise ValueError(f"Invalid regex pattern: {e}")
 
@@ -456,27 +489,26 @@ def search_history_advanced(
         return [(title, url, ts) for title, url, ts, _ in results]
 
     cursor = conn.cursor()
-    params: list[str | int] = []
-    sql_conditions = ["(title LIKE ? OR url LIKE ?)"]
-    params.append(f"%{query}%")
-    params.append(f"%{query}%")
+    conditions: list[tuple[str, ...]] = [("(title LIKE ? OR url LIKE ?)", f"%{query}%", f"%{query}%")]
 
     if exclude_domains:
         for domain in exclude_domains:
-            sql_conditions.append("url NOT LIKE ?")
-            params.append(f"%{domain}%")
+            conditions.append(("url NOT LIKE ?", f"%{domain}%"))
 
-    where_clause = " AND ".join(sql_conditions)
+    order_column, order_dir = {
+        "date": ("last_visit_time", "DESC"),
+        "visit_count": ("visit_count", "DESC"),
+        "title": ("title", "ASC"),
+    }.get(sort_by, ("last_visit_time", "DESC"))
 
-    order_by = {
-        "date": "last_visit_time DESC",
-        "visit_count": "visit_count DESC",
-        "title": "title ASC",
-    }.get(sort_by, "last_visit_time DESC")
-
-    # nosec B608 - both where_clause and order_by are built from controlled literals
-    sql = f"SELECT title, url, last_visit_time FROM urls WHERE {where_clause} ORDER BY {order_by} LIMIT ?"  # nosec B608
-    params.append(limit)
+    sql, params = build_search_query(
+        table="urls",
+        columns=["title", "url", "last_visit_time"],
+        conditions=conditions,
+        order_by=order_column,
+        order_dir=order_dir,
+        limit=limit,
+    )
 
     cursor.execute(sql, params)
     return [

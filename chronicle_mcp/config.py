@@ -132,6 +132,9 @@ class Config:
     advanced: AdvancedConfig = field(default_factory=AdvancedConfig)
 
 
+_config_cache: dict[str, Config] = {}
+
+
 def load_config(config_path: str | None = None) -> Config:
     """
     Load configuration from a TOML file.
@@ -142,10 +145,10 @@ def load_config(config_path: str | None = None) -> Config:
     Returns:
         Config object with settings.
     """
-    config = Config()
+    env_config = os.environ.get("CHRONICLE_CONFIG")
 
     if config_path is None:
-        config_path = os.environ.get("CHRONICLE_CONFIG")
+        config_path = env_config
 
     if config_path is None:
         home_config = os.path.expanduser("~/.config/chronicle-mcp/config.toml")
@@ -157,9 +160,11 @@ def load_config(config_path: str | None = None) -> Config:
         if os.path.exists(local_config):
             config_path = local_config
 
-    if config_path is None:
-        logger.debug("No config file found, using defaults")
-        return config
+    cache_key = config_path or ""
+    if cache_key in _config_cache:
+        return _config_cache[cache_key]
+
+    config = Config()
 
     try:
         import tomllib
@@ -227,6 +232,7 @@ def load_config(config_path: str | None = None) -> Config:
     except Exception as e:
         logger.warning(f"Failed to load config from {config_path}: {e}")
 
+    _config_cache[cache_key] = config
     return config
 
 

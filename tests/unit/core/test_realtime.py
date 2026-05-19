@@ -232,7 +232,6 @@ class TestSubscriptionManager:
         assert sent_count == 2
 
         import time
-
         time.sleep(0.2)
 
         assert ("cb1", event) in received_events
