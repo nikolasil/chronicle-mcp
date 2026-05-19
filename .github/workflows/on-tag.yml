@@ -25,7 +25,11 @@ jobs:
         run: |
           VERSION="${GITHUB_REF#refs/tags/v}"
           echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          echo "Is pre-release: $(echo "$VERSION" | grep -q '-' && echo 'true' || echo 'false')" >> $GITHUB_OUTPUT
+          if echo "$VERSION" | grep -q '-'; then
+            echo "IS_PRE_RELEASE=true" >> $GITHUB_OUTPUT
+          else
+            echo "IS_PRE_RELEASE=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Validate version format
         run: |
@@ -176,6 +180,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
+      is_pre_release: ${{ steps.version.outputs.IS_PRE_RELEASE }}
     steps:
       - name: Download release files
         uses: actions/download-artifact@v4
@@ -183,6 +188,17 @@ jobs:
           name: release-files
           path: ./
           merge-multiple: true
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          if echo "$VERSION" | grep -q '-'; then
+            echo "IS_PRE_RELEASE=true" >> $GITHUB_OUTPUT
+          else
+            echo "IS_PRE_RELEASE=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -280,7 +296,7 @@ jobs:
             dist/*.whl
             dist/*.tar.gz
           draft: false
-          prerelease: ${{ needs.release.outputs.IS_PRE_RELEASE }}
+          prerelease: ${{ needs.build-container.outputs.is_pre_release }}
           generate_release_notes: true
 
   summary:
