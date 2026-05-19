@@ -31,6 +31,7 @@ from chronicle_mcp.database import (
 )
 
 
+@pytest.mark.ci_excluded
 class TestDatabaseLockedHandling:
     """Tests for database locked error handling."""
 

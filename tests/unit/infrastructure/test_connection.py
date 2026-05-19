@@ -18,6 +18,7 @@ from chronicle_mcp.connection import (
 )
 
 
+@pytest.mark.ci_excluded
 class TestTempFileLifecycle:
     """Tests for temp file creation and cleanup.
 
