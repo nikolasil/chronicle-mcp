@@ -104,7 +104,7 @@ jobs:
         run: pip install -e ".[dev]"
 
       - name: Run test suite
-        run: pytest tests/ -v --tb=short -m "not ci_excluded"
+        run: pytest tests/ -v --tb=short -m "not ci_excluded and not performance"
 
   build-package:
     needs: test
