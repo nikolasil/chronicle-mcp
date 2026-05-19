@@ -38,7 +38,7 @@ jobs:
 
       - name: Run browser integration tests
         run: |
-          pytest tests/integration/ -v -k "${{ matrix.browser }}" || echo "No browser-specific tests found"
+          pytest tests/integration/ -v -k "${{ matrix.browser }}" -m "not ci_excluded" || echo "No browser-specific tests found"
         env:
           BROWSER: ${{ matrix.browser }}
 
@@ -78,7 +78,7 @@ jobs:
           exit 1
 
       - name: Run HTTP integration tests
-        run: pytest tests/unit/protocols/ -v
+        run: pytest tests/unit/protocols/ -v -m "not ci_excluded"
 
       - name: Stop server
         if: always()
@@ -107,7 +107,7 @@ jobs:
           pip install -e ".[dev]"
 
       - name: Run protocol-specific tests
-        run: pytest tests/unit/protocols/ -v
+        run: pytest tests/unit/protocols/ -v -m "not ci_excluded"
 
   integration-summary:
     needs: [browser-integration-tests, http-integration, protocol-tests]

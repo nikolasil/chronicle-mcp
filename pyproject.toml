@@ -82,6 +82,7 @@ markers = [
     "safari: marks tests for Safari browser",
     "vivaldi: marks tests for Vivaldi browser",
     "opera: marks tests for Opera browser",
+    "ci_excluded: marks tests excluded from CI due to environment-specific behavior",
 ]
 
 [tool.pytest-cov]

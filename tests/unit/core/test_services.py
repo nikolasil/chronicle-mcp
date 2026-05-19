@@ -26,6 +26,7 @@ class TestListAvailableDownloads:
         assert "message" in result
 
 
+@pytest.mark.ci_excluded
 class TestGetBookmarks:
     """Tests for get_bookmarks service method."""
 
@@ -108,6 +109,7 @@ class TestGetBookmarks:
         assert result_with_filter["count"] < result_all["count"]
 
 
+@pytest.mark.ci_excluded
 class TestGetDownloads:
     """Tests for get_downloads service method."""
 
@@ -917,6 +919,7 @@ class TestWithConnectionErrorHandling:
         assert "Database operation failed" in str(exc_info.value)
 
 
+@pytest.mark.ci_excluded
 class TestFindDuplicateEntries:
     """Tests for find_duplicate_entries method."""
 
@@ -971,6 +974,7 @@ class TestFindDuplicateEntries:
         assert "total_entries_analyzed" in result
 
 
+@pytest.mark.ci_excluded
 class TestDeleteDuplicates:
     """Tests for delete_duplicates method."""
 

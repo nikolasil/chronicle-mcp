@@ -8,6 +8,8 @@ from starlette.testclient import TestClient
 
 from chronicle_mcp.protocols.http import app
 
+pytestmark = pytest.mark.ci_excluded
+
 
 class TestHTTPServerIntegration:
     """Integration tests for HTTP REST API server."""

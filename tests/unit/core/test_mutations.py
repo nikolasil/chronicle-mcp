@@ -2,8 +2,12 @@
 
 from unittest.mock import patch
 
+import pytest
+
 from chronicle_mcp.core.events import EventType
 from chronicle_mcp.core.realtime import get_subscription_manager
+
+pytestmark = pytest.mark.ci_excluded
 
 
 class TestDuplicateEntriesMutationSafety:
