@@ -194,7 +194,7 @@ jobs:
         run: pip install -e ".[dev]" mutmut
 
       - name: Run mutation tests
-        run: mutmut run -- --runner=pytest -- --ignore=tests/benchmark -m "not ci_excluded"
+        run: mutmut run -- --runner=pytest -- --ignore=tests/benchmark --ignore=tests/integration/test_http_server.py --ignore=tests/unit/core/test_mutations.py
 
       - name: Show mutation results summary
         run: mutmut show
