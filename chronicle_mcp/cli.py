@@ -26,10 +26,21 @@ logger = logging.getLogger(__name__)
 
 @click.group()
 @click.version_option()
+@click.option("-q", "--quiet", is_flag=True, help="Suppress output")
+@click.option("-v", "--verbose", count=True, help="Increase verbosity (-v, -vv, -vvv)")
 @click.pass_context  # type: ignore[untyped-decorator]
-def cli(ctx: click.Context) -> None:
+def cli(ctx: click.Context, quiet: bool, verbose: int) -> None:
     """ChronicleMCP - MCP server for secure local browser history access."""
-    pass
+    ctx.ensure_object(dict)
+    ctx.obj["quiet"] = quiet
+    ctx.obj["verbose"] = verbose
+    if quiet:
+        import logging
+        logging.getLogger().setLevel(logging.ERROR)
+    elif verbose > 0:
+        import logging
+        level = {1: logging.INFO, 2: logging.DEBUG}.get(verbose, logging.DEBUG)
+        logging.getLogger().setLevel(level)
 
 
 @cli.command("version")  # type: ignore[untyped-decorator]

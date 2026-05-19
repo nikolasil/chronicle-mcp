@@ -7,6 +7,37 @@ from importlib.metadata import version as get_package_version
 from pathlib import Path
 from typing import Any
 
+VALID_LOG_LEVELS = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
+
+
+def _validate_log_level(level: str) -> str:
+    """Validate log level string."""
+    if level.upper() not in VALID_LOG_LEVELS:
+        raise ValueError(f"Invalid log_level '{level}'. Must be one of: {', '.join(sorted(VALID_LOG_LEVELS))}")
+    return level.upper()
+
+
+def _validate_positive_int(value: int, name: str) -> int:
+    """Validate that a value is a positive integer."""
+    if value <= 0:
+        raise ValueError(f"{name} must be positive, got {value}")
+    return value
+
+
+def _validate_log_level_from_env(value: str) -> str:
+    """Validate log level from environment variable."""
+    if not value:
+        return value
+    return _validate_log_level(value)
+
+
+def _validate_ttl_from_env(value: str) -> int:
+    """Validate TTL from environment variable."""
+    if not value:
+        return int(value)
+    return _validate_positive_int(int(value), "cache_ttl")
+
+
 logger = logging.getLogger(__name__)
 
 
@@ -229,6 +260,9 @@ def apply_env_overrides(config: Config) -> Config:
 
     Returns:
         Modified Config object
+
+    Raises:
+        ValueError: If environment variables contain invalid values
     """
     browser = get_env_override("browser", config.default_browser)
     if browser:
@@ -242,13 +276,13 @@ def apply_env_overrides(config: Config) -> Config:
     if format_:
         config.default_format = format_
 
-    log_level = get_env_override("log_level", config.log_level)
+    log_level = os.environ.get("CHRONICLE_LOG_LEVEL")
     if log_level:
-        config.log_level = log_level
+        config.log_level = _validate_log_level(log_level)
 
-    cache_ttl = get_env_override("cache_ttl", config.cache.ttl_seconds, int)
+    cache_ttl = os.environ.get("CHRONICLE_CACHE_TTL")
     if cache_ttl:
-        config.cache.ttl_seconds = cache_ttl
+        config.cache.ttl_seconds = _validate_positive_int(int(cache_ttl), "cache_ttl")
 
     return config
 

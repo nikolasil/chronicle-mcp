@@ -180,9 +180,15 @@ def count_domain_visits(conn: sqlite3.Connection, domain: str) -> int:
     Returns:
         Number of visits to the domain
     """
+    schema = detect_schema(conn)
+    cols = get_schema_columns(schema)
+    table = cols["table"]
+    url_col = cols["url_col"]
+    visit_count_col = cols["visit_count_col"]
+
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT SUM(visit_count) FROM urls WHERE url LIKE ?",
+        f"SELECT SUM({visit_count_col}) FROM {table} WHERE {url_col} LIKE ?",
         (f"%://{domain}/%",),
     )
     result = cursor.fetchone()
@@ -245,36 +251,60 @@ def search_by_date(
     """
     from datetime import datetime, timezone
 
-    cursor = conn.cursor()
-    chrome_epoch = datetime(1601, 1, 1, tzinfo=timezone.utc)
+    schema = detect_schema(conn)
+    cols = get_schema_columns(schema)
+    table = cols["table"]
+    title_col = cols["title_col"]
+    url_col = cols["url_col"]
+    timestamp_col = cols["timestamp_col"]
+
+    if schema == "chrome":
+        epoch = datetime(1601, 1, 1, tzinfo=timezone.utc)
+    elif schema == "firefox":
+        epoch = datetime(1970, 1, 1, tzinfo=timezone.utc)
+    else:
+        epoch = datetime(2001, 1, 1, tzinfo=timezone.utc)
 
     try:
         start_dt = datetime.fromisoformat(start_date)
         end_dt = datetime.fromisoformat(end_date)
 
-        # Ensure both datetimes are timezone-aware (UTC)
         if start_dt.tzinfo is None:
             start_dt = start_dt.replace(tzinfo=timezone.utc)
         if end_dt.tzinfo is None:
             end_dt = end_dt.replace(tzinfo=timezone.utc)
 
-        start_microseconds = int((start_dt - chrome_epoch).total_seconds() * 1_000_000)
-        end_microseconds = int((end_dt - chrome_epoch).total_seconds() * 1_000_000)
+        start_microseconds = int((start_dt - epoch).total_seconds() * 1_000_000)
+        end_microseconds = int((end_dt - epoch).total_seconds() * 1_000_000)
     except ValueError:
         return []
 
     search_query = f"%{query}%"
+    cursor = conn.cursor()
     cursor.execute(
-        """SELECT title, url, last_visit_time FROM urls
-           WHERE (title LIKE ? OR url LIKE ?)
-           AND last_visit_time >= ? AND last_visit_time <= ?
-           ORDER BY last_visit_time DESC LIMIT ?""",
+        f"""SELECT {title_col}, {url_col}, {timestamp_col} FROM {table}
+           WHERE ({title_col} LIKE ? OR {url_col} LIKE ?)
+           AND {timestamp_col} >= ? AND {timestamp_col} <= ?
+           ORDER BY {timestamp_col} DESC LIMIT ?""",
         (search_query, search_query, start_microseconds, end_microseconds, limit),
     )
-    return [
-        (title, sanitize_url(url), format_chrome_timestamp(ts))
-        for title, url, ts in cursor.fetchall()
-    ]
+    results = cursor.fetchall()
+
+    if schema == "chrome":
+        return [
+            (title, sanitize_url(url), format_chrome_timestamp(ts))
+            for title, url, ts in results
+        ]
+    elif schema == "firefox":
+        return [
+            (title, sanitize_url(url), format_firefox_timestamp(ts))
+            for title, url, ts in results
+        ]
+    else:
+        return [
+            (title, sanitize_url(url), format_safari_timestamp(ts))
+            for title, url, ts in results
+        ]
 
 
 def format_results(
@@ -427,9 +457,19 @@ def get_most_visited_pages(conn: sqlite3.Connection, limit: int = 20) -> list[tu
     Returns:
         List of (title, url, visit_count) tuples
     """
+    schema = detect_schema(conn)
+    if schema != "chrome":
+        return []
+
+    cols = get_schema_columns(schema)
+    table = cols["table"]
+    title_col = cols["title_col"]
+    url_col = cols["url_col"]
+    visit_count_col = cols["visit_count_col"]
+
     cursor = conn.cursor()
     cursor.execute(
-        "SELECT title, url, visit_count FROM urls WHERE title IS NOT NULL AND url LIKE 'http%' ORDER BY visit_count DESC LIMIT ?",
+        f"SELECT {title_col}, {url_col}, {visit_count_col} FROM {table} WHERE {title_col} IS NOT NULL AND {url_col} LIKE 'http%' ORDER BY {visit_count_col} DESC LIMIT ?",
         (limit,),
     )
     return [(row[0], sanitize_url(row[1]), row[2]) for row in cursor.fetchall()]
