@@ -111,7 +111,6 @@ app = create_app()
 
 @contextlib.asynccontextmanager
 async def lifespan(app: Starlette) -> Any:
-
     _metrics.set(
         RequestMetrics(default_browser=getattr(app.state, "default_browser", DEFAULT_BROWSER))
     )

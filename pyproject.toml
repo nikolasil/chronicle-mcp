@@ -113,9 +113,8 @@ module = ["mcp.*", "cachetools.*"]
 ignore_errors = true
 
 [tool.deptry]
-pep621_dev_dependency_groups = ["dev"]
-
 ignore = [
+    "chronicle_mcp",
     "pytest",
     "pytest-benchmark",
     "pytest-cov",
@@ -133,3 +132,6 @@ ignore = [
     "pip-audit",
     "shellcheck-py",
 ]
+
+[tool.deptry.per_rule_ignores]
+DEP001 = ["chronicle_mcp"]

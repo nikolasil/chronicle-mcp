@@ -165,7 +165,7 @@ class TestAnalyticsMutationSafety:
             result = HistoryService.analyze_productivity(browser="chrome")
             assert "productivity_score" in result
             assert "grade" in result
-            assert isinstance(result["productivity_score"], (int, float))
+            assert isinstance(result["productivity_score"], int | float)
             assert result["grade"] in ["A", "B+", "B", "C", "D", "F", "N/A"]
 
 

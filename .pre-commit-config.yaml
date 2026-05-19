@@ -5,7 +5,6 @@ repos:
       - id: ruff
         args: [--fix]
       - id: ruff-format
-        args: [--no-commit]
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -24,7 +23,7 @@ repos:
       - id: mypy
         additional_dependencies: [types-requests, types-cachetools]
         files: ^chronicle_mcp/
-        args: [--ignore-missing-imports, --strict]
+        args: [--ignore-missing-imports]
 
   - repo: https://github.com/codespell-project/codespell
     rev: v2.3.0

@@ -33,7 +33,7 @@ plugins:
       lang:
         - en
   - mdxinclude:
-      enabled: !ENV [ENABLE_MDX_INCLUDE, False]
+      enabled: false
   - social:
       enabled: true
       cards: true

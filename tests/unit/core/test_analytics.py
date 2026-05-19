@@ -101,7 +101,7 @@ class TestAnalyzeProductivity:
         """Should return productivity score and grade."""
         result = HistoryService.analyze_productivity(browser="chrome")
         assert "productivity_score" in result
-        assert isinstance(result["productivity_score"], (int, float))
+        assert isinstance(result["productivity_score"], int | float)
         assert 0 <= result["productivity_score"] <= 100
 
     def test_productivity_analysis_returns_grade(self, mock_chrome_path, sample_chrome_db):

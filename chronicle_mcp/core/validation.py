@@ -243,7 +243,7 @@ def validate_fuzzy_threshold(threshold: float) -> float:
     Raises:
         ValidationError: If threshold is out of range
     """
-    if not isinstance(threshold, (int, float)):
+    if not isinstance(threshold, int | float):
         raise ValidationError("Fuzzy threshold must be a number", field="fuzzy_threshold")
 
     if not 0.0 <= threshold <= 1.0:

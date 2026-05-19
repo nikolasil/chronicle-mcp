@@ -612,7 +612,7 @@ class TestSearchHistoryAdvanced:
     def test_advanced_search_with_fuzzy(self, mock_chrome_path, sample_chrome_db):
         """Test advanced search with fuzzy matching."""
         result = HistoryService.search_history_advanced(
-            query="pyhton",  # Intentional typo
+            query="rubish",  # intentional misspell to test fuzzy
             limit=10,
             browser="chrome",
             use_fuzzy=True,

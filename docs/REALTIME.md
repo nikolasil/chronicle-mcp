@@ -130,7 +130,7 @@ subscribe_to_history(
 Trigger actions when history changes:
 ```python
 subscribe_to_history(
-    browser="chrome", 
+    browser="chrome",
     event_types=["history_added", "history_deleted"]
 )
 ```
