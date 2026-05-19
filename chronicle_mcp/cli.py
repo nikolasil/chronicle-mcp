@@ -15,6 +15,7 @@ from chronicle_mcp.paths import get_available_browsers
 def ensure_logging() -> None:
     """Ensure logging is configured before use."""
     import logging
+
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
@@ -36,9 +37,11 @@ def cli(ctx: click.Context, quiet: bool, verbose: int) -> None:
     ctx.obj["verbose"] = verbose
     if quiet:
         import logging
+
         logging.getLogger().setLevel(logging.ERROR)
     elif verbose > 0:
         import logging
+
         level = {1: logging.INFO, 2: logging.DEBUG}.get(verbose, logging.DEBUG)
         logging.getLogger().setLevel(level)
 

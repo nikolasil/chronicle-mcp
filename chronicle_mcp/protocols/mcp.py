@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 
 mcp = FastMCP("Chronicle")
 
-F = TypeVar("F", bound=Callable[..., Any])
+T = TypeVar("T", bound=Callable[..., str])
 
 
 def handle_service_error(error: Exception) -> str:
@@ -58,12 +58,13 @@ def handle_service_error(error: Exception) -> str:
         return format_error_message("An unexpected error occurred")
 
 
-def mcp_tool(func: F) -> F:
+def mcp_tool(func: T) -> T:
     """Decorator to register MCP tools with standardized error handling.
 
     This decorator wraps MCP tools with consistent error handling,
     replacing the need for try/except blocks in each tool.
     """
+
     @functools.wraps(func)
     def wrapper(*args: Any, **kwargs: Any) -> str:
         try:
@@ -73,7 +74,7 @@ def mcp_tool(func: F) -> F:
 
     # Register with FastMCP
     registered = mcp.tool()(wrapper)
-    return registered
+    return wrapper  # type: ignore[return-value]
 
 
 @mcp_tool
@@ -84,7 +85,7 @@ def list_available_browsers() -> str:
         List of available browsers (chrome, edge, firefox)
     """
     result = HistoryService.list_available_browsers()
-    return result["message"]
+    return result["message"]  # type: ignore[no-any-return]
 
 
 @mcp_tool
@@ -108,7 +109,7 @@ def search_history(
     result = HistoryService.search_history(
         query=query, limit=limit, browser=browser, format_type=format_type
     )
-    return result["message"]
+    return result["message"]  # type: ignore[no-any-return]
 
 
 @mcp_tool
@@ -132,7 +133,7 @@ def get_recent_history(
     result = HistoryService.get_recent_history(
         hours=hours, limit=limit, browser=browser, format_type=format_type
     )
-    return result["message"]
+    return result["message"]  # type: ignore[no-any-return]
 
 
 @mcp_tool
@@ -147,7 +148,7 @@ def count_visits(domain: str, browser: str = "chrome") -> str:
         Number of visits to the domain or error message
     """
     result = HistoryService.count_visits(domain=domain, browser=browser)
-    return result["message"]
+    return result["message"]  # type: ignore[no-any-return]
 
 
 @mcp_tool
@@ -166,10 +167,8 @@ def list_top_domains(
     Returns:
         Formatted list of top domains or error message
     """
-    result = HistoryService.list_top_domains(
-        limit=limit, browser=browser, format_type=format_type
-    )
-    return result["message"]
+    result = HistoryService.list_top_domains(limit=limit, browser=browser, format_type=format_type)
+    return result["message"]  # type: ignore[no-any-return]
 
 
 @mcp_tool
@@ -202,7 +201,7 @@ def search_history_by_date(
         browser=browser,
         format_type=format_type,
     )
-    return result["message"]
+    return result["message"]  # type: ignore[no-any-return]
 
 
 @mcp_tool
@@ -226,7 +225,7 @@ def delete_history(
     result = HistoryService.delete_history(
         query=query, limit=limit, browser=browser, confirm=confirm
     )
-    return result["message"]
+    return result["message"]  # type: ignore[no-any-return]
 
 
 @mcp_tool
@@ -259,7 +258,7 @@ def search_by_domain(
         format_type=format_type,
         exclude_domains=exclude_domains,
     )
-    return result["message"]
+    return result["message"]  # type: ignore[no-any-return]
 
 
 @mcp_tool
@@ -273,7 +272,7 @@ def get_browser_stats(browser: str = "chrome") -> str:
         JSON string with browsing statistics
     """
     result = HistoryService.get_browser_stats(browser=browser)
-    return result["message"]
+    return result["message"]  # type: ignore[no-any-return]
 
 
 @mcp_tool
@@ -295,7 +294,7 @@ def get_most_visited_pages(
     result = HistoryService.get_most_visited_pages(
         limit=limit, browser=browser, format_type=format_type
     )
-    return result["message"]
+    return result["message"]  # type: ignore[no-any-return]
 
 
 @mcp_tool
@@ -319,7 +318,7 @@ def export_history(
     result = HistoryService.export_history(
         format_type=format_type, limit=limit, query=query, browser=browser
     )
-    return result["content"]
+    return result["content"]  # type: ignore[no-any-return]
 
 
 @mcp_tool
@@ -361,7 +360,7 @@ def search_history_advanced(
         use_fuzzy=use_fuzzy,
         fuzzy_threshold=fuzzy_threshold,
     )
-    return result["message"]
+    return result["message"]  # type: ignore[no-any-return]
 
 
 @mcp_tool
@@ -388,7 +387,7 @@ def sync_history(
         merge_strategy=merge_strategy,
         dry_run=dry_run,
     )
-    return result["message"]
+    return result["message"]  # type: ignore[no-any-return]
 
 
 @mcp_tool
@@ -399,7 +398,7 @@ def list_available_bookmarks() -> str:
         List of available browsers with bookmarks
     """
     result = HistoryService.list_available_bookmarks()
-    return result["message"]
+    return result["message"]  # type: ignore[no-any-return]
 
 
 @mcp_tool
@@ -410,7 +409,7 @@ def list_available_downloads() -> str:
         List of available browsers with downloads
     """
     result = HistoryService.list_available_downloads()
-    return result["message"]
+    return result["message"]  # type: ignore[no-any-return]
 
 
 @mcp_tool
@@ -437,7 +436,7 @@ def get_bookmarks(
         browser=browser,
         format_type=format_type,
     )
-    return result["message"]
+    return result["message"]  # type: ignore[no-any-return]
 
 
 @mcp_tool
@@ -464,7 +463,7 @@ def get_downloads(
         browser=browser,
         format_type=format_type,
     )
-    return result["message"]
+    return result["message"]  # type: ignore[no-any-return]
 
 
 @mcp_tool
@@ -590,7 +589,7 @@ def generate_insights_report(
     )
     if format_type == "json":
         return json.dumps(result, indent=2)
-    return result["summary_markdown"]
+    return result["summary_markdown"]  # type: ignore[no-any-return]
 
 
 @mcp_tool

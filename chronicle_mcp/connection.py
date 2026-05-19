@@ -69,7 +69,8 @@ class DatabaseLockedError(ConnectionError):
         super().__init__(
             message=f"Unable to access {browser} history database (locked)",
             browser=browser,
-            details="Ensure the browser is closed before querying" + (f" at {path}" if path else ""),
+            details="Ensure the browser is closed before querying"
+            + (f" at {path}" if path else ""),
         )
 
 

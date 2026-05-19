@@ -5,7 +5,6 @@ catching common fixture pollution issues.
 """
 
 
-
 class TestFixtureIsolation:
     """Verify that fixtures don't leak state between tests."""
 

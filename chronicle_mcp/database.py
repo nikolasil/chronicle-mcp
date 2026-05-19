@@ -99,18 +99,15 @@ def query_history(
 
     if schema == "chrome":
         return [
-            (title, sanitize_url(url), format_chrome_timestamp(ts))
-            for title, url, ts in results
+            (title, sanitize_url(url), format_chrome_timestamp(ts)) for title, url, ts in results
         ]
     elif schema == "firefox":
         return [
-            (title, sanitize_url(url), format_firefox_timestamp(ts))
-            for title, url, ts in results
+            (title, sanitize_url(url), format_firefox_timestamp(ts)) for title, url, ts in results
         ]
     else:
         return [
-            (title, sanitize_url(url), format_safari_timestamp(ts))
-            for title, url, ts in results
+            (title, sanitize_url(url), format_safari_timestamp(ts)) for title, url, ts in results
         ]
 
 
@@ -154,18 +151,15 @@ def query_recent_history(
 
     if schema == "chrome":
         return [
-            (title, sanitize_url(url), format_chrome_timestamp(ts))
-            for title, url, ts in results
+            (title, sanitize_url(url), format_chrome_timestamp(ts)) for title, url, ts in results
         ]
     elif schema == "firefox":
         return [
-            (title, sanitize_url(url), format_firefox_timestamp(ts))
-            for title, url, ts in results
+            (title, sanitize_url(url), format_firefox_timestamp(ts)) for title, url, ts in results
         ]
     else:
         return [
-            (title, sanitize_url(url), format_safari_timestamp(ts))
-            for title, url, ts in results
+            (title, sanitize_url(url), format_safari_timestamp(ts)) for title, url, ts in results
         ]
 
 
@@ -316,18 +310,15 @@ def search_by_date(
 
     if schema == "chrome":
         return [
-            (title, sanitize_url(url), format_chrome_timestamp(ts))
-            for title, url, ts in results
+            (title, sanitize_url(url), format_chrome_timestamp(ts)) for title, url, ts in results
         ]
     elif schema == "firefox":
         return [
-            (title, sanitize_url(url), format_firefox_timestamp(ts))
-            for title, url, ts in results
+            (title, sanitize_url(url), format_firefox_timestamp(ts)) for title, url, ts in results
         ]
     else:
         return [
-            (title, sanitize_url(url), format_safari_timestamp(ts))
-            for title, url, ts in results
+            (title, sanitize_url(url), format_safari_timestamp(ts)) for title, url, ts in results
         ]
 
 

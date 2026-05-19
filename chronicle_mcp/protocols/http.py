@@ -56,7 +56,7 @@ class RequestMetrics:
         self._latency_token = _request_latency_total.set(0.0)
         self._start_token = _start_time.set(time.time())
         self._default_browser_token = _default_browser.set(default_browser)
-        self._histogram_buckets = {
+        self._histogram_buckets: dict[str, list[float]] = {
             "search": [],
             "recent": [],
             "count": [],
@@ -985,9 +985,7 @@ async def unsubscribe_endpoint(request: Request) -> JSONResponse:
 async def subscription_status_endpoint(request: Request) -> JSONResponse:
     try:
         data = await request.json() if await request.body() else {}
-        result = HistoryService.get_subscription_status(
-            subscription_id=data.get("subscription_id")
-        )
+        result = HistoryService.get_subscription_status(subscription_id=data.get("subscription_id"))
         return JSONResponse(result)
     except Exception as e:
         return handle_service_error_http(e)

@@ -900,6 +900,7 @@ class TestWithConnectionErrorHandling:
 
     def test_unexpected_error_converted_to_database_error(self, monkeypatch):
         """Test unexpected exceptions are converted to DatabaseError."""
+
         def mock_get_history_connection(browser):
             raise RuntimeError("Unexpected error")
 

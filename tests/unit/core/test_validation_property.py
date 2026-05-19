@@ -174,10 +174,13 @@ class TestValidateFuzzyThresholdProperty:
 class TestValidateExcludeDomainsProperty:
     """Property-based tests for validate_exclude_domains."""
 
-    @given(domains=st.lists(
-        st.sampled_from(["example.com", "test.org", "domain.net", "site.io", "app.dev"]),
-        min_size=1, max_size=20
-    ))
+    @given(
+        domains=st.lists(
+            st.sampled_from(["example.com", "test.org", "domain.net", "site.io", "app.dev"]),
+            min_size=1,
+            max_size=20,
+        )
+    )
     @settings(max_examples=50)
     def test_valid_domain_list(self, domains):
         """Valid domain lists should be processed."""
@@ -185,10 +188,13 @@ class TestValidateExcludeDomainsProperty:
         assert isinstance(result, list)
         assert len(result) <= len(domains)
 
-    @given(domains=st.lists(
-        st.sampled_from(["example.com", "test.org", "", "domain.net", "  "]),
-        min_size=1, max_size=20
-    ))
+    @given(
+        domains=st.lists(
+            st.sampled_from(["example.com", "test.org", "", "domain.net", "  "]),
+            min_size=1,
+            max_size=20,
+        )
+    )
     @settings(max_examples=50)
     def test_empty_strings_filtered(self, domains):
         """Empty strings in domain lists should be filtered."""

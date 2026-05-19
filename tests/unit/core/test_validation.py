@@ -26,18 +26,21 @@ from chronicle_mcp.core.validation import (
 class TestValidateBrowser:
     """Tests for validate_browser function."""
 
-    @pytest.mark.parametrize("browser,expected", [
-        ("chrome", "chrome"),
-        ("CHROME", "chrome"),
-        ("Chrome", "chrome"),
-        ("edge", "edge"),
-        ("EDGE", "edge"),
-        ("Firefox", "firefox"),
-        ("BRAVE", "brave"),
-        ("Safari", "safari"),
-        ("vivaldi", "vivaldi"),
-        ("opera", "opera"),
-    ])
+    @pytest.mark.parametrize(
+        "browser,expected",
+        [
+            ("chrome", "chrome"),
+            ("CHROME", "chrome"),
+            ("Chrome", "chrome"),
+            ("edge", "edge"),
+            ("EDGE", "edge"),
+            ("Firefox", "firefox"),
+            ("BRAVE", "brave"),
+            ("Safari", "safari"),
+            ("vivaldi", "vivaldi"),
+            ("opera", "opera"),
+        ],
+    )
     def test_valid_browser_case_normalization(self, browser, expected):
         result = validate_browser(browser)
         assert result == expected

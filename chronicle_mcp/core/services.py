@@ -1078,7 +1078,7 @@ class HistoryService:
         cls,
         browser: str,
         event_types: list[str],
-        callback: Callable[[Any], None],
+        callback: Callable[[Any], None] | None = None,
     ) -> dict[str, Any]:
         """Subscribe to history changes for a browser.
 
@@ -1103,7 +1103,7 @@ class HistoryService:
                 raise ValueError(f"Invalid event type: {et}")
 
         manager = get_subscription_manager()
-        subscription_id = manager.subscribe(browser_lower, event_type_enums, callback)
+        subscription_id = manager.subscribe(browser_lower, event_type_enums, callback if callback is not None else lambda e: None)
         stats = manager.get_stats()
 
         return {

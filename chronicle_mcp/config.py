@@ -13,7 +13,9 @@ VALID_LOG_LEVELS = {"DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
 def _validate_log_level(level: str) -> str:
     """Validate log level string."""
     if level.upper() not in VALID_LOG_LEVELS:
-        raise ValueError(f"Invalid log_level '{level}'. Must be one of: {', '.join(sorted(VALID_LOG_LEVELS))}")
+        raise ValueError(
+            f"Invalid log_level '{level}'. Must be one of: {', '.join(sorted(VALID_LOG_LEVELS))}"
+        )
     return level.upper()
 
 

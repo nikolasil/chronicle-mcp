@@ -51,9 +51,7 @@ class DatabaseLockedError(ServiceError):
         msg = f"Unable to access {browser} history database (locked)"
         if path:
             msg += f" at {path}"
-        super().__init__(
-            message=msg, code="DATABASE_LOCKED"
-        )
+        super().__init__(message=msg, code="DATABASE_LOCKED")
 
 
 class PermissionDeniedError(ServiceError):
