@@ -156,7 +156,7 @@ jobs:
           format: 'sarif'
           output: 'trivy-fs-results.sarif'
 
-      
+
 
   secret-scan:
     runs-on: ubuntu-latest
