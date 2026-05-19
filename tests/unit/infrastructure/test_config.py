@@ -320,6 +320,15 @@ class TestApplyEnvOverrides:
         assert result.log_level == "DEBUG"
         assert result.cache.ttl_seconds == 600
 
+    def test_empty_cache_ttl_env_var(self, monkeypatch):
+        """Test that empty CHRONICLE_CACHE_TTL doesn't crash and keeps default."""
+        monkeypatch.setenv("CHRONICLE_CACHE_TTL", "")
+
+        config = Config()
+        result = apply_env_overrides(config)
+
+        assert result.cache.ttl_seconds == 300
+
 
 class TestJSONFormatter:
     """Tests for JSONFormatter class."""

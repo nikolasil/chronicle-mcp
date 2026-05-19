@@ -8,23 +8,9 @@ import logging
 from collections.abc import Callable
 from typing import Any
 
-from chronicle_mcp.connection import (
-    BrowserNotFoundError as ConnBrowserNotFoundError,
-)
-from chronicle_mcp.connection import (
-    ConnectionError as ConnConnectionError,
-)
-from chronicle_mcp.connection import (
-    DatabaseLockedError as ConnDatabaseLockedError,
-)
-from chronicle_mcp.connection import (
-    PermissionDeniedError as ConnPermissionDeniedError,
-)
-from chronicle_mcp.connection import (
-    get_history_connection,
-)
 from chronicle_mcp.core.exceptions import (
     BrowserNotFoundError,
+    BrowserPathNotFoundError,
     DatabaseError,
     DatabaseLockedError,
     PermissionDeniedError,
@@ -33,7 +19,9 @@ from chronicle_mcp.core.exceptions import (
 logger = logging.getLogger(__name__)
 
 # Module-level reference to get_history_connection, can be patched by tests
-_get_history_connection = get_history_connection
+from chronicle_mcp.connection import get_history_connection as _get_history_connection_func
+
+_get_history_connection = _get_history_connection_func
 
 
 def with_connection(browser: str, operation: Callable[..., Any]) -> Any:
@@ -48,15 +36,34 @@ def with_connection(browser: str, operation: Callable[..., Any]) -> Any:
 
     Raises:
         BrowserNotFoundError: If browser not found
+        BrowserPathNotFoundError: If path not found
         DatabaseLockedError: If database is locked
         PermissionDeniedError: If permission denied
         DatabaseError: For other database errors
     """
+    from chronicle_mcp.connection import (
+        BrowserNotFoundError as ConnBrowserNotFoundError,
+    )
+    from chronicle_mcp.connection import (
+        BrowserPathNotFoundError as ConnBrowserPathNotFoundError,
+    )
+    from chronicle_mcp.connection import (
+        ConnectionError as ConnConnectionError,
+    )
+    from chronicle_mcp.connection import (
+        DatabaseLockedError as ConnDatabaseLockedError,
+    )
+    from chronicle_mcp.connection import (
+        PermissionDeniedError as ConnPermissionDeniedError,
+    )
+
     try:
         with _get_history_connection(browser) as conn:
             return operation(conn)
     except ConnBrowserNotFoundError:
         raise BrowserNotFoundError(browser)
+    except ConnBrowserPathNotFoundError:
+        raise BrowserPathNotFoundError(browser, "")
     except ConnDatabaseLockedError:
         raise DatabaseLockedError(browser)
     except ConnPermissionDeniedError:

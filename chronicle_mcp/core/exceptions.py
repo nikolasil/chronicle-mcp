@@ -92,3 +92,10 @@ class InvalidDateRangeError(ServiceError):
         self.start_date = start_date
         self.end_date = end_date
         super().__init__(message=f"Invalid date range: {reason}", code="INVALID_DATE_RANGE")
+
+
+class UnexpectedError(ServiceError):
+    """Raised for unexpected internal errors."""
+
+    def __init__(self, message: str = "An unexpected error occurred"):
+        super().__init__(message, code="UNEXPECTED_ERROR")

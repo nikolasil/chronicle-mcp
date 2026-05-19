@@ -3,7 +3,6 @@
 import json
 from typing import Any
 
-from chronicle_mcp.connection import get_history_connection
 from chronicle_mcp.core._connection import with_connection
 from chronicle_mcp.core.exceptions import BrowserNotFoundError
 from chronicle_mcp.core.formatters import (
@@ -122,8 +121,7 @@ def sync_history(
             "message": format_sync_preview(source, target, entries_count, strategy),
         }
 
-    with get_history_connection(source) as conn_source:
-        entries = get_history_entries(conn_source, 10000)
+    entries = with_connection(source, lambda conn: get_history_entries(conn, 10000))
 
     synced_count = sync_to_browser(target_path, entries, strategy)
 

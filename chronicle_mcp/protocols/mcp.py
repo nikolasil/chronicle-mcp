@@ -8,7 +8,7 @@ import functools
 import json
 import logging
 from collections.abc import Callable
-from typing import Any, TypeVar
+from typing import Any, TypedDict, TypeVar
 
 from fastmcp import FastMCP
 
@@ -30,6 +30,103 @@ logger = logging.getLogger(__name__)
 mcp = FastMCP("Chronicle")
 
 T = TypeVar("T", bound=Callable[..., str])
+
+
+class SearchHistoryResult(TypedDict):
+    results: list[tuple[str, str, int]]
+    count: int
+    query: str
+    message: str
+
+
+class RecentHistoryResult(TypedDict):
+    results: list[tuple[str, str, int]]
+    count: int
+    hours: int
+    message: str
+
+
+class CountVisitsResult(TypedDict):
+    domain: str
+    browser: str
+    count: int
+    message: str
+
+
+class TopDomainsResult(TypedDict):
+    domains: list[tuple[str, int]]
+    count: int
+    message: str
+
+
+class MostVisitedPagesResult(TypedDict):
+    pages: list[tuple[str, str, int]]
+    count: int
+    message: str
+
+
+class SearchByDateResult(TypedDict):
+    results: list[tuple[str, str, int]]
+    count: int
+    query: str
+    start_date: str
+    end_date: str
+    message: str
+
+
+class AdvancedSearchResult(TypedDict):
+    results: list[tuple[str, str, int]]
+    count: int
+    query: str
+    options: dict[str, Any]
+    message: str
+
+
+class BrowserStatsResult(TypedDict):
+    stats: dict[str, Any]
+    message: str
+
+
+class BookmarksResult(TypedDict):
+    results: list[tuple[str, str]]
+    count: int
+    browser: str
+    message: str
+
+
+class DownloadsResult(TypedDict):
+    results: list[tuple[str, str, int]]
+    count: int
+    browser: str
+    message: str
+
+
+class DeleteHistoryResult(TypedDict):
+    preview: bool | None
+    deleted: int | None
+    query: str
+    count: int
+    browser: str
+    message: str
+
+
+class ExportHistoryResult(TypedDict):
+    format: str
+    content: str
+
+
+class SyncHistoryResult(TypedDict):
+    dry_run: bool
+    source: str
+    target: str
+    entries_count: int
+    merge_strategy: str
+    message: str
+
+
+class BrowserListResult(TypedDict):
+    browsers: list[str]
+    message: str
 
 
 def handle_service_error(error: Exception) -> str:

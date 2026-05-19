@@ -4,6 +4,8 @@ This module provides a centralized way to connect to browser history databases
 while avoiding 'Database Locked' errors by using temporary copies.
 """
 
+from __future__ import annotations
+
 import logging
 import os
 import shutil
@@ -12,7 +14,15 @@ import tempfile
 import time
 from collections.abc import Callable, Generator
 from contextlib import contextmanager
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from chronicle_mcp.core.exceptions import (
+        BrowserNotFoundError,
+        BrowserPathNotFoundError,
+        DatabaseLockedError,
+        PermissionDeniedError,
+    )
 
 from chronicle_mcp.paths import get_browser_path
 
@@ -27,51 +37,6 @@ class ConnectionError(Exception):
         self.browser = browser
         self.details = details
         super().__init__(self.message)
-
-
-class BrowserNotFoundError(ConnectionError):
-    """Raised when the specified browser's history is not found."""
-
-    def __init__(self, browser: str):
-        super().__init__(
-            message=f"Could not find {browser} history",
-            browser=browser,
-            details=f"Ensure {browser} is installed and has history data",
-        )
-
-
-class BrowserPathNotFoundError(ConnectionError):
-    """Raised when the browser's history path doesn't exist."""
-
-    def __init__(self, browser: str, path: str):
-        super().__init__(
-            message=f"Could not find {browser} history at {path}",
-            browser=browser,
-            details="Check that the path exists and is accessible",
-        )
-
-
-class PermissionDeniedError(ConnectionError):
-    """Raised when permission is denied accessing the history database."""
-
-    def __init__(self, browser: str, path: str):
-        super().__init__(
-            message=f"Permission denied accessing {browser} history at {path}",
-            browser=browser,
-            details="Ensure the browser is closed and you have read permissions",
-        )
-
-
-class DatabaseLockedError(ConnectionError):
-    """Raised when the database is locked (browser is open)."""
-
-    def __init__(self, browser: str, path: str | None = None):
-        super().__init__(
-            message=f"Unable to access {browser} history database (locked)",
-            browser=browser,
-            details="Ensure the browser is closed before querying"
-            + (f" at {path}" if path else ""),
-        )
 
 
 def get_temp_filename(browser: str) -> str:
@@ -130,6 +95,13 @@ def get_history_connection(
         PermissionDeniedError: If the file cannot be read
         DatabaseLockedError: If the database is locked after retries
     """
+    from chronicle_mcp.core.exceptions import (
+        BrowserNotFoundError,
+        BrowserPathNotFoundError,
+        DatabaseLockedError,
+        PermissionDeniedError,
+    )
+
     browser_lower = browser.lower()
 
     history_path = get_browser_path(browser_lower)
@@ -216,3 +188,24 @@ def execute_with_connection(browser: str, func: Callable[[sqlite3.Connection], A
     """
     with get_history_connection(browser) as conn:
         return func(conn)
+
+
+# Re-export exceptions from core.exceptions for backward compatibility
+from chronicle_mcp.core.exceptions import (
+    BrowserNotFoundError,
+    BrowserPathNotFoundError,
+    DatabaseLockedError,
+    PermissionDeniedError,
+)
+
+__all__ = [
+    "BrowserNotFoundError",
+    "BrowserPathNotFoundError",
+    "DatabaseLockedError",
+    "PermissionDeniedError",
+    "ConnectionError",
+    "get_history_connection",
+    "execute_with_connection",
+    "get_temp_filename",
+    "cleanup_temp_file",
+]

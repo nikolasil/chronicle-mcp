@@ -9,19 +9,7 @@ import logging
 from io import StringIO
 from typing import Any
 
-from chronicle_mcp.connection import (
-    BrowserNotFoundError as ConnBrowserNotFoundError,
-)
-from chronicle_mcp.connection import (
-    ConnectionError as ConnConnectionError,
-)
-from chronicle_mcp.connection import (
-    DatabaseLockedError as ConnDatabaseLockedError,
-)
-from chronicle_mcp.connection import (
-    PermissionDeniedError as ConnPermissionDeniedError,
-)
-from chronicle_mcp.connection import get_history_connection
+from chronicle_mcp.core._connection import with_connection
 from chronicle_mcp.core.categories import (
     CATEGORY_DESCRIPTIONS,
     CATEGORY_PATTERNS,
@@ -29,12 +17,6 @@ from chronicle_mcp.core.categories import (
     categorize_url,
     generate_recommendations,
     get_category_breakdown,
-)
-from chronicle_mcp.core.exceptions import (
-    BrowserNotFoundError,
-    DatabaseError,
-    DatabaseLockedError,
-    PermissionDeniedError,
 )
 from chronicle_mcp.core.validation import (
     validate_browser,
@@ -79,39 +61,6 @@ def get_browser_stats(
     stats = with_connection(browser_lower, db_get_browser_stats)
 
     return {"stats": stats, "message": format_browser_stats(stats, format_clean)}
-
-
-def with_connection(browser: str, operation: Any) -> Any:
-    """Execute an operation with a database connection.
-
-    Args:
-        browser: Browser name
-        operation: Function that takes a connection and returns data
-
-    Returns:
-        Result of the operation
-
-    Raises:
-        BrowserNotFoundError: If browser not found
-        DatabaseLockedError: If database is locked
-        PermissionDeniedError: If permission denied
-        DatabaseError: For other database errors
-    """
-    try:
-        with get_history_connection(browser) as conn:
-            return operation(conn)
-    except ConnBrowserNotFoundError:
-        raise BrowserNotFoundError(browser)
-    except ConnDatabaseLockedError:
-        raise DatabaseLockedError(browser)
-    except ConnPermissionDeniedError:
-        raise PermissionDeniedError(browser, "")
-    except ConnConnectionError as e:
-        logger.error(f"Connection error: {e.message}")
-        raise DatabaseError(f"Failed to access {browser} history: {e.message}")
-    except Exception as e:
-        logger.exception("Unexpected database error")
-        raise DatabaseError(f"Database operation failed: {e}")
 
 
 def compare_time_periods(

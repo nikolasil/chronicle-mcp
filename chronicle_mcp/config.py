@@ -36,7 +36,7 @@ def _validate_log_level_from_env(value: str) -> str:
 def _validate_ttl_from_env(value: str) -> int:
     """Validate TTL from environment variable."""
     if not value:
-        return int(value)
+        return 0
     return _validate_positive_int(int(value), "cache_ttl")
 
 
@@ -283,7 +283,7 @@ def apply_env_overrides(config: Config) -> Config:
         config.log_level = _validate_log_level(log_level)
 
     cache_ttl = os.environ.get("CHRONICLE_CACHE_TTL")
-    if cache_ttl:
+    if cache_ttl is not None and cache_ttl != "":
         config.cache.ttl_seconds = _validate_positive_int(int(cache_ttl), "cache_ttl")
 
     return config

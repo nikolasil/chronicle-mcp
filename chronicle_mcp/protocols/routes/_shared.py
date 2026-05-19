@@ -1,6 +1,7 @@
 import contextvars
 import time
-from typing import TYPE_CHECKING
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -117,11 +118,11 @@ def error_response(
     return JSONResponse({"error": message, "correlation_id": error_id}, status_code=status_code)
 
 
-def handle_service_error_http(error: Exception) -> JSONResponse:
-    import json
-    import logging
+def handle_service_error(e: Exception) -> JSONResponse:
+    """Handle service errors with specific exception types."""
+    from json import JSONDecodeError
 
-    from chronicle_mcp.core import (
+    from chronicle_mcp.core.exceptions import (
         BrowserNotFoundError,
         DatabaseError,
         DatabaseLockedError,
@@ -130,22 +131,88 @@ def handle_service_error_http(error: Exception) -> JSONResponse:
         ValidationError,
     )
 
-    logger = logging.getLogger(__name__)
-
-    if isinstance(error, ValidationError):
-        return error_response(error.message, 400)
-    elif isinstance(error, json.JSONDecodeError):
+    if isinstance(e, JSONDecodeError):
         return error_response("Invalid JSON in request body", 422)
-    elif isinstance(error, BrowserNotFoundError):
-        return error_response(error.message, 404)
-    elif isinstance(error, DatabaseLockedError):
-        return error_response(error.message, 423)
-    elif isinstance(error, PermissionDeniedError):
-        return error_response(error.message, 403)
-    elif isinstance(error, DatabaseError):
-        return error_response(error.message, 500)
-    elif isinstance(error, ServiceError):
-        return error_response(error.message, 500)
+    elif isinstance(e, ValidationError):
+        return error_response(e.message, 400)
+    elif isinstance(e, BrowserNotFoundError):
+        return error_response(e.message, 404)
+    elif isinstance(e, DatabaseLockedError):
+        return error_response(e.message, 423)
+    elif isinstance(e, PermissionDeniedError):
+        return error_response(e.message, 403)
+    elif isinstance(e, DatabaseError):
+        return error_response(e.message, 500)
+    elif isinstance(e, ServiceError):
+        return error_response(e.message, 500)
     else:
+        import logging
+
+        logger = logging.getLogger(__name__)
         logger.exception("Unexpected error in HTTP endpoint")
         return error_response("An unexpected error occurred", 500)
+
+
+def handle_service_error_http(error: Exception) -> JSONResponse:
+    """Deprecated: Use handle_service_error instead."""
+    return handle_service_error(error)
+
+
+def validate_request_data(
+    data: dict[str, Any],
+    field_validators: list[tuple[str, Callable[..., Any], dict[str, Any]]],
+) -> tuple[dict[str, Any], JSONResponse | None]:
+    """Validate request data using field validators.
+
+    Args:
+        data: Request data dictionary
+        field_validators: List of (field_name, validator_func, validator_kwargs) tuples
+
+    Returns:
+        Tuple of (validated_data, error_response) where error_response is None if valid
+    """
+    from chronicle_mcp.core import ValidationError
+    from chronicle_mcp.core.validation import (
+        validate_browser,
+        validate_domain,
+        validate_format_type,
+        validate_fuzzy_threshold,
+        validate_hours,
+        validate_limit,
+        validate_merge_strategy,
+        validate_query,
+        validate_sort_by,
+    )
+
+    validated: dict[str, Any] = {}
+
+    for field_name, validator_func, kwargs in field_validators:
+        value = data.get(field_name)
+        if value is None:
+            continue
+
+        try:
+            if validator_func is validate_query:
+                validated[field_name] = validator_func(value, field_name=field_name)
+            elif validator_func is validate_domain:
+                validated[field_name] = validator_func(value)
+            elif validator_func is validate_limit:
+                validated[field_name] = validator_func(value, **kwargs)
+            elif validator_func is validate_hours:
+                validated[field_name] = validate_hours(value)
+            elif validator_func is validate_browser:
+                validated[field_name] = validate_browser(value)
+            elif validator_func is validate_format_type:
+                validated[field_name] = validator_func(value, **kwargs)
+            elif validator_func is validate_sort_by:
+                validated[field_name] = validate_sort_by(value)
+            elif validator_func is validate_merge_strategy:
+                validated[field_name] = validate_merge_strategy(value)
+            elif validator_func is validate_fuzzy_threshold:
+                validated[field_name] = validate_fuzzy_threshold(value)
+            else:
+                validated[field_name] = validator_func(value, **kwargs)
+        except ValidationError as e:
+            return {}, error_response(e.message, 400)
+
+    return validated, None
