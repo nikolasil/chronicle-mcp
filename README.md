@@ -567,6 +567,16 @@ get_downloads(query="pdf", browser="firefox")
 | POST | `/api/bookmarks/query` | Query bookmarks |
 | GET | `/api/downloads` | List available downloads |
 | POST | `/api/downloads/query` | Query downloads |
+| POST | `/api/compare-periods` | Compare browsing periods |
+| POST | `/api/productivity` | Analyze productivity |
+| POST | `/api/suggest-categories` | Suggest URL categories |
+| POST | `/api/visualization` | Export visualization data |
+| POST | `/api/insights` | Generate insights report |
+| POST | `/api/subscribe` | Subscribe to history changes |
+| POST | `/api/unsubscribe` | Unsubscribe from history |
+| POST | `/api/subscription-status` | Get subscription status |
+| POST | `/api/find-duplicates` | Find duplicate entries |
+| POST | `/api/delete-duplicates` | Delete duplicate entries |
 
 #### Request/Response Examples
 

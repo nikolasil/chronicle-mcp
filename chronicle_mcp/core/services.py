@@ -1103,7 +1103,9 @@ class HistoryService:
                 raise ValueError(f"Invalid event type: {et}")
 
         manager = get_subscription_manager()
-        subscription_id = manager.subscribe(browser_lower, event_type_enums, callback if callback is not None else lambda e: None)
+        subscription_id = manager.subscribe(
+            browser_lower, event_type_enums, callback if callback is not None else lambda e: None
+        )
         stats = manager.get_stats()
 
         return {

@@ -73,7 +73,7 @@ def mcp_tool(func: T) -> T:
             return handle_service_error(e)
 
     # Register with FastMCP
-    registered = mcp.tool()(wrapper)
+    mcp.tool()(wrapper)
     return wrapper  # type: ignore[return-value]
 
 
