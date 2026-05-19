@@ -2,8 +2,6 @@
 
 from unittest.mock import patch
 
-import pytest
-
 
 class TestServerEntryPoint:
     """Tests for MCP server initialization."""
@@ -52,8 +50,9 @@ class TestServerHelpOption:
 
     def test_server_help_removed(self):
         """Verify server no longer has interactive --help (simplified entry point)."""
-        import chronicle_mcp.server as server_module
         import inspect
+
+        import chronicle_mcp.server as server_module
 
         source = inspect.getsource(server_module)
         assert "sys.argv" not in source

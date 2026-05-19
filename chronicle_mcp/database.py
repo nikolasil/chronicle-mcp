@@ -1,3 +1,10 @@
+"""Database query operations for browser history.
+
+This module provides functions for querying and manipulating browser history
+across different browser schemas (Chrome, Firefox, Safari). It handles timestamp
+conversion, URL sanitization, and schema-aware queries.
+"""
+
 import re
 import sqlite3
 from datetime import datetime, timedelta, timezone
@@ -75,16 +82,36 @@ def query_history(
     Returns:
         List of (title, url, timestamp) tuples
     """
+    schema = detect_schema(conn)
+    cols = get_schema_columns(schema)
+    table = cols["table"]
+    title_col = cols["title_col"]
+    url_col = cols["url_col"]
+    timestamp_col = cols["timestamp_col"]
+
     cursor = conn.cursor()
     search_query = f"%{query}%"
     cursor.execute(
-        "SELECT title, url, last_visit_time FROM urls WHERE title LIKE ? OR url LIKE ? ORDER BY last_visit_time DESC LIMIT ?",
+        f"SELECT {title_col}, {url_col}, {timestamp_col} FROM {table} WHERE {title_col} LIKE ? OR {url_col} LIKE ? ORDER BY {timestamp_col} DESC LIMIT ?",
         (search_query, search_query, limit),
     )
-    return [
-        (title, sanitize_url(url), format_chrome_timestamp(ts))
-        for title, url, ts in cursor.fetchall()
-    ]
+    results = cursor.fetchall()
+
+    if schema == "chrome":
+        return [
+            (title, sanitize_url(url), format_chrome_timestamp(ts))
+            for title, url, ts in results
+        ]
+    elif schema == "firefox":
+        return [
+            (title, sanitize_url(url), format_firefox_timestamp(ts))
+            for title, url, ts in results
+        ]
+    else:
+        return [
+            (title, sanitize_url(url), format_safari_timestamp(ts))
+            for title, url, ts in results
+        ]
 
 
 def query_recent_history(
@@ -101,19 +128,45 @@ def query_recent_history(
     Returns:
         List of (title, url, timestamp) tuples
     """
-    cursor = conn.cursor()
-    chrome_epoch = datetime(1601, 1, 1, tzinfo=timezone.utc)
-    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
-    cutoff_microseconds = int((cutoff - chrome_epoch).total_seconds() * 1_000_000)
+    schema = detect_schema(conn)
+    cols = get_schema_columns(schema)
+    table = cols["table"]
+    title_col = cols["title_col"]
+    url_col = cols["url_col"]
+    timestamp_col = cols["timestamp_col"]
 
+    if schema == "chrome":
+        chrome_epoch = datetime(1601, 1, 1, tzinfo=timezone.utc)
+    elif schema == "firefox":
+        chrome_epoch = datetime(1970, 1, 1, tzinfo=timezone.utc)
+    else:
+        chrome_epoch = datetime(2001, 1, 1, tzinfo=timezone.utc)
+
+    cutoff = datetime.now(timezone.utc) - timedelta(hours=hours)
+    cutoff_timestamp = int((cutoff - chrome_epoch).total_seconds() * 1_000_000)
+
+    cursor = conn.cursor()
     cursor.execute(
-        "SELECT title, url, last_visit_time FROM urls WHERE last_visit_time > ? ORDER BY last_visit_time DESC LIMIT ?",
-        (cutoff_microseconds, limit),
+        f"SELECT {title_col}, {url_col}, {timestamp_col} FROM {table} WHERE {timestamp_col} > ? ORDER BY {timestamp_col} DESC LIMIT ?",
+        (cutoff_timestamp, limit),
     )
-    return [
-        (title, sanitize_url(url), format_chrome_timestamp(ts))
-        for title, url, ts in cursor.fetchall()
-    ]
+    results = cursor.fetchall()
+
+    if schema == "chrome":
+        return [
+            (title, sanitize_url(url), format_chrome_timestamp(ts))
+            for title, url, ts in results
+        ]
+    elif schema == "firefox":
+        return [
+            (title, sanitize_url(url), format_firefox_timestamp(ts))
+            for title, url, ts in results
+        ]
+    else:
+        return [
+            (title, sanitize_url(url), format_safari_timestamp(ts))
+            for title, url, ts in results
+        ]
 
 
 def count_domain_visits(conn: sqlite3.Connection, domain: str) -> int:
@@ -147,6 +200,10 @@ def get_top_domains(conn: sqlite3.Connection, limit: int = 10) -> list[tuple[str
     Returns:
         List of (domain, visit_count) tuples
     """
+    schema = detect_schema(conn)
+    if schema != "chrome":
+        return []
+
     cursor = conn.cursor()
     cursor.execute(
         """
@@ -160,7 +217,7 @@ def get_top_domains(conn: sqlite3.Connection, limit: int = 10) -> list[tuple[str
             END
         ) as domain, SUM(visit_count) as total
         FROM urls
-WHERE url LIKE 'http%' OR url LIKE 'https%'
+        WHERE url LIKE 'http%' OR url LIKE 'https%'
         GROUP BY domain
         ORDER BY total DESC
         LIMIT ?
@@ -775,6 +832,36 @@ def detect_schema(conn: sqlite3.Connection) -> str:
         return "safari"
     else:
         return "unknown"
+
+
+SCHEMA_COLUMNS: dict[str, dict[str, str]] = {
+    "chrome": {
+        "table": "urls",
+        "title_col": "title",
+        "url_col": "url",
+        "timestamp_col": "last_visit_time",
+        "visit_count_col": "visit_count",
+    },
+    "firefox": {
+        "table": "moz_places",
+        "title_col": "title",
+        "url_col": "url",
+        "timestamp_col": "last_visit_date",
+        "visit_count_col": "visit_count",
+    },
+    "safari": {
+        "table": "history_items",
+        "title_col": "title",
+        "url_col": "url",
+        "timestamp_col": "visit_time",
+        "visit_count_col": "visit_count",
+    },
+}
+
+
+def get_schema_columns(schema: str) -> dict[str, str]:
+    """Get column/table mapping for a schema."""
+    return SCHEMA_COLUMNS.get(schema, SCHEMA_COLUMNS["chrome"])
 
 
 def format_firefox_timestamp(microseconds: int) -> str:

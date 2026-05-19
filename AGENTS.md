@@ -422,7 +422,7 @@ def test_invalid_browser():
 
 ## See Also
 
-- [Architecture](ARCHITECTURE.md) - Detailed architecture documentation
-- [CLI Reference](CLI.md) - CLI command reference
-- [API Documentation](API.md) - HTTP API reference
-- [Installation Guide](INSTALL.md) - Installation instructions
+- [Architecture](docs/ARCHITECTURE.md) - Detailed architecture documentation
+- [CLI Reference](docs/CLI.md) - CLI command reference
+- [API Documentation](docs/API.md) - HTTP API reference
+- [Installation Guide](docs/INSTALL.md) - Installation instructions

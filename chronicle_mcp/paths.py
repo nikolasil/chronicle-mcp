@@ -1,3 +1,9 @@
+"""Browser path detection for ChronicleMCP.
+
+This module provides functions for locating browser history, bookmarks, and
+download databases across different platforms (Windows, macOS, Linux).
+"""
+
 import glob
 import os
 import platform

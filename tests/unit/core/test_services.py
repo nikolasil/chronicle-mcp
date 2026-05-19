@@ -879,6 +879,41 @@ class TestWithConnectionErrorHandling:
             HistoryService._with_connection("chrome", lambda conn: None)
         assert "chrome" in str(exc_info.value)
 
+    def test_connection_error_converted_to_database_error(self, monkeypatch):
+        """Test ConnConnectionError is converted to DatabaseError."""
+        from chronicle_mcp.connection import ConnectionError as ConnConnectionError
+
+        def mock_get_history_connection(browser):
+            raise ConnConnectionError("Connection failed", browser="chrome", details="timeout")
+
+        monkeypatch.setattr(
+            "chronicle_mcp.core.services.get_history_connection",
+            mock_get_history_connection,
+        )
+
+        from chronicle_mcp.core import DatabaseError
+
+        with pytest.raises(DatabaseError) as exc_info:
+            HistoryService._with_connection("chrome", lambda conn: None)
+        assert "chrome" in str(exc_info.value)
+        assert "Failed to access" in str(exc_info.value)
+
+    def test_unexpected_error_converted_to_database_error(self, monkeypatch):
+        """Test unexpected exceptions are converted to DatabaseError."""
+        def mock_get_history_connection(browser):
+            raise RuntimeError("Unexpected error")
+
+        monkeypatch.setattr(
+            "chronicle_mcp.core.services.get_history_connection",
+            mock_get_history_connection,
+        )
+
+        from chronicle_mcp.core import DatabaseError
+
+        with pytest.raises(DatabaseError) as exc_info:
+            HistoryService._with_connection("chrome", lambda conn: None)
+        assert "Database operation failed" in str(exc_info.value)
+
 
 class TestFindDuplicateEntries:
     """Tests for find_duplicate_entries method."""

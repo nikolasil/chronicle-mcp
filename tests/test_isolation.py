@@ -4,7 +4,6 @@ This module verifies that test fixtures properly isolate tests from each other,
 catching common fixture pollution issues.
 """
 
-import pytest
 
 
 class TestFixtureIsolation:
@@ -124,7 +123,7 @@ class TestDatabaseIsolation:
 
     def test_connection_cleanup(self, temp_dir):
         """Test that temp database connections are cleaned up."""
-        from chronicle_mcp.connection import cleanup_temp_file, get_temp_filename
+        from chronicle_mcp.connection import cleanup_temp_file
 
         temp_path = temp_dir / "test_cleanup.db"
         temp_path.write_text("test")

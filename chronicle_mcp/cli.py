@@ -8,14 +8,24 @@ from pathlib import Path
 
 import click
 
-from chronicle_mcp.config import get_version, setup_logging
+from chronicle_mcp.config import get_version
 from chronicle_mcp.paths import get_available_browsers
 
-setup_logging()
+
+def ensure_logging() -> None:
+    """Ensure logging is configured before use."""
+    import logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    )
+
+
 logger = logging.getLogger(__name__)
 
 
-@click.group()  # type: ignore[untyped-decorator]
+@click.group()
+@click.version_option()
 @click.pass_context  # type: ignore[untyped-decorator]
 def cli(ctx: click.Context) -> None:
     """ChronicleMCP - MCP server for secure local browser history access."""
