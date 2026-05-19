@@ -18,6 +18,14 @@ graph TB
 
     subgraph Service["Service Layer (Core)"]
         HS[HistoryService]
+        SS[SearchService]
+        AS[AnalyticsService]
+        BS[BrowserService]
+        BDS[BookmarksService]
+        DDS[DedupService]
+        DNS[DomainService]
+        HSS[HistoryService]
+        SBS[SubscriptionService]
         VAL[Validation]
         FMT[Formatters]
         EXC[Exceptions]
@@ -44,16 +52,29 @@ chronicle-mcp/
 │   ├── __init__.py          # Package exports
 │   ├── cli.py               # CLI commands
 │   ├── server.py            # Entry point (imports from protocols)
-│   ├── core/                # Business Logic Layer (NEW)
+│   ├── core/                # Business Logic Layer
 │   │   ├── __init__.py
-│   │   ├── services.py      # HistoryService - all business logic
+│   │   ├── _connection.py   # with_connection helper
+│   │   ├── services.py      # HistoryService - facade/delegate
+│   │   ├── search_service.py    # Search operations (search, recent, etc.)
+│   │   ├── analytics_service.py # Analytics (compare periods, productivity)
+│   │   ├── browser_service.py   # Browser listing (list_available_*)
+│   │   ├── bookmarks_service.py # Bookmarks and downloads
+│   │   ├── dedup_service.py     # Deduplication operations
+│   │   ├── domain_service.py    # Domain operations
+│   │   ├── history_service.py   # History operations (delete, sync, export)
+│   │   ├── subscription_service.py # Real-time subscriptions
 │   │   ├── validation.py    # Input validation functions
 │   │   ├── formatters.py    # Response formatting
-│   │   └── exceptions.py    # Service-level exceptions
-│   ├── protocols/           # Protocol Adapters (NEW)
+│   │   ├── exceptions.py    # Service-level exceptions
+│   │   ├── events.py        # Event types
+│   │   ├── realtime.py      # Real-time subscription manager
+│   │   └── categories.py    # URL categorization
+│   ├── protocols/           # Protocol Adapters
 │   │   ├── __init__.py
-│   │   ├── mcp.py          # MCP protocol adapter
-│   │   └── http.py         # HTTP protocol adapter
+│   │   ├── mcp.py           # MCP protocol adapter
+│   │   ├── http.py          # HTTP protocol adapter
+│   │   └── routes/          # HTTP route handlers
 │   ├── connection.py        # Database connection management
 │   ├── database.py          # Query operations
 │   ├── paths.py             # Browser path detection
@@ -93,35 +114,80 @@ Thin adapters that handle protocol-specific concerns:
 
 ### 2. Service Layer (Core)
 
-Contains all business logic, shared by all protocols.
+Contains all business logic, shared by all protocols. The service layer is split into a **facade** (`HistoryService`) and **specialized service modules**.
 
 #### HistoryService (`chronicle_mcp/core/services.py`)
 
-Central service class providing all operations:
+Facade service that delegates to specialized service modules. Provides a unified API for all operations:
 
 ```python
 class HistoryService:
+    """Facade service that delegates to specialized service modules."""
+
+    _with_connection = staticmethod(with_connection)
+
     @classmethod
     def search_history(cls, query, limit, browser, format_type) -> dict:
-        # Validates inputs
-        # Executes database query
-        # Returns structured data
+        return search_service.search_history(query, limit, browser, format_type)
 ```
 
-**Methods:**
-- `list_available_browsers()` - Get available browsers
-- `search_history()` - Search by query
-- `get_recent_history()` - Recent history
-- `count_visits()` - Count domain visits
+**Key Principle:** All business logic lives in the specialized service modules. HistoryService is a thin wrapper that delegates to them.
+
+#### Specialized Service Modules
+
+Each module handles a specific domain of functionality:
+
+##### SearchService (`chronicle_mcp/core/search_service.py`)
+Handles all search-related operations:
+- `search_history()` - Keyword search
+- `get_recent_history()` - Recent visits
+- `count_visits()` - Domain visit counts
 - `list_top_domains()` - Top domains
-- `search_history_by_date()` - Date-range search
-- `delete_history()` - Delete entries
-- `search_by_domain()` - Domain-specific search
-- `get_browser_stats()` - Statistics
 - `get_most_visited_pages()` - Most visited pages
-- `export_history()` - Export to CSV/JSON
-- `search_history_advanced()` - Advanced search
+- `search_history_by_date()` - Date range search
+- `search_by_domain()` - Domain-specific search
+- `search_history_advanced()` - Advanced search with filters
+
+##### AnalyticsService (`chronicle_mcp/core/analytics_service.py`)
+Handles analytics and insights:
+- `compare_time_periods()` - Compare browsing between periods
+- `analyze_productivity()` - Productivity scoring
+- `suggest_categories()` - URL categorization
+- `export_visualization()` - Chart.js compatible data
+- `generate_insights_report()` - Comprehensive reports
+
+##### BrowserService (`chronicle_mcp/core/browser_service.py`)
+Handles browser listing:
+- `list_available_browsers()` - Browsers with history databases
+- `list_available_bookmarks()` - Browsers with bookmarks
+- `list_available_downloads()` - Browsers with downloads
+
+##### BookmarksService (`chronicle_mcp/core/bookmarks_service.py`)
+Handles bookmarks and downloads:
+- `get_bookmarks()` - Get bookmarks with optional query filter
+- `get_downloads()` - Get download history with optional query filter
+
+##### DedupService (`chronicle_mcp/core/dedup_service.py`)
+Handles history deduplication:
+- `find_duplicate_entries()` - Find duplicate URLs
+- `delete_duplicates()` - Remove duplicates with strategy
+
+##### DomainService (`chronicle_mcp/core/domain_service.py`)
+Handles domain-related operations:
+- `categorize_url()` - URL category detection
+- `categorize_batch()` - Batch categorization
+
+##### HistoryService (`chronicle_mcp/core/history_service.py`)
+Handles history management:
+- `delete_history()` - Delete matching entries
 - `sync_history()` - Sync between browsers
+- `export_history()` - Export to CSV/JSON
+
+##### SubscriptionService (`chronicle_mcp/core/subscription_service.py`)
+Handles real-time subscriptions:
+- `subscribe_to_history()` - Subscribe to changes
+- `unsubscribe_from_history()` - Unsubscribe
+- `get_subscription_status()` - Subscription info
 
 #### Validation (`chronicle_mcp/core/validation.py`)
 
@@ -407,7 +473,7 @@ def search_history(query, limit, browser, format_type):
 ## Key Benefits of New Architecture
 
 ### 1. Single Source of Truth
-- All business logic in `HistoryService`
+- All business logic in specialized service modules
 - No code duplication between protocols
 - Changes made once, applied everywhere
 
@@ -415,16 +481,19 @@ def search_history(query, limit, browser, format_type):
 - Service layer can be tested independently
 - Pure validation/formatting functions are easy to test
 - Protocol adapters are thin and mostly delegation
+- Each service module can be tested in isolation
 
 ### 3. Maintainability
 - Clear separation of concerns
-- Each layer has single responsibility
+- Each service module has single responsibility
 - Easy to understand and modify
+- Facade pattern keeps API stable while internals evolve
 
 ### 4. Extensibility
 - Easy to add new protocols (WebSocket, gRPC, etc.)
 - Just create new adapter in `protocols/`
 - Reuse existing service layer
+- Add new service modules without touching existing code
 
 ### 5. Error Handling Consistency
 - Service layer raises exceptions

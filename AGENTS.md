@@ -103,7 +103,15 @@ Protocol Layer (protocols/)
 └── http.py         # HTTP protocol adapter
 
 Service Layer (core/)
-├── services.py     # HistoryService - all business logic
+├── services.py     # HistoryService - facade that delegates
+├── search_service.py     # Search operations
+├── analytics_service.py  # Analytics and insights
+├── browser_service.py    # Browser listing
+├── bookmarks_service.py   # Bookmarks and downloads
+├── dedup_service.py      # Deduplication
+├── domain_service.py     # Domain operations
+├── history_service.py    # History management (delete, sync, export)
+├── subscription_service.py # Real-time subscriptions
 ├── validation.py   # Input validation
 ├── formatters.py   # Response formatting
 └── exceptions.py   # Service exceptions
@@ -117,7 +125,7 @@ Infrastructure Layer
 
 ### Key Principle
 
-**All business logic lives in the Service Layer.** Protocol adapters are thin wrappers that:
+**All business logic lives in the specialized service modules.** `HistoryService` is a facade that delegates to them. Protocol adapters are thin wrappers that:
 1. Receive protocol-specific requests
 2. Call `HistoryService` methods
 3. Convert results to protocol-specific responses
