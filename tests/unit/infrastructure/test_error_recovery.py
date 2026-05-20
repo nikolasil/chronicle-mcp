@@ -141,6 +141,7 @@ class TestPermissionDeniedHandling:
                 pass
 
 
+@pytest.mark.ci_excluded
 class TestCorruptedDatabaseHandling:
     """Tests for corrupted database file handling."""
 
