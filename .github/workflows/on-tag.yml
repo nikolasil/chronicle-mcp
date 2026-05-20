@@ -345,18 +345,12 @@ jobs:
           name: python-dist
           path: dist/
 
-      - name: Download binaries
+- name: Download binaries
         uses: actions/download-artifact@v4
         with:
           path: release-artifacts/
           pattern: 'chronicle-mcp-*'
           merge-multiple: true
-
-      - name: Download SBOM
-        uses: actions/download-artifact@v4
-        with:
-          name: sbom
-          path: .
 
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
