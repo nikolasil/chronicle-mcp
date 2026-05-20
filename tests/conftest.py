@@ -1,6 +1,7 @@
 import os
 import sqlite3
 import tempfile
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -10,6 +11,19 @@ CHROME_EPOCH_OFFSET = 11644473600000000
 
 # Fixed reference timestamp for time-independent test data
 CREATED_TIMESTAMP = datetime(2024, 6, 15, 12, 0, 0, tzinfo=timezone.utc)
+
+
+def _cleanup_on_windows(path: Path, retries: int = 3, delay: float = 0.1):
+    """Retry cleanup on Windows when files are locked."""
+    for attempt in range(retries):
+        try:
+            import shutil
+            shutil.rmtree(path, ignore_errors=True)
+            return
+        except Exception:
+            if attempt < retries - 1:
+                time.sleep(delay)
+            pass
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -72,6 +86,8 @@ def temp_dir():
     """Provides a temporary directory for test artifacts."""
     with tempfile.TemporaryDirectory() as tmpdir:
         yield Path(tmpdir)
+    if os.name == "nt":
+        _cleanup_on_windows(Path(tmpdir))
 
 
 @pytest.fixture
