@@ -310,7 +310,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install cosign
-        uses: actions/cosign-installer@v3
+        uses: sigstore/cosign-installer@v4
         with:
           cosign-version: v2.2.0
 
