@@ -246,6 +246,7 @@ jobs:
   sign-container:
     needs: build-container
     runs-on: ubuntu-latest
+    continue-on-error: true
     permissions:
       contents: read
       packages: write
@@ -264,6 +265,7 @@ jobs:
 
   publish:
     needs: [release, build-package, build-binaries, build-container, sign-container]
+    if: always()
     runs-on: ubuntu-latest
     environment:
       name: pypi
