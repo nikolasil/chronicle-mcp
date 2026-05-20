@@ -41,8 +41,13 @@ MergeStrategy = Literal["latest", "combine", "dedupe"]
 KeepStrategy = Literal["most_visits", "most_recent", "first"]
 PeriodType = Literal["day", "week", "month"]
 EventType = Literal[
-    "history_added", "history_deleted", "history_updated",
-    "bookmark_added", "bookmark_deleted", "download_added", "download_deleted"
+    "history_added",
+    "history_deleted",
+    "history_updated",
+    "bookmark_added",
+    "bookmark_deleted",
+    "download_added",
+    "download_deleted",
 ]
 
 
@@ -238,12 +243,14 @@ def handle_service_error(error: Exception, correlation_id: str | None = None) ->
         if hasattr(error, "browser"):
             error_dict["valid_options"] = [error.browser]
 
-    return json.dumps({
-        "success": False,
-        "data": None,
-        "meta": {"correlation_id": correlation_id} if correlation_id else None,
-        "error": error_dict,
-    })
+    return json.dumps(
+        {
+            "success": False,
+            "data": None,
+            "meta": {"correlation_id": correlation_id} if correlation_id else None,
+            "error": error_dict,
+        }
+    )
 
 
 def mcp_tool(func: T) -> T:
