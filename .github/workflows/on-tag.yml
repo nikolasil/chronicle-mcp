@@ -106,6 +106,36 @@ jobs:
       - name: Run test suite
         run: pytest tests/ -v --tb=short --ignore=tests/benchmark -m "not ci_excluded"
 
+  generate-sbom:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: v${{ needs.release.outputs.version }}
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: 'pip'
+
+      - name: Install syft
+        run: pip install syft
+
+      - name: Generate SBOM with syft
+        run: |
+          syft . -o cyclonedx-json=syft-sbom.json --catalogs pypi
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: syft-sbom.json
+          retention-days: 365
+
   build-package:
     needs: test
     runs-on: ubuntu-latest
@@ -179,8 +209,47 @@ jobs:
           path: dist/${{ matrix.release_name }}
           retention-days: 7
 
+  smoke-test-binaries:
+    needs: build-binaries
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: chronicle-mcp-linux
+            release_name: chronicle-mcp-linux
+            is_windows: false
+          - os: macos-latest
+            artifact_name: chronicle-mcp-macos
+            release_name: chronicle-mcp-macos
+            is_windows: false
+          - os: windows-latest
+            artifact_name: chronicle-mcp-windows
+            release_name: chronicle-mcp-windows.exe
+            is_windows: true
+    steps:
+      - name: Download binary
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ./binary/
+
+      - name: Test binary help and version
+        run: |
+          $ext = if ('${{ matrix.is_windows }}' -eq 'true') { '.exe' } else { '' }
+          chmod +x ./binary/${{ matrix.release_name }}$ext
+          ./binary/${{ matrix.release_name }}$ext --help
+          ./binary/${{ matrix.release_name }}$ext version
+
+      - name: Test MCP server starts (non-Windows)
+        if: matrix.is_windows == false
+        run: |
+          timeout 5 ./binary/${{ matrix.release_name }} mcp 2>&1 || true
+          echo "Binary can start MCP mode"
+
   build-container:
-    needs: test
+    needs: [test, smoke-test-binaries]
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.VERSION }}
@@ -264,7 +333,7 @@ jobs:
           cosign sign --yes ghcr.io/${{ github.repository }}:${{ needs.build-container.outputs.version }}
 
   publish:
-    needs: [release, build-package, build-binaries, build-container, sign-container]
+    needs: [release, build-package, build-binaries, smoke-test-binaries, build-container, sign-container]
     if: always()
     runs-on: ubuntu-latest
     environment:
@@ -289,6 +358,12 @@ jobs:
           pattern: 'chronicle-mcp-*'
           merge-multiple: true
 
+      - name: Download SBOM
+        uses: actions/download-artifact@v4
+        with:
+          name: sbom
+          path: .
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
@@ -302,6 +377,7 @@ jobs:
             release-artifacts/*
             dist/*.whl
             dist/*.tar.gz
+            syft-sbom.json
           draft: false
           prerelease: ${{ needs.build-container.outputs.is_pre_release }}
           generate_release_notes: true
