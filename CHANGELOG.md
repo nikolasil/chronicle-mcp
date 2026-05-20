@@ -1,3 +1,32 @@
+## [1.5.3] - 2026-05-20
+
+
+### Added
+
+
+- MCP tools now return structured JSON responses with consistent envelope format
+- New MCPResponse, MCPError, MCPMeta TypedDicts for type-safe responses
+- Error responses now include error codes, field attribution, and recovery suggestions
+- Added Literal types for all enum parameters (BrowserType, FormatType, SortOrder, etc.)
+- Correlation IDs added to all responses for debugging
+- Execution time tracking in response metadata
+
+### Changed
+
+
+- All 31 MCP tools now return JSON string responses (was mixed formats)
+- Enhanced docstrings with usage context, examples, and "distinguishes from" sections
+- Improved error messages with actionable suggestions
+- MCP decorator now auto-wraps responses and handles errors uniformly
+
+### Documentation
+
+
+- Updated MCP_CLIENTS.md with enhanced tool descriptions
+
+
+---
+
 ## [1.4.0] - 2026-02-16
 
 

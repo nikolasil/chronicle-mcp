@@ -204,50 +204,57 @@ class TestHandleServiceError:
         """Test handling ValidationError."""
         error = ValidationError("Invalid input", field="browser")
         result = handle_service_error(error)
-        assert "Error:" in result
+        assert '"success": false' in result
+        assert '"code": "VALIDATION_ERROR"' in result
         assert "Invalid input" in result
 
     def test_browser_not_found_error(self):
         """Test handling BrowserNotFoundError."""
         error = BrowserNotFoundError("chrome")
         result = handle_service_error(error)
-        assert "Error:" in result
+        assert '"success": false' in result
+        assert '"code": "BROWSER_NOT_FOUND"' in result
         assert "chrome" in result
 
     def test_database_locked_error(self):
         """Test handling DatabaseLockedError."""
         error = DatabaseLockedError("firefox")
         result = handle_service_error(error)
-        assert "Error:" in result
+        assert '"success": false' in result
+        assert '"code": "DATABASE_LOCKED"' in result
         assert "firefox" in result
 
     def test_permission_denied_error(self):
         """Test handling PermissionDeniedError."""
         error = PermissionDeniedError("edge", "/path/to/db")
         result = handle_service_error(error)
-        assert "Error:" in result
+        assert '"success": false' in result
+        assert '"code": "PERMISSION_DENIED"' in result
         assert "edge" in result
 
     def test_database_error(self):
         """Test handling DatabaseError."""
         error = DatabaseError("Query failed")
         result = handle_service_error(error)
-        assert "Error:" in result
+        assert '"success": false' in result
+        assert '"code": "DATABASE_ERROR"' in result
         assert "Query failed" in result
 
     def test_generic_service_error(self):
         """Test handling generic ServiceError."""
         error = ServiceError("Service failed", code="CUSTOM_ERROR")
         result = handle_service_error(error)
-        assert "Error:" in result
+        assert '"success": false' in result
+        assert '"code": "SERVICE_ERROR"' in result
         assert "Service failed" in result
 
     def test_unexpected_error(self):
         """Test handling unexpected error."""
         error = RuntimeError("Unexpected crash")
         result = handle_service_error(error)
-        assert "Error:" in result
-        assert "unexpected error occurred" in result.lower()
+        assert '"success": false' in result
+        assert '"code": "INTERNAL_ERROR"' in result
+        assert "Unexpected crash" in result
 
 
 class TestListAvailableBrowsersMCP:
