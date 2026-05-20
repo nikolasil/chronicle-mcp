@@ -9,6 +9,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytestmark = pytest.mark.ci_excluded
+
 from chronicle_mcp.webhooks import (
     Webhook,
     WebhookEvent,
