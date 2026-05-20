@@ -18,6 +18,7 @@ def _cleanup_on_windows(path: Path, retries: int = 3, delay: float = 0.1):
     for attempt in range(retries):
         try:
             import shutil
+
             shutil.rmtree(path, ignore_errors=True)
             return
         except Exception:
