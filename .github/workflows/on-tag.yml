@@ -117,6 +117,8 @@ jobs:
           path: ./
           merge-multiple: true
 
+      - name: Checkout code
+        uses: actions/checkout@v6
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -152,6 +154,8 @@ jobs:
             artifact_name: chronicle-mcp-windows
             release_name: chronicle-mcp-windows.exe
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -188,6 +192,9 @@ jobs:
           name: release-files
           path: ./
           merge-multiple: true
+
+      - name: Checkout code
+        uses: actions/checkout@v6
 
       - name: Extract version
         id: version
