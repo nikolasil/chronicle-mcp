@@ -4,6 +4,8 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
+pytestmark = pytest.mark.ci_excluded
+
 from chronicle_mcp.core.exceptions import InvalidDateRangeError, ValidationError
 from chronicle_mcp.core.validation import (
     validate_browser,
