@@ -166,11 +166,11 @@ jobs:
         run: |
           pip install pyinstaller
           pip install --no-deps --no-build-isolation -e .
+          pip install click markdown pygments
 
       - name: Build binary
         shell: bash
         run: |
-          pip install pyinstaller
           pyinstaller --onefile --collect-all fastmcp --collect-all rich --collect-all chronicle_mcp --collect-all docket --collect-all fakeredis --collect-all lupa --collect-all click --collect-all markdown --collect-all pygments --name chronicle-mcp chronicle_mcp/__main__.py
           mv dist/chronicle-mcp* dist/${{ matrix.release_name }}
 
@@ -209,6 +209,7 @@ jobs:
           path: ./binary/
 
       - name: Test binary help and version
+        shell: bash
         run: |
           ext=""
           if [[ '${{ matrix.is_windows }}' == 'true' ]]; then
@@ -220,6 +221,7 @@ jobs:
 
       - name: Test MCP server starts (non-Windows)
         if: matrix.is_windows == false
+        shell: bash
         run: |
           timeout 5 ./binary/${{ matrix.release_name }} mcp 2>&1 || true
           echo "Binary can start MCP mode"
