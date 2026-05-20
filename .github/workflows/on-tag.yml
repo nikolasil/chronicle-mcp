@@ -106,37 +106,6 @@ jobs:
       - name: Run test suite
         run: pytest tests/ -v --tb=short --ignore=tests/benchmark -m "not ci_excluded"
 
-  generate-sbom:
-    needs: test
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-        with:
-          ref: v${{ needs.release.outputs.version }}
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-          cache: 'pip'
-
-      - name: Install syft
-        run: pip install syft
-
-      - name: Generate SBOM with syft
-        run: |
-          syft . -o cyclonedx-json=syft-sbom.json --catalogs pypi
-
-      - name: Upload SBOM
-        uses: actions/upload-artifact@v4
-        with:
-          name: sbom
-          path: syft-sbom.json
-          retention-days: 365
-
   build-package:
     needs: test
     runs-on: ubuntu-latest
@@ -200,7 +169,12 @@ jobs:
 
       - name: Build binary
         run: |
-          pyinstaller --onefile --collect-all fastmcp --collect-all rich --collect-all chronicle_mcp --collect-all docket --collect-all fakeredis --collect-all lupa --name chronicle-mcp chronicle_mcp/__main__.py
+          pip install pyinstaller
+          pyinstaller --onefile \
+            --collect-all fastmcp --collect-all rich --collect-all chronicle_mcp \
+            --collect-all docket --collect-all fakeredis --collect-all lupa \
+            --collect-all click --collect-all markdown --collect-all pygments \
+            --name chronicle-mcp chronicle_mcp/__main__.py
           mv dist/chronicle-mcp* dist/${{ matrix.release_name }}
 
       - name: Upload binary
