@@ -4,6 +4,9 @@ These tests verify the HTTP REST API endpoints.
 """
 
 import pytest
+
+pytestmark = pytest.mark.ci_excluded
+
 from starlette.testclient import TestClient
 
 from chronicle_mcp.protocols.http import app

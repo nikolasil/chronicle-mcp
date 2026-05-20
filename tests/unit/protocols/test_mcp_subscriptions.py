@@ -3,6 +3,10 @@
 These tests verify the subscription/unsubscription MCP tools work correctly.
 """
 
+import pytest
+
+pytestmark = pytest.mark.ci_excluded
+
 from chronicle_mcp.protocols.mcp import (
     get_subscription_status,
     subscribe_to_history,

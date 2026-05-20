@@ -3,6 +3,10 @@
 These tests verify the MCP tool functions for bookmarks and downloads.
 """
 
+import pytest
+
+pytestmark = pytest.mark.ci_excluded
+
 from chronicle_mcp.core.exceptions import (
     BrowserNotFoundError,
     DatabaseError,

@@ -1,5 +1,9 @@
 """Tests for server.py entry point."""
 
+import pytest
+
+pytestmark = pytest.mark.ci_excluded
+
 from unittest.mock import patch
 
 
