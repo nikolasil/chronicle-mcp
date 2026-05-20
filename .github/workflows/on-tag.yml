@@ -248,7 +248,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Install cosign
-        uses: sigstore/cosign-installer@v4.1
+        uses: sigstore/cosign-installer@v4.1.2
         with:
           cosign-version: v2.2.0
 
