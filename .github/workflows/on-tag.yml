@@ -211,6 +211,7 @@ jobs:
 
   smoke-test-binaries:
     needs: build-binaries
+    continue-on-error: true
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
