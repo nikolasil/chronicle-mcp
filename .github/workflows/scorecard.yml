@@ -25,6 +25,14 @@ jobs:
       - name: Run Scorecard
         uses: ossf/scorecard-action@v2.4.3
         with:
-          publish_results: true
+          publish_results: false
           results_file: scorecard-results.sarif
           results_format: sarif
+
+      - name: Upload results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: scorecard-results
+          path: scorecard-results.sarif
+          retention-days: 7
