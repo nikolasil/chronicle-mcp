@@ -249,11 +249,11 @@ jobs:
           echo "Binary can start MCP mode"
 
   build-container:
-    needs: [test, smoke-test-binaries]
+    needs: [test, smoke-test-binaries, release]
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.version.outputs.VERSION }}
-      is_pre_release: ${{ steps.version.outputs.IS_PRE_RELEASE }}
+      version: ${{ needs.release.outputs.version }}
+      is_pre_release: ${{ needs.release.outputs.is_pre_release }}
     steps:
       - name: Download release files
         uses: actions/download-artifact@v4
@@ -264,17 +264,6 @@ jobs:
 
       - name: Checkout code
         uses: actions/checkout@v6
-
-      - name: Extract version
-        id: version
-        run: |
-          VERSION="${GITHUB_REF#refs/tags/v}"
-          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
-          if echo "$VERSION" | grep -q '-'; then
-            echo "IS_PRE_RELEASE=true" >> $GITHUB_OUTPUT
-          else
-            echo "IS_PRE_RELEASE=false" >> $GITHUB_OUTPUT
-          fi
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
