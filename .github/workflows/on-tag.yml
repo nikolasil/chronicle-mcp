@@ -237,7 +237,10 @@ jobs:
 
       - name: Test binary help and version
         run: |
-          $ext = if ('${{ matrix.is_windows }}' -eq 'true') { '.exe' } else { '' }
+          ext=""
+          if [[ '${{ matrix.is_windows }}' == 'true' ]]; then
+            ext=".exe"
+          fi
           chmod +x ./binary/${{ matrix.release_name }}$ext
           ./binary/${{ matrix.release_name }}$ext --help
           ./binary/${{ matrix.release_name }}$ext version
