@@ -168,13 +168,10 @@ jobs:
           pip install --no-deps --no-build-isolation -e .
 
       - name: Build binary
+        shell: bash
         run: |
           pip install pyinstaller
-          pyinstaller --onefile \
-            --collect-all fastmcp --collect-all rich --collect-all chronicle_mcp \
-            --collect-all docket --collect-all fakeredis --collect-all lupa \
-            --collect-all click --collect-all markdown --collect-all pygments \
-            --name chronicle-mcp chronicle_mcp/__main__.py
+          pyinstaller --onefile --collect-all fastmcp --collect-all rich --collect-all chronicle_mcp --collect-all docket --collect-all fakeredis --collect-all lupa --collect-all click --collect-all markdown --collect-all pygments --name chronicle-mcp chronicle_mcp/__main__.py
           mv dist/chronicle-mcp* dist/${{ matrix.release_name }}
 
       - name: Upload binary
