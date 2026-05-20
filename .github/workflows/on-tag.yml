@@ -152,7 +152,7 @@ jobs:
             release_name: chronicle-mcp-macos
           - os: windows-latest
             artifact_name: chronicle-mcp-windows
-            release_name: chronicle-mcp-windows.exe
+            release_name: chronicle-mcp-windows
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -199,7 +199,7 @@ jobs:
             is_windows: false
           - os: windows-latest
             artifact_name: chronicle-mcp-windows
-            release_name: chronicle-mcp-windows.exe
+            release_name: chronicle-mcp-windows
             is_windows: true
     steps:
       - name: Download binary
