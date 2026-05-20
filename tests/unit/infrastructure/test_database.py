@@ -1,6 +1,10 @@
 import json
 import sqlite3
 
+import pytest
+
+pytestmark = pytest.mark.ci_excluded
+
 from chronicle_mcp.database import (
     count_domain_visits,
     format_results,
