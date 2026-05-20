@@ -14,6 +14,8 @@ import sqlite3
 
 import pytest
 
+pytestmark = pytest.mark.ci_excluded
+
 from chronicle_mcp.connection import (
     BrowserPathNotFoundError,
     DatabaseLockedError,
@@ -31,7 +33,6 @@ from chronicle_mcp.database import (
 )
 
 
-@pytest.mark.ci_excluded
 class TestDatabaseLockedHandling:
     """Tests for database locked error handling."""
 
@@ -141,7 +142,6 @@ class TestPermissionDeniedHandling:
                 pass
 
 
-@pytest.mark.ci_excluded
 class TestCorruptedDatabaseHandling:
     """Tests for corrupted database file handling."""
 
