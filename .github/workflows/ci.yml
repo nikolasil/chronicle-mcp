@@ -32,7 +32,7 @@ jobs:
         run: pre-commit install-hooks
 
       - name: Run pre-commit
-        run: pre-commit run --all-files --fix
+        run: pre-commit run --all-files
 
   codeql:
     runs-on: ubuntu-latest
