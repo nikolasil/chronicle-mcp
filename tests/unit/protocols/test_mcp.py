@@ -16,14 +16,21 @@ from chronicle_mcp.core.exceptions import (
     ValidationError,
 )
 from chronicle_mcp.protocols.mcp import (
+    analyze_productivity,
+    compare_time_periods,
     count_visits,
+    delete_duplicate_history,
     delete_history,
     export_history,
+    export_visualization,
+    find_duplicate_history,
+    generate_insights_report,
     get_bookmarks,
     get_browser_stats,
     get_downloads,
     get_most_visited_pages,
     get_recent_history,
+    get_subscription_status,
     handle_service_error,
     list_available_bookmarks,
     list_available_browsers,
@@ -33,17 +40,10 @@ from chronicle_mcp.protocols.mcp import (
     search_history,
     search_history_advanced,
     search_history_by_date,
-    sync_history,
     subscribe_to_history,
-    unsubscribe_from_history,
-    get_subscription_status,
-    find_duplicate_history,
-    delete_duplicate_history,
-    analyze_productivity,
-    compare_time_periods,
     suggest_categories,
-    export_visualization,
-    generate_insights_report,
+    sync_history,
+    unsubscribe_from_history,
 )
 
 
@@ -859,7 +859,9 @@ class TestUnsubscribeFromHistoryMCP:
                 "message": "Unsubscribed successfully",
             }
 
-        monkeypatch.setattr(services.HistoryService, "unsubscribe_history_changes", mock_unsubscribe)
+        monkeypatch.setattr(
+            services.HistoryService, "unsubscribe_history_changes", mock_unsubscribe
+        )
 
         result = unsubscribe_from_history(subscription_id="sub-123")
         assert isinstance(result, str)
@@ -872,7 +874,9 @@ class TestUnsubscribeFromHistoryMCP:
         def mock_unsubscribe(*args, **kwargs):
             raise ServiceError("Subscription not found")
 
-        monkeypatch.setattr(services.HistoryService, "unsubscribe_history_changes", mock_unsubscribe)
+        monkeypatch.setattr(
+            services.HistoryService, "unsubscribe_history_changes", mock_unsubscribe
+        )
 
         result = unsubscribe_from_history(subscription_id="invalid")
         assert "error" in result.lower() or "Error" in result
