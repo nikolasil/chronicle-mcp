@@ -34,6 +34,16 @@ from chronicle_mcp.protocols.mcp import (
     search_history_advanced,
     search_history_by_date,
     sync_history,
+    subscribe_to_history,
+    unsubscribe_from_history,
+    get_subscription_status,
+    find_duplicate_history,
+    delete_duplicate_history,
+    analyze_productivity,
+    compare_time_periods,
+    suggest_categories,
+    export_visualization,
+    generate_insights_report,
 )
 
 
@@ -799,3 +809,308 @@ class TestSyncHistoryMCP:
             dry_run=True,
         )
         assert "could not find" in result.lower()
+
+
+class TestSubscribeToHistoryMCP:
+    """Tests for subscribe_to_history MCP tool."""
+
+    def test_subscribe_to_history(self, monkeypatch):
+        """Test subscribing to history changes."""
+        from chronicle_mcp.core import services
+
+        def mock_subscribe(*args, **kwargs):
+            return {
+                "subscription_id": "sub-123",
+                "browser": "chrome",
+                "event_types": ["history_added", "history_deleted"],
+                "status": "active",
+                "message": "Subscribed to chrome history changes",
+            }
+
+        monkeypatch.setattr(services.HistoryService, "subscribe_history_changes", mock_subscribe)
+
+        result = subscribe_to_history(browser="chrome")
+        assert isinstance(result, str)
+        assert "subscription_id" in result
+
+    def test_subscribe_to_history_error(self, monkeypatch):
+        """Test subscription error handling."""
+        from chronicle_mcp.core import services
+
+        def mock_subscribe(*args, **kwargs):
+            raise ValidationError("Invalid event type")
+
+        monkeypatch.setattr(services.HistoryService, "subscribe_history_changes", mock_subscribe)
+
+        result = subscribe_to_history(browser="chrome")
+        assert "error" in result.lower() or "Error" in result
+
+
+class TestUnsubscribeFromHistoryMCP:
+    """Tests for unsubscribe_from_history MCP tool."""
+
+    def test_unsubscribe_from_history(self, monkeypatch):
+        """Test unsubscribing from history changes."""
+        from chronicle_mcp.core import services
+
+        def mock_unsubscribe(*args, **kwargs):
+            return {
+                "success": True,
+                "message": "Unsubscribed successfully",
+            }
+
+        monkeypatch.setattr(services.HistoryService, "unsubscribe_history_changes", mock_unsubscribe)
+
+        result = unsubscribe_from_history(subscription_id="sub-123")
+        assert isinstance(result, str)
+        assert "success" in result.lower() or "unsubscribed" in result.lower()
+
+    def test_unsubscribe_error(self, monkeypatch):
+        """Test unsubscribe error handling."""
+        from chronicle_mcp.core import services
+
+        def mock_unsubscribe(*args, **kwargs):
+            raise ServiceError("Subscription not found")
+
+        monkeypatch.setattr(services.HistoryService, "unsubscribe_history_changes", mock_unsubscribe)
+
+        result = unsubscribe_from_history(subscription_id="invalid")
+        assert "error" in result.lower() or "Error" in result
+
+
+class TestGetSubscriptionStatusMCP:
+    """Tests for get_subscription_status MCP tool."""
+
+    def test_get_subscription_status(self, monkeypatch):
+        """Test getting subscription status."""
+        from chronicle_mcp.core import services
+
+        def mock_status(*args, **kwargs):
+            return {
+                "subscription_id": "sub-123",
+                "status": "active",
+                "event_count": 42,
+            }
+
+        monkeypatch.setattr(services.HistoryService, "get_subscription_status", mock_status)
+
+        result = get_subscription_status(subscription_id="sub-123")
+        assert isinstance(result, str)
+        assert "sub-123" in result
+
+    def test_get_global_stats(self, monkeypatch):
+        """Test getting global subscription stats."""
+        from chronicle_mcp.core import services
+
+        def mock_status(*args, **kwargs):
+            return {
+                "total_subscriptions": 2,
+                "total_events": 100,
+            }
+
+        monkeypatch.setattr(services.HistoryService, "get_subscription_status", mock_status)
+
+        result = get_subscription_status()
+        assert isinstance(result, str)
+
+
+class TestFindDuplicateHistoryMCP:
+    """Tests for find_duplicate_history MCP tool."""
+
+    def test_find_duplicate_history(self, monkeypatch):
+        """Test finding duplicate history entries."""
+        from chronicle_mcp.core import services
+
+        def mock_find_dupes(*args, **kwargs):
+            return {
+                "duplicate_groups": [
+                    {
+                        "urls": ["https://example.com/page1", "https://example.com/page1?"],
+                        "similarity": 0.95,
+                        "count": 2,
+                    }
+                ],
+                "total_duplicates": 5,
+                "message": "Found 1 duplicate group",
+            }
+
+        monkeypatch.setattr(services.HistoryService, "find_duplicate_entries", mock_find_dupes)
+
+        result = find_duplicate_history(browser="chrome")
+        assert isinstance(result, str)
+        assert "duplicate" in result.lower()
+
+    def test_find_duplicate_error(self, monkeypatch):
+        """Test find duplicates error handling."""
+        from chronicle_mcp.core import services
+
+        def mock_find_dupes(*args, **kwargs):
+            raise ValidationError("Invalid similarity threshold")
+
+        monkeypatch.setattr(services.HistoryService, "find_duplicate_entries", mock_find_dupes)
+
+        result = find_duplicate_history(browser="chrome")
+        assert "error" in result.lower() or "Error" in result
+
+
+class TestDeleteDuplicateHistoryMCP:
+    """Tests for delete_duplicate_history MCP tool."""
+
+    def test_delete_duplicate_preview(self, monkeypatch):
+        """Test deleting duplicates in preview mode."""
+        from chronicle_mcp.core import services
+
+        def mock_delete_dupes(*args, **kwargs):
+            return {
+                "preview": True,
+                "would_delete": 10,
+                "message": "Preview: would delete 10 duplicate entries",
+            }
+
+        monkeypatch.setattr(services.HistoryService, "delete_duplicates", mock_delete_dupes)
+
+        result = delete_duplicate_history(browser="chrome", confirm=False)
+        assert isinstance(result, str)
+        assert "preview" in result.lower() or "would delete" in result.lower()
+
+    def test_delete_duplicate_confirm(self, monkeypatch):
+        """Test actually deleting duplicates."""
+        from chronicle_mcp.core import services
+
+        def mock_delete_dupes(*args, **kwargs):
+            return {
+                "deleted": 10,
+                "message": "Deleted 10 duplicate entries",
+            }
+
+        monkeypatch.setattr(services.HistoryService, "delete_duplicates", mock_delete_dupes)
+
+        result = delete_duplicate_history(browser="chrome", confirm=True)
+        assert isinstance(result, str)
+        assert "deleted" in result.lower() or "10" in result
+
+
+class TestAnalyzeProductivityMCP:
+    """Tests for analyze_productivity MCP tool."""
+
+    def test_analyze_productivity(self, monkeypatch):
+        """Test productivity analysis."""
+        from chronicle_mcp.core import services
+
+        def mock_analyze(*args, **kwargs):
+            return {
+                "productivity_score": 75,
+                "grade": "B",
+                "category_breakdown": {"work": 60, "entertainment": 40},
+                "recommendations": ["Reduce social media time"],
+            }
+
+        monkeypatch.setattr(services.HistoryService, "analyze_productivity", mock_analyze)
+
+        result = analyze_productivity(browser="chrome")
+        assert isinstance(result, str)
+        assert "75" in result or "productivity" in result.lower()
+
+
+class TestCompareTimePeriodsMCP:
+    """Tests for compare_time_periods MCP tool."""
+
+    def test_compare_periods(self, monkeypatch):
+        """Test comparing time periods."""
+        from chronicle_mcp.core import services
+
+        def mock_compare(*args, **kwargs):
+            return {
+                "period1": {"total_visits": 100, "unique_urls": 50},
+                "period2": {"total_visits": 120, "unique_urls": 60},
+                "changes": {"total_visits_delta": 20},
+            }
+
+        monkeypatch.setattr(services.HistoryService, "compare_time_periods", mock_compare)
+
+        result = compare_time_periods(
+            start_date1="2024-01-01",
+            end_date1="2024-01-31",
+            start_date2="2024-02-01",
+            end_date2="2024-02-28",
+        )
+        assert isinstance(result, str)
+        assert "period" in result.lower() or "visits" in result.lower()
+
+
+class TestSuggestCategoriesMCP:
+    """Tests for suggest_categories MCP tool."""
+
+    def test_suggest_categories(self, monkeypatch):
+        """Test category suggestions."""
+        from chronicle_mcp.core import services
+
+        def mock_suggest(*args, **kwargs):
+            return {
+                "uncategorized": [
+                    {"url": "https://example.com", "suggested_category": "work"},
+                ],
+                "count": 1,
+            }
+
+        monkeypatch.setattr(services.HistoryService, "suggest_categories", mock_suggest)
+
+        result = suggest_categories(browser="chrome")
+        assert isinstance(result, str)
+        assert "category" in result.lower() or "example" in result
+
+
+class TestExportVisualizationMCP:
+    """Tests for export_visualization MCP tool."""
+
+    def test_export_chart_json(self, monkeypatch):
+        """Test exporting chart data."""
+        from chronicle_mcp.core import services
+
+        def mock_export(*args, **kwargs):
+            return {
+                "charts": [{"type": "bar", "data": []}],
+                "category_breakdown": {},
+            }
+
+        monkeypatch.setattr(services.HistoryService, "export_visualization", mock_export)
+
+        result = export_visualization(period="week")
+        assert isinstance(result, str)
+        assert "chart" in result.lower() or "charts" in result.lower()
+
+
+class TestGenerateInsightsReportMCP:
+    """Tests for generate_insights_report MCP tool."""
+
+    def test_generate_insights_markdown(self, monkeypatch):
+        """Test generating insights report in markdown."""
+        from chronicle_mcp.core import services
+
+        def mock_generate(*args, **kwargs):
+            return {
+                "summary_markdown": "# Insights Report\n\nProductivity: 75%",
+                "period": "week",
+            }
+
+        monkeypatch.setattr(services.HistoryService, "generate_insights_report", mock_generate)
+
+        result = generate_insights_report(period="week", format_type="markdown")
+        assert isinstance(result, str)
+        assert "insights" in result.lower() or "report" in result.lower()
+
+    def test_generate_insights_json(self, monkeypatch):
+        """Test generating insights report in JSON."""
+        from chronicle_mcp.core import services
+
+        def mock_generate(*args, **kwargs):
+            return {
+                "data": {"productivity_score": 75},
+                "period": "week",
+            }
+
+        monkeypatch.setattr(services.HistoryService, "generate_insights_report", mock_generate)
+
+        result = generate_insights_report(period="week", format_type="json")
+        assert isinstance(result, str)
+        assert "75" in result or "productivity" in result.lower()
