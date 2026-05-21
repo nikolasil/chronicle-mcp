@@ -31,8 +31,8 @@ jobs:
       - name: Install pre-commit hooks
         run: pre-commit install-hooks
 
-      - name: Check formatting (auto-fix)
-        run: ruff format --diff || true
+      - name: Format code
+        run: ruff format .
 
       - name: Run pre-commit
         run: pre-commit run --all-files
