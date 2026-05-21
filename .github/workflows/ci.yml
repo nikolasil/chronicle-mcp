@@ -32,9 +32,7 @@ jobs:
         run: pre-commit install-hooks
 
       - name: Format code
-        run: |
-          set +e
-          ruff format .
+        run: ruff format . || true
 
       - name: Run pre-commit
         run: pre-commit run --all-files
