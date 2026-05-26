@@ -111,7 +111,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Download release files
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release-files
           path: ./
@@ -203,7 +203,7 @@ jobs:
             is_windows: true
     steps:
       - name: Download binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: ${{ matrix.artifact_name }}
           path: ./binary/
@@ -234,7 +234,7 @@ jobs:
       is_pre_release: ${{ needs.release.outputs.is_pre_release }}
     steps:
       - name: Download release files
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: release-files
           path: ./
@@ -313,13 +313,13 @@ jobs:
           fetch-depth: 0
 
       - name: Download package
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: python-dist
           path: dist/
 
       - name: Download binaries
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: release-artifacts/
           pattern: 'chronicle-mcp-*'
