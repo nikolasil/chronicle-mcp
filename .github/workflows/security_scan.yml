@@ -47,7 +47,7 @@ jobs:
           pip audit --format=markdown --output=pip-audit.md --ignore-vuln CVE-2025-69872 || true
 
       - name: Upload audit results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: pip-audit
@@ -86,7 +86,7 @@ jobs:
           bandit -r chronicle_mcp/ -f txt -o bandit-report.txt || true
 
       - name: Upload Bandit results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: bandit-report
@@ -100,7 +100,7 @@ jobs:
           safety scan --output text > safety-report.txt || true
 
       - name: Upload Safety results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: safety-report

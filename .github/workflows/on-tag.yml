@@ -75,7 +75,7 @@ jobs:
           GITHUB_REPO: ${{ github.repository }}
 
       - name: Upload release files
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-files
           path: |
@@ -131,7 +131,7 @@ jobs:
           python -m build
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: python-dist
           path: dist/
@@ -175,7 +175,7 @@ jobs:
           mv dist/chronicle-mcp* dist/${{ matrix.release_name }}
 
       - name: Upload binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_name }}
           path: dist/${{ matrix.release_name }}
